@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db } from "@/lib/firebase";
@@ -14,10 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, Plus, Star } from "lucide-react";
+import { Loader2, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { cn } from "@/lib/utils";
 
 const sessionSchema = z.object({
   topic: z.string().min(2, "Topic must be at least 2 characters."),
@@ -36,6 +36,80 @@ const sessionSchema = z.object({
   })),
 });
 
+type SessionFormValues = z.infer<typeof sessionSchema>;
+
+// New component for rendering a single question's form fields
+function QuestionItem({ control, index, removeQuestion, getValues }: { control: Control<SessionFormValues>, index: number, removeQuestion: (index: number) => void, getValues: any }) {
+    const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({
+        control,
+        name: `questions.${index}.options`
+    });
+
+    return (
+        <div className="p-4 border rounded-lg space-y-4">
+            <Button type="button" variant="destructive" onClick={() => removeQuestion(index)}>Delete Question</Button>
+            <FormField control={control} name={`questions.${index}.question`} render={({ field }) => (
+                <FormItem><FormLabel>Question</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+            )}/>
+            
+            <FormField
+              control={control}
+              name={`questions.${index}.answer`}
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Options & Correct Answer</FormLabel>
+                  <FormControl>
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
+                      {optionFields.map((optionField, optionIndex) => (
+                        <FormField
+                          key={optionField.id}
+                          control={control}
+                          name={`questions.${index}.options.${optionIndex}`}
+                          render={({ field: optionField }) => (
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value={getValues(`questions.${index}.options.${optionIndex}`)} />
+                              </FormControl>
+                              <Input {...optionField} placeholder={`Option ${optionIndex + 1}`} className="flex-1" />
+                               <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(optionIndex)} disabled={optionFields.length <= 2}>
+                                  <Trash2 className="h-4 w-4 text-muted-foreground"/>
+                              </Button>
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {optionFields.length < 4 && (
+              <Button type="button" size="sm" variant="outline" onClick={() => appendOption('')}>Add Option</Button>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={control} name={`questions.${index}.difficulty`} render={({ field }) => (
+                  <FormItem><FormLabel>Difficulty</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="easy">Easy</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+              )}/>
+              <FormField control={control} name={`questions.${index}.topic`} render={({ field }) => (
+                  <FormItem><FormLabel>Topic</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+              )}/>
+            </div>
+        </div>
+    );
+}
+
+
 export default function SessionConfigPage() {
   const params = useParams();
   const router = useRouter();
@@ -44,7 +118,7 @@ export default function SessionConfigPage() {
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const form = useForm<z.infer<typeof sessionSchema>>({
+  const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
         topic: 'General Knowledge',
@@ -84,7 +158,7 @@ export default function SessionConfigPage() {
     });
   }, [gameId, form]);
 
-  const onSubmit = async (data: z.infer<typeof sessionSchema>) => {
+  const onSubmit = async (data: SessionFormValues) => {
     try {
         const gameRef = doc(db, "games", gameId);
         // Reset players and score when config is updated.
@@ -192,70 +266,15 @@ export default function SessionConfigPage() {
                         <CardDescription>Add custom multiple-choice questions here. If left empty, questions will be generated by AI.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {questionFields.map((field, index) => {
-                            const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({ control: form.control, name: `questions.${index}.options` });
-                            return (
-                             <div key={field.id} className="p-4 border rounded-lg space-y-4">
-                                <Button type="button" variant="destructive" onClick={() => removeQuestion(index)}>Delete Question</Button>
-                                <FormField control={form.control} name={`questions.${index}.question`} render={({ field }) => (
-                                    <FormItem><FormLabel>Question</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                                )}/>
-                                
-                                <FormField
-                                  control={form.control}
-                                  name={`questions.${index}.answer`}
-                                  render={({ field }) => (
-                                    <FormItem className="space-y-3">
-                                      <FormLabel>Options & Correct Answer</FormLabel>
-                                      <FormControl>
-                                        <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
-                                          {optionFields.map((optionField, optionIndex) => (
-                                            <FormField
-                                              key={optionField.id}
-                                              control={form.control}
-                                              name={`questions.${index}.options.${optionIndex}`}
-                                              render={({ field: optionField }) => (
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                  <FormControl>
-                                                    <RadioGroupItem value={optionField.value} />
-                                                  </FormControl>
-                                                  <Input {...optionField} placeholder={`Option ${optionIndex + 1}`} className="flex-1" />
-                                                   <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(optionIndex)} disabled={optionFields.length <= 2}>
-                                                      <Trash2 className="h-4 w-4 text-muted-foreground"/>
-                                                  </Button>
-                                                </FormItem>
-                                              )}
-                                            />
-                                          ))}
-                                        </RadioGroup>
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-                                {optionFields.length < 4 && (
-                                  <Button type="button" size="sm" variant="outline" onClick={() => appendOption('')}>Add Option</Button>
-                                )}
-
-                                <div className="grid grid-cols-2 gap-4">
-                                  <FormField control={form.control} name={`questions.${index}.difficulty`} render={({ field }) => (
-                                      <FormItem><FormLabel>Difficulty</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                          <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                                          <SelectContent>
-                                            <SelectItem value="easy">Easy</SelectItem>
-                                            <SelectItem value="medium">Medium</SelectItem>
-                                            <SelectItem value="hard">Hard</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </FormItem>
-                                  )}/>
-                                  <FormField control={form.control} name={`questions.${index}.topic`} render={({ field }) => (
-                                      <FormItem><FormLabel>Topic</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-                                  )}/>
-                                </div>
-                            </div>
-                        )})}
+                        {questionFields.map((field, index) => (
+                            <QuestionItem 
+                                key={field.id}
+                                control={form.control}
+                                index={index}
+                                removeQuestion={removeQuestion}
+                                getValues={form.getValues}
+                            />
+                        ))}
                          {questionFields.length === 0 && <p className="text-muted-foreground text-sm">No custom questions added. AI will generate them based on topic.</p>}
                     </CardContent>
                 </Card>
