@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from "uuid";
 const GAME_ID = "main_game"; 
 const GAME_DURATION = 5 * 60; // 5 minutes
 const QUESTIONS_PER_PLAYER = 2;
+const ADMIN_USER_ID = "GLdvOzQWorMcsmOpcwvqqZcpCIN2";
 
 
 export default function Home() {
@@ -210,6 +211,7 @@ export default function Home() {
             onJoinTeam={handleJoinTeam}
             onStartGame={handleStartGame}
             currentPlayer={currentPlayer}
+            isAdmin={currentPlayer?.id === ADMIN_USER_ID}
           />
         );
       case "starting":

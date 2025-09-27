@@ -12,9 +12,10 @@ type LobbyProps = {
   onJoinTeam: (playerName: string, teamName: string) => void;
   onStartGame: () => void;
   currentPlayer: Player | null;
+  isAdmin: boolean;
 };
 
-export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer }: LobbyProps) {
+export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, isAdmin }: LobbyProps) {
   const [playerName, setPlayerName] = useState("");
 
   const TeamCard = ({ team }: { team: Team }) => (
@@ -49,9 +50,11 @@ export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer }:
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-8">
             {teams.map((team) => <TeamCard key={team.name} team={team} />)}
         </div>
-        <Button onClick={onStartGame} size="lg">
-          Start Game
-        </Button>
+        {isAdmin && (
+          <Button onClick={onStartGame} size="lg">
+            Start Game
+          </Button>
+        )}
       </div>
     );
   }
