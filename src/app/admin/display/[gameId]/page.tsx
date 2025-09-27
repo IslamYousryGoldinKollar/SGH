@@ -8,12 +8,20 @@ import { db } from "@/lib/firebase";
 import type { Game } from "@/lib/types";
 import { Loader2, Play, Square, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function DisplayPage() {
     const params = useParams();
     const gameId = params.gameId as string;
     const [game, setGame] = useState<Game | null>(null);
     const [loading, setLoading] = useState(true);
+    const [joinUrl, setJoinUrl] = useState("");
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            setJoinUrl(`${window.location.origin}/game/${gameId}`);
+        }
+    }, [gameId]);
 
     useEffect(() => {
         if (!gameId) return;
@@ -79,11 +87,22 @@ export default function DisplayPage() {
 
         return (
             <div className="w-full max-w-6xl mx-auto">
-                <div className="text-center mb-12 p-6 bg-primary/10 border-2 border-primary rounded-xl">
-                    <p className="text-2xl text-muted-foreground">Session PIN</p>
-                    <h1 className="text-8xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
-                    <h2 className="text-5xl font-display text-accent mt-4">{renderStatus()}</h2>
+                <div className="text-center mb-12 p-6 bg-primary/10 border-2 border-primary rounded-xl flex items-center justify-around">
+                    <div>
+                        <p className="text-2xl text-muted-foreground">Session PIN</p>
+                        <h1 className="text-8xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
+                    </div>
+                    {joinUrl && (
+                        <div className="text-center">
+                            <p className="text-2xl text-muted-foreground mb-2">Scan to Join</p>
+                            <div className="bg-white p-4 rounded-lg inline-block">
+                                <QRCodeSVG value={joinUrl} size={160} />
+                            </div>
+                        </div>
+                    )}
                 </div>
+                 <h2 className="text-5xl font-display text-accent mt-4 text-center mb-12">{renderStatus()}</h2>
+
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
                     {sortedTeams.map(team => (
