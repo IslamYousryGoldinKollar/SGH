@@ -185,7 +185,7 @@ export default function DisplayPage() {
     }
 
     return (
-        <div className="w-full h-full flex flex-col items-center overflow-hidden">
+        <div className="w-full h-screen flex flex-col items-center overflow-hidden">
             {renderContent()}
         </div>
     );
