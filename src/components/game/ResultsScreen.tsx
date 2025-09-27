@@ -1,3 +1,4 @@
+
 import type { Team } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,12 +33,12 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsSc
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl my-12">
         {sortedTeams.map((team, index) => (
-          <Card key={team.name} className={cn("shadow-lg bg-card/50", index === 0 && !isTie ? "border-primary border-2" : "")}>
+          <Card key={team.name} className={cn("shadow-lg bg-card/50", index === 0 && !isTie ? "border-2" : "")} style={{borderColor: index === 0 && !isTie ? team.color : 'hsl(var(--border))' }}>
             <CardHeader>
-              <CardTitle className="text-2xl font-display">{team.name}</CardTitle>
+              <CardTitle className="text-2xl font-display" style={{color: team.color}}>{team.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-5xl font-bold text-primary">{team.score}</p>
+              <p className="text-5xl font-bold" style={{color: team.color}}>{team.score}</p>
               <p className="text-muted-foreground">points</p>
             </CardContent>
           </Card>

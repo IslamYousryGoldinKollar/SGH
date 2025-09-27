@@ -24,6 +24,7 @@ export interface Team {
   score: number;
   players: Player[];
   capacity: number;
+  color: string;
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
@@ -38,4 +39,3 @@ export interface Game {
     timer: number;
     topic: string;
 }
-

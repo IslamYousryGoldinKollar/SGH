@@ -21,11 +21,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
 
 const sessionSchema = z.object({
-  topic: z.string().min(2, "Topic must be at least 2 characters."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
   teams: z.array(z.object({
     name: z.string().min(1, "Team name is required."),
     capacity: z.coerce.number().min(1, "Capacity must be at least 1."),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color"),
   })).min(1, "At least one team is required."),
   questions: z.array(z.object({
       question: z.string().min(1, "Question text is required."),
@@ -104,7 +104,6 @@ export default function SessionConfigPage() {
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
-        topic: 'General Knowledge',
         timer: 300,
         teams: [],
         questions: [],
@@ -129,9 +128,8 @@ export default function SessionConfigPage() {
         const gameData = docSnap.data() as Game;
         setGame(gameData);
         form.reset({
-          topic: gameData.topic,
           timer: gameData.timer,
-          teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity })),
+          teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff' })),
           questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
         });
       }
@@ -189,7 +187,6 @@ export default function SessionConfigPage() {
         const teams = data.teams.map(t => ({ ...t, score: 0, players: [] }));
 
         await updateDoc(gameRef, { 
-          topic: data.topic,
           timer: data.timer,
           teams: teams,
           questions: data.questions 
@@ -231,13 +228,6 @@ export default function SessionConfigPage() {
               <Card className="bg-card/50">
                 <CardHeader><CardTitle>General Settings</CardTitle></CardHeader>
                 <CardContent className="grid md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="topic" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Topic (for AI Questions)</FormLabel>
-                            <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
                     <FormField control={form.control} name="timer" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Game Timer (seconds)</FormLabel>
@@ -252,7 +242,7 @@ export default function SessionConfigPage() {
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <CardTitle>Teams</CardTitle>
-                            <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ name: `Team ${teamFields.length + 1}`, capacity: 10 })}>
+                            <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ name: `Team ${teamFields.length + 1}`, capacity: 10, color: '#FFFFFF' })}>
                                 <Plus className="mr-2" /> Add Team
                             </Button>
                         </div>
@@ -265,6 +255,9 @@ export default function SessionConfigPage() {
                                 )} />
                                 <FormField control={form.control} name={`teams.${index}.capacity`} render={({ field }) => (
                                      <FormItem><FormLabel>Capacity</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                )} />
+                                <FormField control={form.control} name={`teams.${index}.color`} render={({ field }) => (
+                                     <FormItem><FormLabel>Color</FormLabel><FormControl><Input type="color" {...field} className="p-1 h-10" /></FormControl></FormItem>
                                 )} />
                                 <Button type="button" variant="destructive" size="icon" onClick={() => removeTeam(index)}><Trash2 /></Button>
                             </div>

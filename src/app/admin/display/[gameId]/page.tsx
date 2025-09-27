@@ -87,8 +87,8 @@ export default function DisplayPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
                     {sortedTeams.map(team => (
-                        <div key={team.name} className="p-8 border-4 border-secondary rounded-lg bg-card/50 text-center transition-all duration-500">
-                            <h3 className="text-4xl font-display text-accent">{team.name}</h3>
+                        <div key={team.name} className="p-8 border-4 rounded-lg bg-card/50 text-center transition-all duration-500" style={{ borderColor: team.color }}>
+                            <h3 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h3>
                             <p className="text-8xl font-bold font-mono my-4">{team.score}</p>
                             <p className="text-muted-foreground">{team.players.length} players</p>
                         </div>
