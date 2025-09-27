@@ -46,12 +46,19 @@ export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, i
       <div className="flex flex-col items-center justify-center text-center flex-1">
         <h1 className="text-4xl font-bold font-display">Welcome, {currentPlayer.name}!</h1>
         <p className="text-muted-foreground mt-2">You are on <span className="font-bold text-primary">{currentPlayer.teamName}</span>.</p>
-        <p className="mt-4">Waiting for the game to start...</p>
+        
+        {isAdmin ? (
+            <p className="mt-4">You are the admin. Start the game when you're ready!</p>
+        ) : (
+            <p className="mt-4">Waiting for the game to start...</p>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-8">
             {teams.map((team) => <TeamCard key={team.name} team={team} />)}
         </div>
         {isAdmin && (
           <Button onClick={onStartGame} size="lg" className="font-display tracking-wider">
+            <Swords className="mr-2 h-5 w-5" />
             Start Game
           </Button>
         )}
