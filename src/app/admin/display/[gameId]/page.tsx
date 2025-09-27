@@ -157,7 +157,7 @@ export default function DisplayPage() {
         }
 
         return (
-            <div className="flex-1 w-full max-w-full flex flex-col justify-center min-h-0">
+            <div className="w-full h-full flex flex-col justify-center p-8">
                 <div className="flex-1 flex flex-col justify-center min-h-0">
                     {renderStatus()}
                 </div>
@@ -183,7 +183,7 @@ export default function DisplayPage() {
     }
 
     return (
-        <div className="bg-background text-foreground h-screen flex flex-col items-center p-8 overflow-hidden">
+        <div className="w-full h-full flex flex-col items-center overflow-hidden">
             {renderContent()}
         </div>
     );
