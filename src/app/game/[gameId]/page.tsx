@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import type { Team, Player, Question, GameStatus, Game } from "@/lib/types";
 import { generateQuestionsAction }from "@/lib/actions";
 import { db, auth } from "@/lib/firebase";
@@ -18,8 +19,9 @@ import { Loader2 } from "lucide-react";
 // This value is a placeholder and should be made configurable by the admin in a future update.
 const QUESTIONS_PER_PLAYER = 1;
 
-export default function GamePage({ params }: { params: { gameId: string } }) {
-  const GAME_ID = params.gameId.toUpperCase();
+export default function GamePage() {
+  const params = useParams();
+  const GAME_ID = (params.gameId as string).toUpperCase();
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
@@ -355,3 +357,5 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
     </div>
   );
 }
+
+    
