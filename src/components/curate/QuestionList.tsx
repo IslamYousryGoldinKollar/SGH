@@ -17,19 +17,19 @@ type QuestionListProps = {
 const DifficultyBadge = ({ difficulty }: { difficulty: string }) => {
   const variant = {
     easy: "secondary",
-    medium: "outline",
+    medium: "default",
     hard: "destructive",
-  }[difficulty] as "secondary" | "outline" | "destructive" | undefined;
+  }[difficulty] as "secondary" | "default" | "destructive" | undefined;
   
-  return <Badge variant={variant}>{difficulty}</Badge>
+  return <Badge variant={variant} className="capitalize">{difficulty}</Badge>
 }
 
 export default function QuestionList({ questions, isLoading }: QuestionListProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="bg-card/50">
         <CardHeader>
-          <CardTitle>Generated Questions</CardTitle>
+          <CardTitle className="font-display">Generated Questions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {[...Array(3)].map((_, i) => (
@@ -45,9 +45,9 @@ export default function QuestionList({ questions, isLoading }: QuestionListProps
   }
 
   return (
-    <Card>
+    <Card className="bg-card/50">
       <CardHeader>
-        <CardTitle>Generated Questions</CardTitle>
+        <CardTitle className="font-display">Generated Questions</CardTitle>
       </CardHeader>
       <CardContent>
         <Accordion type="single" collapsible className="w-full">
@@ -55,10 +55,10 @@ export default function QuestionList({ questions, isLoading }: QuestionListProps
             <AccordionItem value={`item-${index}`} key={index}>
               <AccordionTrigger>
                 <div className="flex items-center justify-between w-full pr-4">
-                  <span className="text-left">{q.question}</span>
-                  <div className="flex items-center gap-2">
+                  <span className="text-left font-sans">{q.question}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                     <DifficultyBadge difficulty={q.difficulty} />
-                    <Badge variant="default" className="bg-accent">{q.topic}</Badge>
+                    <Badge variant="outline" className="bg-accent text-accent-foreground">{q.topic}</Badge>
                   </div>
                 </div>
               </AccordionTrigger>

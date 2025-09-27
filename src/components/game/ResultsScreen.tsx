@@ -18,7 +18,7 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsSc
   return (
     <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
       <Trophy className="h-24 w-24 text-yellow-400" />
-      <h1 className="text-5xl font-bold mt-4 font-headline">
+      <h1 className="text-5xl font-bold mt-4 font-display">
         {isTie ? "It's a Tie!" : `${winner.name} Wins!`}
       </h1>
       
@@ -32,9 +32,9 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsSc
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl my-12">
         {sortedTeams.map((team, index) => (
-          <Card key={team.name} className={cn("shadow-lg", index === 0 && !isTie ? "border-primary border-2" : "")}>
+          <Card key={team.name} className={cn("shadow-lg bg-card/50", index === 0 && !isTie ? "border-primary border-2" : "")}>
             <CardHeader>
-              <CardTitle className="text-2xl">{team.name}</CardTitle>
+              <CardTitle className="text-2xl font-display">{team.name}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-5xl font-bold text-primary">{team.score}</p>

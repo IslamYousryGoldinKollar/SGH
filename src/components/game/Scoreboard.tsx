@@ -8,9 +8,9 @@ type ScoreboardProps = {
 
 export default function Scoreboard({ team }: ScoreboardProps) {
   return (
-    <Card className="bg-card/80 backdrop-blur-sm shadow-lg">
+    <Card className="bg-card/50 backdrop-blur-sm shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between font-display">
           <span className="flex items-center gap-2"><Shield /> {team.name}</span>
           <span className="text-3xl font-bold text-primary">{team.score} PTS</span>
         </CardTitle>

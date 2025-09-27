@@ -222,7 +222,7 @@ export default function Home() {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4">Loading Game...</h1>
+            <h1 className="text-4xl font-bold mt-4 font-display">Loading Game...</h1>
         </div>
       )
     }
@@ -242,14 +242,14 @@ export default function Home() {
         return (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4">Generating Questions...</h1>
+            <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
             <p className="text-muted-foreground mt-2">Get ready for battle!</p>
           </div>
         );
       case "playing":
         if (!currentPlayer) return (
              <div className="flex flex-col items-center justify-center flex-1 text-center">
-               <h1 className="text-4xl font-bold">Game in Progress</h1>
+               <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
                <p className="text-muted-foreground mt-2">Join the game to play!</p>
              </div>
         );
@@ -266,7 +266,7 @@ export default function Home() {
         if (playerState.currentQuestionIndex >= QUESTIONS_PER_PLAYER) {
            return (
              <div className="flex flex-col items-center justify-center flex-1 text-center">
-               <h1 className="text-4xl font-bold">You've finished your questions!</h1>
+               <h1 className="text-4xl font-bold font-display">You've finished your questions!</h1>
                <p className="text-muted-foreground mt-2">Waiting for other players to finish...</p>
              </div>
            );

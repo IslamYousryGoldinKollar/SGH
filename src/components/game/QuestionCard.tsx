@@ -44,11 +44,11 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
   };
 
   return (
-    <Card className={cn("h-full flex flex-col transition-all duration-300", feedbackStyles[feedback])}>
+    <Card className={cn("h-full flex flex-col transition-all duration-300 bg-card/50", feedbackStyles[feedback])}>
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-2xl lg:text-3xl font-headline">{question.question}</CardTitle>
-          <div className="flex gap-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-2xl lg:text-3xl font-display">{question.question}</CardTitle>
+          <div className="flex gap-2 flex-shrink-0 ml-4">
             <Badge variant="outline">{question.difficulty}</Badge>
             <Badge variant="secondary">{question.topic}</Badge>
           </div>
@@ -72,13 +72,13 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
         ) : (
           <div className="text-center space-y-4 animate-in fade-in duration-500">
             {feedback === 'correct' && (
-              <div className="flex flex-col items-center gap-2 text-green-600">
+              <div className="flex flex-col items-center gap-2 text-green-400">
                 <CheckCircle2 className="h-16 w-16" />
                 <p className="text-2xl font-bold">Correct!</p>
               </div>
             )}
             {feedback === 'incorrect' && (
-              <div className="flex flex-col items-center gap-2 text-red-600">
+              <div className="flex flex-col items-center gap-2 text-red-400">
                 <XCircle className="h-16 w-16" />
                 <p className="text-2xl font-bold">Incorrect!</p>
                 <p className="text-lg flex items-center gap-2"><Lightbulb className="h-5 w-5"/> The correct answer was: <strong className="text-foreground">{question.answer}</strong></p>

@@ -45,9 +45,9 @@ export default function CuratorForm({ onSubmit, isLoading }: CuratorFormProps) {
   });
 
   return (
-    <Card className="mb-8 shadow-lg">
+    <Card className="mb-8 shadow-lg bg-card/50">
       <CardHeader>
-        <CardTitle>Generate Questions</CardTitle>
+        <CardTitle className="font-display">Generate Questions</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>

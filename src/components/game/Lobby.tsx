@@ -19,9 +19,9 @@ export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, i
   const [playerName, setPlayerName] = useState("");
 
   const TeamCard = ({ team }: { team: Team }) => (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col bg-card/50">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between font-display">
           <span>{team.name}</span>
           <span className="flex items-center text-sm text-muted-foreground">
             <Users className="mr-2 h-4 w-4" /> {team.players.length} / 10
@@ -44,14 +44,14 @@ export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, i
   if (currentPlayer) {
     return (
       <div className="flex flex-col items-center justify-center text-center flex-1">
-        <h1 className="text-4xl font-bold font-headline">Welcome, {currentPlayer.name}!</h1>
+        <h1 className="text-4xl font-bold font-display">Welcome, {currentPlayer.name}!</h1>
         <p className="text-muted-foreground mt-2">You are on <span className="font-bold text-primary">{currentPlayer.teamName}</span>.</p>
         <p className="mt-4">Waiting for the game to start...</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-8">
             {teams.map((team) => <TeamCard key={team.name} team={team} />)}
         </div>
         {isAdmin && (
-          <Button onClick={onStartGame} size="lg">
+          <Button onClick={onStartGame} size="lg" className="font-display tracking-wider">
             Start Game
           </Button>
         )}
@@ -61,7 +61,7 @@ export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, i
 
   return (
     <div className="flex flex-col items-center justify-center text-center flex-1">
-      <h1 className="text-5xl font-bold font-headline">Join the Battle</h1>
+      <h1 className="text-5xl font-bold font-display">Join the Battle</h1>
       <p className="text-muted-foreground mt-2 max-w-xl">Enter your name, choose a team, and get ready to prove your knowledge. The game will start when you're ready.</p>
       
       <div className="my-8 flex flex-col sm:flex-row items-center gap-4">
