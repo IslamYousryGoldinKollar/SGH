@@ -140,10 +140,10 @@ export default function DisplayPage() {
     
     const renderContent = () => {
         if (loading) {
-            return <Loader2 className="h-16 w-16 animate-spin" />;
+            return <div className="flex-1 flex items-center justify-center"><Loader2 className="h-16 w-16 animate-spin" /></div>;
         }
         if (!game) {
-            return <h1 className="text-4xl text-destructive">Session Not Found</h1>;
+            return <div className="flex-1 flex items-center justify-center"><h1 className="text-4xl text-destructive">Session Not Found</h1></div>;
         }
 
         const renderStatus = () => {
@@ -157,8 +157,8 @@ export default function DisplayPage() {
         }
 
         return (
-            <div className="flex-1 w-full max-w-full flex flex-col justify-center">
-                <div className="flex-1 flex flex-col justify-center">
+            <div className="flex-1 w-full max-w-full flex flex-col justify-center min-h-0">
+                <div className="flex-1 flex flex-col justify-center min-h-0">
                     {renderStatus()}
                 </div>
                 <div className="text-center py-4 flex-shrink-0">
@@ -183,7 +183,7 @@ export default function DisplayPage() {
     }
 
     return (
-        <div className="bg-background text-foreground h-screen flex flex-col items-center justify-center p-8 overflow-hidden">
+        <div className="bg-background text-foreground h-screen flex flex-col items-center p-8 overflow-hidden">
             {renderContent()}
         </div>
     );
