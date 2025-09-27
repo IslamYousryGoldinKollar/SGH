@@ -37,11 +37,14 @@ export default function DisplayPage() {
                 // Recalculate scores based on grid
                 const scores = new Map<string, number>();
                 gameData.teams.forEach(team => scores.set(team.name, 0));
-                gameData.grid?.forEach(square => {
-                    if (square.coloredBy) {
-                        scores.set(square.coloredBy, (scores.get(square.coloredBy) || 0) + 1);
-                    }
-                });
+                
+                if (gameData.grid) {
+                    gameData.grid.forEach(square => {
+                        if (square.coloredBy) {
+                            scores.set(square.coloredBy, (scores.get(square.coloredBy) || 0) + 1);
+                        }
+                    });
+                }
 
                 gameData.teams.forEach(team => {
                     team.score = scores.get(team.name) || 0;
@@ -143,7 +146,7 @@ export default function DisplayPage() {
     }
 
     const GameGrid = () => {
-        if (!game) return null;
+        if (!game || !game.grid) return null; // Added check for game.grid
         const { grid, teams } = game;
         
         const getTeamColor = (teamName: string) => {
