@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -12,9 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2 } from "lucide-react";
 import { doc, setDoc } from "firebase/firestore";
 
-// In a real app, this would be a server-side check.
-// For this prototype, we'll use a simple client-side check.
-const ADMIN_EMAIL = "admin@trivia.com";
+// The designated admin user ID.
+const ADMIN_UID = "40J7xdA4thUfcFf9vGvxUpTfSAD3";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -27,19 +27,21 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simple validation
-    if (email.toLowerCase() !== ADMIN_EMAIL) {
-        toast({
-            title: "Access Denied",
-            description: "The provided email is not registered as an admin.",
-            variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-    }
-
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Check if the signed-in user's UID matches the admin UID
+      if (userCredential.user.uid !== ADMIN_UID) {
+        toast({
+            title: "Access Denied",
+            description: "You are not authorized to access the admin dashboard.",
+            variant: "destructive",
+        });
+        await auth.signOut(); // Sign out the unauthorized user
+        setIsLoading(false);
+        return;
+      }
+      
       // Set the admin UID in a known location in Firestore for other clients to check
       await setDoc(doc(db, "settings", "admin"), { uid: userCredential.user.uid });
       toast({
@@ -64,7 +66,7 @@ export default function AdminLoginPage() {
       <Card className="w-full max-w-sm bg-card/50">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-display">Admin Login</CardTitle>
-          <CardDescription>Enter your credentials to manage games.</CardDescription>
+          <CardDescription>Enter your admin credentials to manage games.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -73,7 +75,7 @@ export default function AdminLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@trivia.com"
+                placeholder="your-admin-email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
