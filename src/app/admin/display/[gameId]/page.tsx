@@ -63,7 +63,7 @@ const HexGrid = ({ grid, teams }: { grid: GridSquare[], teams: Team[] }) => {
              if (square) {
                 hexes.push(
                     <Hexagon
-                        key={square.id}
+                        key={`${q},${r}`}
                         q={q}
                         r={r}
                         coloredBy={square.coloredBy}
@@ -336,4 +336,5 @@ export default function DisplayPage() {
             {renderContent()}
         </div>
     );
-}
+
+    
