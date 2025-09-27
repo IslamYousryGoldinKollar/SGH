@@ -19,12 +19,18 @@ export interface Player {
   answeredQuestions: string[]; // Array of question strings they've already answered
 }
 
+export interface GridSquare {
+  id: number;
+  coloredBy: string | null; // Team name
+}
+
 export interface Team {
   name:string;
   score: number;
   players: Player[];
   capacity: number;
   color: string;
+  coloringCredits: number;
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
@@ -34,6 +40,7 @@ export interface Game {
     status: GameStatus;
     teams: Team[];
     questions: Question[];
+    grid: GridSquare[];
     createdAt: Timestamp;
     gameStartedAt?: Timestamp | null;
     timer: number;

@@ -9,10 +9,12 @@ import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from 
 import { Loader2, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import type { Game } from "@/lib/types";
+import type { Game, GridSquare } from "@/lib/types";
 
 // A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+
+const GRID_SIZE = 100; // 10x10 grid
 
 export default function AdminDashboard() {
   const [user, loading, error] = useAuthState(auth);
@@ -48,14 +50,20 @@ export default function AdminDashboard() {
     const newPin = generatePin();
     const gameRef = doc(db, "games", newPin);
     
+    const initialGrid: GridSquare[] = Array.from({ length: GRID_SIZE }, (_, i) => ({
+        id: i,
+        coloredBy: null,
+    }));
+
     // Default structure for a new game
     const newGame: Omit<Game, 'id'> = {
         status: "lobby",
         teams: [
-          { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347" },
-          { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4" },
+          { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347", coloringCredits: 0 },
+          { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4", coloringCredits: 0 },
         ],
         questions: [],
+        grid: initialGrid,
         createdAt: serverTimestamp() as any,
         gameStartedAt: null,
         timer: 300, // 5 minutes default

@@ -5,12 +5,13 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Game, Team } from "@/lib/types";
-import { Loader2, Play, Square, RotateCw, Users } from "lucide-react";
+import type { Game, Team, GridSquare } from "@/lib/types";
+import { Loader2, Play, Square, RotateCw, Users, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 
 export default function DisplayPage() {
@@ -31,7 +32,22 @@ export default function DisplayPage() {
         const gameRef = doc(db, "games", gameId.toUpperCase());
         const unsubscribe = onSnapshot(gameRef, (doc) => {
             if (doc.exists()) {
-                setGame({ id: doc.id, ...doc.data() } as Game);
+                const gameData = { id: doc.id, ...doc.data() } as Game;
+                
+                // Recalculate scores based on grid
+                const scores = new Map<string, number>();
+                gameData.teams.forEach(team => scores.set(team.name, 0));
+                gameData.grid?.forEach(square => {
+                    if (square.coloredBy) {
+                        scores.set(square.coloredBy, (scores.get(square.coloredBy) || 0) + 1);
+                    }
+                });
+
+                gameData.teams.forEach(team => {
+                    team.score = scores.get(team.name) || 0;
+                });
+
+                setGame(gameData);
             } else {
                 setGame(null);
             }
@@ -55,13 +71,21 @@ export default function DisplayPage() {
     const handlePlayAgain = async () => {
         if (!game) return;
         const gameRef = doc(db, "games", gameId.toUpperCase());
+        
+        const initialGrid: GridSquare[] = Array.from({ length: 100 }, (_, i) => ({
+            id: i,
+            coloredBy: null,
+        }));
+        
         await updateDoc(gameRef, {
             status: "lobby",
             teams: game.teams.map(t => ({
                 ...t,
                 score: 0,
+                coloringCredits: 0,
                 players: []
             })),
+            grid: initialGrid,
             gameStartedAt: null,
         });
     };
@@ -118,21 +142,60 @@ export default function DisplayPage() {
         )
     }
 
-    const renderGameInProgress = () => {
-         if (!game) return null;
-         const sortedTeams = game.teams ? [...game.teams].sort((a, b) => b.score - a.score) : [];
+    const GameGrid = () => {
+        if (!game) return null;
+        const { grid, teams } = game;
+        
+        const getTeamColor = (teamName: string) => {
+            return teams.find(t => t.name === teamName)?.color || '#333';
+        }
 
         return (
-             <div className="w-full max-w-6xl mx-auto text-center">
-                 <h2 className="text-6xl font-display text-accent mb-12">Game in Progress!</h2>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
-                    {sortedTeams.map(team => (
-                        <div key={team.name} className="p-8 border-4 rounded-lg bg-card/50 text-center transition-all duration-500" style={{ borderColor: team.color }}>
-                            <h3 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h3>
-                            <p className="text-8xl font-bold font-mono my-4">{team.score}</p>
-                            <p className="text-muted-foreground">{team.players.length} players</p>
-                        </div>
-                    ))}
+            <div className="grid grid-cols-10 gap-2 aspect-square max-w-[60vh] mx-auto">
+                {grid.map(square => (
+                    <div 
+                        key={square.id}
+                        className="w-full aspect-square rounded-md border-2 border-border transition-colors duration-500"
+                        style={{ backgroundColor: square.coloredBy ? getTeamColor(square.coloredBy) : 'var(--card)'}}
+                    />
+                ))}
+            </div>
+        );
+    }
+    
+    const TeamScoreBar = ({ team }: { team: Team }) => (
+        <div className="p-6 rounded-lg bg-card/50 text-center transition-all duration-500 border-4" style={{ borderColor: team.color }}>
+            <h3 className="text-3xl font-display" style={{ color: team.color }}>{team.name}</h3>
+            <p className="text-6xl font-bold font-mono my-2">{team.score}</p>
+             <div className="flex items-center justify-center text-muted-foreground text-xl">
+                <Users className="mr-2 h-5 w-5" /> 
+                <span>{team.players.length}</span>
+            </div>
+        </div>
+    );
+
+
+    const renderGameInProgress = () => {
+         if (!game) return null;
+         const teamLeft = game.teams.length > 1 ? game.teams[1] : null;
+         const teamRight = game.teams.length > 0 ? game.teams[0] : null;
+
+        return (
+             <div className="flex-1 w-full max-w-full flex items-center justify-around gap-8">
+                {/* Left Team */}
+                <div className="w-1/4 flex justify-center">
+                    {teamLeft && <TeamScoreBar team={teamLeft} />}
+                </div>
+
+                {/* Center Content */}
+                <div className="w-1/2 flex flex-col items-center justify-center text-center">
+                    <h2 className="text-5xl font-display text-accent mb-6">Color War</h2>
+                    <GameGrid />
+                </div>
+
+                {/* Right Team */}
+                 <div className="w-1/4 flex justify-center">
+                    {teamRight && <TeamScoreBar team={teamRight} />}
                 </div>
              </div>
         )
@@ -151,13 +214,32 @@ export default function DisplayPage() {
                 case 'lobby': return renderLobby();
                 case 'starting': return <h2 className="text-5xl font-display text-accent mt-4 text-center mb-12">Getting ready...</h2>;
                 case 'playing': return renderGameInProgress();
-                case 'finished': return <h2 className="text-5xl font-display text-accent mt-4 text-center mb-12">Game Over!</h2>;
+                case 'finished': return renderGameInProgress(); // Show final grid state
                 default: return <p>{game.status}</p>;
             }
         }
+        
+        const GameOverOverlay = () => {
+            if (game.status !== 'finished') return null;
+
+            const sortedTeams = [...game.teams].sort((a,b) => b.score - a.score);
+            const winner = sortedTeams[0];
+            const isTie = sortedTeams.length > 1 && sortedTeams[0].score === sortedTeams[1].score;
+
+            return (
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-10 animate-in fade-in">
+                    <h1 className="text-7xl font-display text-yellow-400">Game Over</h1>
+                    <h2 className="text-4xl font-display mt-4">{isTie ? "It's a Tie!" : `${winner.name} Wins!`}</h2>
+                     <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl mt-12">
+                        <RotateCw className="mr-4"/> Play Again
+                    </Button>
+                </div>
+            )
+        }
 
         return (
-            <div className="w-full h-full flex flex-col p-8">
+            <div className="w-full h-full flex flex-col p-8 relative">
+                 <GameOverOverlay />
                 <div className="flex-1 flex flex-col justify-start pt-[5%] min-h-0">
                     {renderStatus()}
                 </div>

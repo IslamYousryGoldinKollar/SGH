@@ -32,12 +32,13 @@ const sessionSchema = z.object({
       options: z.array(z.string().min(1, "Option text is required.")).min(2, "At least two options are required.").max(4, "You can have a maximum of 4 options."),
       answer: z.string().min(1, "An answer is required."),
   })),
+  topic: z.string(),
 });
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
 
 // New component for rendering a single question's form fields
-function QuestionItem({ control, index, removeQuestion, getValues }: { control: Control<SessionFormValues>, index: number, removeQuestion: (index: number) => void, getValues: any }) {
+function QuestionItem({ control, index, removeQuestion, getValues }: { control: Control<any>, index: number, removeQuestion: (index: number) => void, getValues: any }) {
     const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({
         control,
         name: `questions.${index}.options`
@@ -107,6 +108,7 @@ export default function SessionConfigPage() {
         timer: 300,
         teams: [],
         questions: [],
+        topic: "General Knowledge",
     }
   });
   
@@ -131,6 +133,7 @@ export default function SessionConfigPage() {
           timer: gameData.timer,
           teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff' })),
           questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
+          topic: gameData.topic,
         });
       }
       setLoading(false);
@@ -184,12 +187,13 @@ export default function SessionConfigPage() {
     try {
         const gameRef = doc(db, "games", gameId);
         
-        const teams = data.teams.map(t => ({ ...t, score: 0, players: [] }));
+        const teams = data.teams.map(t => ({ ...t, score: 0, players: [], coloringCredits: 0 }));
 
         await updateDoc(gameRef, { 
           timer: data.timer,
           teams: teams,
-          questions: data.questions 
+          questions: data.questions,
+          topic: data.topic,
         });
 
         toast({
@@ -232,6 +236,13 @@ export default function SessionConfigPage() {
                         <FormItem>
                             <FormLabel>Game Timer (seconds)</FormLabel>
                             <FormControl><Input type="number" {...field} /></FormControl>
+                             <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="topic" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Topic (for AI Questions)</FormLabel>
+                            <FormControl><Input {...field} /></FormControl>
                              <FormMessage />
                         </FormItem>
                     )} />

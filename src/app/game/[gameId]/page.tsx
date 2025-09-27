@@ -3,14 +3,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import type { Player, Question, Game } from "@/lib/types";
+import type { Player, Question, Game, Team, GridSquare } from "@/lib/types";
 import { generateQuestionsAction }from "@/lib/actions";
 import { db, auth } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, getDoc, serverTimestamp, arrayUnion } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, getDoc, serverTimestamp, runTransaction } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, type User } from "firebase/auth";
 
 import Lobby from "@/components/game/Lobby";
 import GameScreen from "@/components/game/GameScreen";
+import ColorGridScreen from "@/components/game/ColorGridScreen";
 import ResultsScreen from "@/components/game/ResultsScreen";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -26,6 +27,7 @@ export default function GamePage() {
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [view, setView] = useState<'question' | 'grid'>('question');
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
@@ -52,6 +54,18 @@ export default function GamePage() {
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
+        
+        const scores = new Map<string, number>();
+        gameData.teams.forEach(team => scores.set(team.name, 0));
+        gameData.grid?.forEach(square => {
+            if (square.coloredBy) {
+                scores.set(square.coloredBy, (scores.get(square.coloredBy) || 0) + 1);
+            }
+        });
+        gameData.teams.forEach(team => {
+            team.score = scores.get(team.name) || 0;
+        });
+
         setGame(gameData);
         
         if (authUser) {
@@ -65,9 +79,7 @@ export default function GamePage() {
       setLoading(false);
     });
 
-    return () => {
-      unsubGame();
-    };
+    return () => unsubGame();
   }, [GAME_ID, authUser, toast]);
 
  const handleJoinTeam = async (playerName: string, teamName: string) => {
@@ -79,35 +91,41 @@ export default function GamePage() {
     if (!game || !authUser) return;
 
     const gameRef = doc(db, "games", GAME_ID);
-    const currentGame = (await getDoc(gameRef)).data() as Game;
-
-    const isAlreadyInTeam = currentGame.teams.some(t => t.players.some(p => p.id === authUser.uid));
-    if(isAlreadyInTeam) {
-        toast({ title: "Already in a team", description: "You have already joined a team.", variant: "destructive" });
-        return;
-    }
     
-    const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
-    if(teamIndex === -1) return;
+    await runTransaction(db, async (transaction) => {
+        const gameDoc = await transaction.get(gameRef);
+        if (!gameDoc.exists()) throw "Game does not exist!";
+        
+        const currentGame = gameDoc.data() as Game;
 
-    const team = currentGame.teams[teamIndex];
+        const isAlreadyInTeam = currentGame.teams.some(t => t.players.some(p => p.id === authUser.uid));
+        if(isAlreadyInTeam) {
+            toast({ title: "Already in a team", description: "You have already joined a team.", variant: "destructive" });
+            return;
+        }
+        
+        const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
+        if(teamIndex === -1) return;
 
-    if (team.players.length >= team.capacity) {
-      toast({ title: "Team Full", description: `Sorry, ${teamName} is full.`, variant: "destructive" });
-      return;
-    }
+        const team = currentGame.teams[teamIndex];
 
-    const newPlayer: Player = {
-      id: authUser.uid,
-      name: playerName,
-      teamName: teamName,
-      answeredQuestions: [],
-    };
-    
-    const updatedTeams = [...currentGame.teams];
-    updatedTeams[teamIndex].players.push(newPlayer);
+        if (team.players.length >= team.capacity) {
+          toast({ title: "Team Full", description: `Sorry, ${teamName} is full.`, variant: "destructive" });
+          return;
+        }
 
-    await updateDoc(gameRef, { teams: updatedTeams });
+        const newPlayer: Player = {
+          id: authUser.uid,
+          name: playerName,
+          teamName: teamName,
+          answeredQuestions: [],
+        };
+        
+        const updatedTeams = [...currentGame.teams];
+        updatedTeams[teamIndex].players.push(newPlayer);
+
+        transaction.update(gameRef, { teams: updatedTeams });
+    });
   };
 
   const handleStartGame = async () => {
@@ -142,7 +160,9 @@ export default function GamePage() {
           gameStartedAt: serverTimestamp(),
           teams: game.teams.map(team => ({
             ...team,
-            players: team.players.map(p => ({ ...p, answeredQuestions: [] }))
+            players: team.players.map(p => ({ ...p, answeredQuestions: [] })),
+            coloringCredits: 0,
+            score: 0
           }))
        });
     } catch (error) {
@@ -160,25 +180,35 @@ export default function GamePage() {
     if (!game || !currentPlayer) return null;
     
     const answered = currentPlayer.answeredQuestions || [];
+    const allQuestionsAnswered = answered.length >= game.questions.length;
+    if (allQuestionsAnswered) return null;
+
     const availableQuestions = game.questions.filter(
         q => !answered.includes(q.question)
     );
 
     if (availableQuestions.length === 0) {
-      return null; // No more questions available
+      return null;
     }
     
-    // Return a random question from the available pool
     const randomIndex = Math.floor(Math.random() * availableQuestions.length);
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
 
-  // Set initial question when game starts or player joins
   useEffect(() => {
     if (game?.status === 'playing' && currentPlayer && !currentQuestion) {
       setCurrentQuestion(getNextQuestion());
+      setView('question');
     }
-  }, [game?.status, currentPlayer, currentQuestion, getNextQuestion]);
+     if (game?.status === 'playing' && currentPlayer) {
+        const team = game.teams.find(t => t.name === currentPlayer.teamName);
+        if(team && team.coloringCredits > 0) {
+            setView('grid');
+        } else {
+            setView('question');
+        }
+    }
+  }, [game?.status, currentPlayer, currentQuestion, getNextQuestion, game?.teams]);
 
 
   const handleAnswer = async (question: Question, answer: string) => {
@@ -188,32 +218,83 @@ export default function GamePage() {
     
     const gameRef = doc(db, "games", GAME_ID);
     
-    // We need to read the doc inside a transaction to prevent race conditions
-    // but for now, a fresh read is better than using stale state.
-    const currentGame = (await getDoc(gameRef)).data() as Game;
+    await runTransaction(db, async (transaction) => {
+        const gameDoc = await transaction.get(gameRef);
+        if (!gameDoc.exists()) throw "Game does not exist!";
+        const currentGame = gameDoc.data() as Game;
 
-    const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
-    if (teamIndex === -1) return;
+        const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
+        if (teamIndex === -1) return;
 
-    const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
-    if (playerIndex === -1) return;
-    
-    const updatedTeams = [...currentGame.teams];
-    const teamToUpdate = updatedTeams[teamIndex];
-    const playerToUpdate = teamToUpdate.players[playerIndex];
+        const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
+        if (playerIndex === -1) return;
+        
+        const updatedTeams = [...currentGame.teams];
+        const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
+
+        if (isCorrect) {
+            updatedTeams[teamIndex].coloringCredits += 1;
+        }
+
+        playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
+        
+        transaction.update(gameRef, { teams: updatedTeams });
+    });
 
     if (isCorrect) {
-        teamToUpdate.score += 10;
+        setView('grid');
+    } else {
+        setCurrentQuestion(getNextQuestion());
     }
-
-    playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
-    
-    await updateDoc(gameRef, { teams: updatedTeams });
-
-    // After submitting, immediately get the next question for this player
-    setCurrentQuestion(getNextQuestion());
   };
   
+  const handleColorSquare = async (squareId: number) => {
+    if (!game || !currentPlayer) return;
+    
+    const gameRef = doc(db, "games", GAME_ID);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const gameDoc = await transaction.get(gameRef);
+        if (!gameDoc.exists()) throw "Game does not exist!";
+        const currentGame = gameDoc.data() as Game;
+
+        const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
+        if (teamIndex === -1) throw "Team not found!";
+        
+        if (currentGame.teams[teamIndex].coloringCredits <= 0) {
+            toast({ title: "No credits!", description: "Answer more questions correctly to earn credits.", variant: "destructive" });
+            throw "No coloring credits!";
+        }
+
+        const squareIndex = currentGame.grid.findIndex(s => s.id === squareId);
+        if (squareIndex === -1) throw "Square not found!";
+        
+        if (currentGame.grid[squareIndex].coloredBy) {
+            toast({ title: "Already colored!", description: "This square has already been claimed.", variant: "destructive" });
+            throw "Square already colored!";
+        }
+
+        const updatedGrid = [...currentGame.grid];
+        updatedGrid[squareIndex].coloredBy = currentPlayer.teamName;
+        
+        const updatedTeams = [...currentGame.teams];
+        updatedTeams[teamIndex].coloringCredits -= 1;
+
+        transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
+      });
+
+      setCurrentQuestion(getNextQuestion());
+      setView('question');
+
+    } catch (error: any) {
+        console.error("Failed to color square: ", error);
+        if (error.message && !error.message.includes('No coloring credits') && !error.message.includes('Square already colored')) {
+            toast({ title: "Error", description: "Could not color the square. Please try again.", variant: "destructive" });
+        }
+    }
+  };
+
   const handleTimeout = async () => {
     if(game?.status === 'playing') {
       await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
@@ -223,21 +304,31 @@ export default function GamePage() {
       });
     }
   };
+  
+   const handleSkipColoring = () => {
+    setCurrentQuestion(getNextQuestion());
+    setView('question');
+  };
 
   const handlePlayAgain = async () => {
     if (!game) return;
+    const initialGrid: GridSquare[] = Array.from({ length: 100 }, (_, i) => ({ id: i, coloredBy: null }));
+    
     await updateDoc(doc(db, "games", GAME_ID), {
       status: "lobby",
       teams: game.teams.map(t => ({
           name: t.name,
           capacity: t.capacity,
+          color: t.color,
           score: 0, 
-          players: [] 
+          players: [],
+          coloringCredits: 0
       })),
+      grid: initialGrid,
       gameStartedAt: null,
     });
-    // Reset local state for the next round
     setCurrentQuestion(null);
+    setView('question');
   };
 
   const renderContent = () => {
@@ -280,6 +371,19 @@ export default function GamePage() {
         const playerTeam = game.teams.find((t) => t.name === currentPlayer.teamName);
         if (!playerTeam) return <p>Error: Your team could not be found.</p>;
         
+        if (view === 'grid' && playerTeam.coloringCredits > 0) {
+             return (
+                <ColorGridScreen 
+                    grid={game.grid}
+                    teams={game.teams}
+                    onColorSquare={handleColorSquare}
+                    teamColoring={playerTeam.color}
+                    credits={playerTeam.coloringCredits}
+                    onSkip={handleSkipColoring}
+                />
+            );
+        }
+
         if (!currentQuestion) {
              return (
              <div className="flex flex-col items-center justify-center flex-1 text-center">
