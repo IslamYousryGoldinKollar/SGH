@@ -12,12 +12,6 @@ export default function Header() {
             <h1 className="font-display">Trivia Titans</h1>
           </Link>
           <nav>
-            <Button asChild variant="ghost">
-              <Link href="/curate">
-                <Wand2 className="mr-2 h-4 w-4" />
-                AI Curator
-              </Link>
-            </Button>
           </nav>
         </div>
       </div>
