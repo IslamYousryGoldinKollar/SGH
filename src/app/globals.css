@@ -63,8 +63,8 @@
   * {
     @apply border-border;
   }
-  html, body {
-    @apply h-full m-0 p-0 overflow-hidden;
+  html {
+    @apply h-full;
   }
   body {
     @apply bg-background text-foreground;
