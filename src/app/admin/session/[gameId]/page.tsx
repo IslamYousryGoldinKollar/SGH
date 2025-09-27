@@ -85,7 +85,7 @@ function QuestionItem({ control, index, removeQuestion, getValues }: { control: 
               )}
             />
             {optionFields.length < 4 && (
-              <Button type="button" size="sm" variant="outline" onClick={() => appendOption('')}>Add Option</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => appendOption({value: ''})}>Add Option</Button>
             )}
 
             <div className="grid grid-cols-2 gap-4">
@@ -161,9 +161,17 @@ export default function SessionConfigPage() {
   const onSubmit = async (data: SessionFormValues) => {
     try {
         const gameRef = doc(db, "games", gameId);
-        // Reset players and score when config is updated.
+        
         const teams = data.teams.map(t => ({ ...t, score: 0, players: [] }));
-        await updateDoc(gameRef, { ...data, teams });
+
+        await updateDoc(gameRef, { 
+          topic: data.topic,
+          difficulty: data.difficulty,
+          timer: data.timer,
+          teams: teams,
+          questions: data.questions 
+        });
+
         toast({
             title: "Session Updated",
             description: "The game session has been successfully updated.",
@@ -190,7 +198,7 @@ export default function SessionConfigPage() {
     <div className="container mx-auto px-4 py-8">
       <Card>
         <CardHeader>
-          <CardTitle className="font-display">Configure Session: {game.id}</CardTitle>
+          <CardTitle className="font-display">Configure Session: {gameId}</CardTitle>
           <CardDescription>Edit the details for this trivia game session.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -290,3 +298,4 @@ export default function SessionConfigPage() {
     </div>
   );
 }
+
