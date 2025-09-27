@@ -1,4 +1,5 @@
 import type { CurateTriviaQuestionsOutput } from "@/ai/flows/ai-question-curator";
+import type { Timestamp } from "firebase/firestore";
 
 export type Question = CurateTriviaQuestionsOutput["questions"][0];
 
@@ -10,9 +11,18 @@ export interface Player {
 }
 
 export interface Team {
-  name: string;
+  name:string;
   score: number;
   players: Player[];
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
+
+export interface Game {
+    id: string;
+    status: GameStatus;
+    teams: Team[];
+    questions: Question[];
+    createdAt: Timestamp;
+    gameStartedAt?: Timestamp | null;
+}

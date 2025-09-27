@@ -1,4 +1,5 @@
 import type { Team, Player, Question } from "@/lib/types";
+import type { Timestamp } from "firebase/firestore";
 import Scoreboard from "./Scoreboard";
 import Timer from "./Timer";
 import QuestionCard from "./QuestionCard";
@@ -11,6 +12,7 @@ type GameScreenProps = {
   onNextQuestion: () => void;
   duration: number;
   onTimeout: () => void;
+  gameStartedAt: Timestamp | null | undefined;
 };
 
 export default function GameScreen({
@@ -21,6 +23,7 @@ export default function GameScreen({
   onNextQuestion,
   duration,
   onTimeout,
+  gameStartedAt,
 }: GameScreenProps) {
 
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
@@ -43,7 +46,7 @@ export default function GameScreen({
         )}
       </div>
       <aside className="lg:col-span-1 order-1 lg:order-2 space-y-8">
-        <Timer duration={duration} onTimeout={onTimeout} />
+        <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
         <Scoreboard team={playerTeam} />
       </aside>
     </div>

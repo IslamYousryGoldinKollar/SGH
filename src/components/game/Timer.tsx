@@ -3,27 +3,43 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
+import type { Timestamp } from "firebase/firestore";
 
 type TimerProps = {
   duration: number;
   onTimeout: () => void;
+  gameStartedAt: Timestamp | null | undefined;
 };
 
-export default function Timer({ duration, onTimeout }: TimerProps) {
+export default function Timer({ duration, onTimeout, gameStartedAt }: TimerProps) {
   const [timeLeft, setTimeLeft] = useState(duration);
 
   useEffect(() => {
-    if (timeLeft <= 0) {
-      onTimeout();
-      return;
+    if (!gameStartedAt) {
+        setTimeLeft(duration);
+        return;
+    };
+
+    const startTime = gameStartedAt.toMillis();
+    const endTime = startTime + duration * 1000;
+
+    const updateTimer = () => {
+        const now = Date.now();
+        const remaining = Math.max(0, endTime - now);
+        const remainingSeconds = Math.ceil(remaining / 1000);
+        
+        setTimeLeft(remainingSeconds);
+
+        if (remainingSeconds <= 0) {
+            onTimeout();
+        }
     }
 
-    const intervalId = setInterval(() => {
-      setTimeLeft((prevTime) => prevTime - 1);
-    }, 1000);
+    const intervalId = setInterval(updateTimer, 1000);
+    updateTimer(); // Initial call
 
     return () => clearInterval(intervalId);
-  }, [timeLeft, onTimeout]);
+  }, [duration, onTimeout, gameStartedAt]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
