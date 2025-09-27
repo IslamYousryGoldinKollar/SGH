@@ -3,15 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Team, Player, Question, GameStatus, Game } from "@/lib/types";
 import { generateQuestionsAction }from "@/lib/actions";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp, setDoc } from "firebase/firestore";
+import { signInAnonymously, onAuthStateChanged, type User } from "firebase/auth";
 
 import Lobby from "@/components/game/Lobby";
 import GameScreen from "@/components/game/GameScreen";
 import ResultsScreen from "@/components/game/ResultsScreen";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 
 const GAME_ID = "main_game"; 
 const GAME_DURATION = 5 * 60; // 5 minutes
@@ -22,14 +22,32 @@ const ADMIN_USER_ID = "GLdvOzQWorMcsmOpcwvqqZcpCIN2";
 export default function Home() {
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authUser, setAuthUser] = useState<User | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setAuthUser(user);
+      } else {
+        signInAnonymously(auth).catch((error) => {
+          console.error("Anonymous sign-in error", error);
+          toast({ title: "Authentication Error", description: "Could not sign in.", variant: "destructive" });
+        });
+      }
+    });
+
     const gameRef = doc(db, "games", GAME_ID);
-    const unsub = onSnapshot(gameRef, (docSnap) => {
+    const unsubGame = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
-        setGame(docSnap.data() as Game);
+        const gameData = docSnap.data() as Game;
+        setGame(gameData);
+        // Sync current player state
+        if (authUser) {
+          const player = gameData.teams.flatMap(t => t.players).find(p => p.id === authUser.uid);
+          setCurrentPlayer(player || null);
+        }
       } else {
         // Game doc doesn't exist, create it
         const newGame: Game = {
@@ -47,8 +65,12 @@ export default function Home() {
       }
       setLoading(false);
     });
-    return () => unsub();
-  }, []);
+
+    return () => {
+      unsubAuth();
+      unsubGame();
+    };
+  }, [authUser, toast]);
 
   const handleJoinTeam = async (playerName: string, teamName: string) => {
     if (!playerName.trim()) {
@@ -60,7 +82,7 @@ export default function Home() {
       return;
     }
     
-    if (!game) return;
+    if (!game || !authUser) return;
 
     const team = game.teams.find((t) => t.name === teamName);
     if (team && team.players.length >= 10) {
@@ -73,7 +95,7 @@ export default function Home() {
     }
 
     const newPlayer: Player = {
-      id: uuidv4(),
+      id: authUser.uid,
       name: playerName,
       teamName: teamName,
       currentQuestionIndex: 0,
@@ -181,6 +203,8 @@ export default function Home() {
   };
 
   const handlePlayAgain = async () => {
+    // Note: This does not clear authenticated users. For a full reset,
+    // you might want to handle re-authentication or player state clearing differently.
     await updateDoc(doc(db, "games", GAME_ID), {
       status: "lobby",
       teams: [
@@ -190,11 +214,11 @@ export default function Home() {
       questions: [],
       gameStartedAt: null,
     });
-    setCurrentPlayer(null);
+    setCurrentPlayer(null); 
   };
 
   const renderContent = () => {
-    if (loading || !game) {
+    if (loading || !game || !authUser) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -211,7 +235,7 @@ export default function Home() {
             onJoinTeam={handleJoinTeam}
             onStartGame={handleStartGame}
             currentPlayer={currentPlayer}
-            isAdmin={currentPlayer?.id === ADMIN_USER_ID}
+            isAdmin={authUser.uid === ADMIN_USER_ID}
           />
         );
       case "starting":
@@ -224,9 +248,9 @@ export default function Home() {
         );
       case "playing":
         if (!currentPlayer) return (
-            <div className="flex flex-col items-center justify-center flex-1 text-center">
-               <h1 className="text-4xl font-bold">Waiting for players...</h1>
-               <p className="text-muted-foreground mt-2">The game is afoot!</p>
+             <div className="flex flex-col items-center justify-center flex-1 text-center">
+               <h1 className="text-4xl font-bold">Game in Progress</h1>
+               <p className="text-muted-foreground mt-2">Join the game to play!</p>
              </div>
         );
         const playerTeam = game.teams.find((t) => t.name === currentPlayer.teamName);
@@ -261,7 +285,7 @@ export default function Home() {
           />
         );
       case "finished":
-        return <ResultsScreen teams={game.teams} onPlayAgain={handlePlayAgain} />;
+        return <ResultsScreen teams={game.teams} onPlayAgain={handlePlayAgain} isAdmin={authUser.uid === ADMIN_USER_ID} />;
       default:
         return null;
     }

@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 type ResultsScreenProps = {
   teams: Team[];
   onPlayAgain: () => void;
+  isAdmin: boolean;
 };
 
-export default function ResultsScreen({ teams, onPlayAgain }: ResultsScreenProps) {
+export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsScreenProps) {
   const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
   const winner = sortedTeams[0];
   const isTie = teams.length > 1 && sortedTeams[0].score === sortedTeams[1].score;
@@ -43,9 +44,11 @@ export default function ResultsScreen({ teams, onPlayAgain }: ResultsScreenProps
         ))}
       </div>
 
-      <Button onClick={onPlayAgain} size="lg">
-        Play Again
-      </Button>
+      {isAdmin && (
+        <Button onClick={onPlayAgain} size="lg">
+          Play Again
+        </Button>
+      )}
     </div>
   );
 }
