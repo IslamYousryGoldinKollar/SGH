@@ -17,14 +17,15 @@ type ResultsScreenProps = {
 
 export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsScreenProps) {
   
-  const allPlayers = teams.flatMap(t => t.players);
-  const sortedPlayers = [...allPlayers].sort((a, b) => b.score - a.score);
-  
-  const topScore = sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
-  const winners = sortedPlayers.filter(p => p.score === topScore && topScore > 0);
+  const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+  const topScore = sortedTeams.length > 0 ? sortedTeams[0].score : 0;
+  const winningTeams = sortedTeams.filter(t => t.score === topScore && topScore > 0);
+  const isTie = winningTeams.length > 1;
+
+  const sortedPlayers = [...teams.flatMap(t => t.players)].sort((a, b) => b.score - a.score);
 
   useEffect(() => {
-    if (winners.length > 0) {
+    if (winningTeams.length > 0) {
       const duration = 3 * 1000;
       const animationEnd = Date.now() + duration;
       const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -41,26 +42,26 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsSc
         confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
       }, 250);
     }
-  }, [winners.length]);
+  }, [winningTeams]);
 
   return (
     <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
       <Trophy className="h-24 w-24 text-yellow-400 drop-shadow-lg" />
       
-      {winners.length > 0 ? (
+      {winningTeams.length > 0 ? (
         <>
           <h1 className="text-5xl font-bold mt-4 font-display">
-            {winners.length > 1 ? "We have a Tie!" : "We have a Winner!"}
+            {isTie ? "It's a Tie!" : `Team ${winningTeams[0].name} Wins!`}
           </h1>
           <CardDescription className="text-2xl pt-4">
-            Congratulations to our Trivia Titan{winners.length > 1 ? 's' : ''}!
+            Congratulations to the Trivia Titans!
           </CardDescription>
 
           <div className="flex flex-wrap justify-center gap-4 mt-6">
-            {winners.map(winner => (
-              <div key={winner.id} className="p-4 bg-card rounded-lg shadow-lg border border-primary">
-                <p className="text-2xl font-bold text-primary">{winner.name}</p>
-                <p className="text-sm text-muted-foreground">ID: {winner.playerId}</p>
+            {winningTeams.flatMap(team => team.players).map(player => (
+              <div key={player.id} className="p-4 bg-card rounded-lg shadow-lg border border-primary">
+                <p className="text-2xl font-bold text-primary">{player.name}</p>
+                <p className="text-sm text-muted-foreground">ID: {player.playerId}</p>
               </div>
             ))}
           </div>

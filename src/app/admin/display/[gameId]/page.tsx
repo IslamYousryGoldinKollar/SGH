@@ -280,13 +280,13 @@ export default function DisplayPage() {
     const GameOverOverlay = () => {
         if (!game || game.status !== 'finished') return null;
 
-        const allPlayers = game.teams.flatMap(t => t.players);
-        const sortedPlayers = [...allPlayers].sort((a, b) => b.score - a.score);
-        const topScore = sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
-        const winners = sortedPlayers.filter(p => p.score === topScore && topScore > 0);
+        const sortedTeams = [...game.teams].sort((a, b) => b.score - a.score);
+        const topScore = sortedTeams.length > 0 ? sortedTeams[0].score : 0;
+        const winningTeams = sortedTeams.filter(t => t.score === topScore && topScore > 0);
+        const isTie = winningTeams.length > 1;
 
         useEffect(() => {
-            if (winners.length > 0) {
+            if (winningTeams.length > 0) {
               const duration = 5 * 1000;
               const animationEnd = Date.now() + duration;
               const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
@@ -299,41 +299,45 @@ export default function DisplayPage() {
                   return clearInterval(interval);
                 }
                 const particleCount = 50 * (timeLeft / duration);
-                // Use team colors for the confetti
-                const winnerColors = winners.map(w => game.teams.find(t => t.name === w.teamName)?.color || '#ffffff');
+                const winnerColors = winningTeams.map(t => t.color);
+                
                 confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: winnerColors });
                 confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: winnerColors });
               }, 250);
             }
-        }, [winners, game.teams]);
+        }, [winningTeams]);
 
         return (
             <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20 animate-in fade-in">
-                <Card className="max-w-2xl text-center p-8 bg-background/90">
+                <Card className="max-w-4xl w-full text-center p-8 bg-background/90">
                     <CardHeader>
                         <div className="flex justify-center items-center">
                             <Trophy className="h-16 w-16 text-yellow-400 drop-shadow-lg mr-4" />
                             <CardTitle className="text-7xl font-display text-yellow-400">
-                                {winners.length > 0 ? "We have a Winner!" : "Game Over"}
+                                {winningTeams.length > 0 ? (isTie ? "It's a Tie!" : "Team Wins!") : "Game Over"}
                             </CardTitle>
                         </div>
-                        {winners.length > 0 && (
+                         {winningTeams.length > 0 && (
                             <CardDescription className="text-2xl pt-4">
-                                Congratulations to our Trivia Titan{winners.length > 1 ? 's' : ''}!
+                                Congratulations to the Trivia Titans!
                             </CardDescription>
                         )}
                     </CardHeader>
                     <CardContent className="flex flex-col items-center">
-                        <div className="flex flex-wrap justify-center gap-4 mt-4">
-                            {winners.map(winner => {
-                                const team = game.teams.find(t => t.name === winner.teamName);
-                                return (
-                                <div key={winner.id} className="p-4 bg-card rounded-lg shadow-lg border-2" style={{borderColor: team?.color}}>
-                                    <p className="text-3xl font-bold" style={{color: team?.color}}>{winner.name}</p>
-                                    <p className="text-sm text-muted-foreground">ID: {winner.playerId}</p>
+                         <div className="flex flex-wrap justify-center items-start gap-6 mt-4 w-full">
+                            {winningTeams.map(team => (
+                                <div key={team.name} className="p-4 bg-card rounded-lg shadow-lg border-2 flex-1 min-w-[300px]" style={{borderColor: team.color}}>
+                                    <p className="text-4xl font-bold font-display" style={{color: team.color}}>{team.name}</p>
+                                     <ul className="mt-4 space-y-2 text-left">
+                                        {team.players.map(player => (
+                                            <li key={player.id} className="text-lg bg-secondary/30 p-2 rounded-md">
+                                                <span className="font-semibold">{player.name}</span>
+                                                <span className="text-xs text-muted-foreground ml-2">(ID: {player.playerId})</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                                )
-                            })}
+                            ))}
                         </div>
                          <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl mt-12">
                             <RotateCw className="mr-4"/> Play Again
@@ -396,4 +400,5 @@ export default function DisplayPage() {
     
 
     
+
 
