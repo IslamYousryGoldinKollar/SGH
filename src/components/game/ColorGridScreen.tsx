@@ -18,14 +18,14 @@ type ColorGridScreenProps = {
 export default function ColorGridScreen({ grid, teams, onColorSquare, teamColoring, credits, onSkip }: ColorGridScreenProps) {
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 text-center">
+    <div className="flex flex-col items-center justify-center flex-1 text-center w-full">
         <Card className="w-full max-w-2xl">
             <CardHeader>
                 <CardTitle className="font-display text-3xl" style={{color: teamColoring}}>Claim Your Territory!</CardTitle>
                 <CardDescription>You have {credits} credit{credits !== 1 && 's'}. Click a hex to claim it for your team.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="w-full max-w-lg mx-auto my-4">
+                <div className="w-full max-w-lg mx-auto my-4 px-4 sm:px-0">
                   <HexMap 
                     grid={grid}
                     teams={teams}
