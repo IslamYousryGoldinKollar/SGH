@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Team, Player, Game, GameStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Swords, Loader2 } from "lucide-react";
 
@@ -97,30 +98,42 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
       <p className="text-muted-foreground mt-2 max-w-xl">Enter your details, choose a team, and get ready to prove your knowledge.</p>
       
       <div className="my-8 w-full max-w-md space-y-4">
-        <Input
-          type="text"
-          placeholder="Enter your first name"
-          value={playerName}
-          onChange={(e) => setPlayerName(e.target.value)}
-          className="text-lg p-6 w-full text-center"
-          aria-label="Player First Name"
-        />
-        <Input
-          type="text"
-          placeholder="Enter your surname"
-          value={surname}
-          onChange={(e) => setSurname(e.target.value)}
-          className="text-lg p-6 w-full text-center"
-          aria-label="Player Surname"
-        />
-        <Input
-          type="text"
-          placeholder="Enter your ID number"
-          value={idNumber}
-          onChange={(e) => setIdNumber(e.target.value)}
-          className="text-lg p-6 w-full text-center"
-          aria-label="Player ID Number"
-        />
+          <div className="space-y-2">
+              <Label htmlFor="playerName" className="sr-only">First Name</Label>
+              <Input
+                id="playerName"
+                type="text"
+                placeholder="Enter your first name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="text-lg p-6 w-full text-center"
+                aria-label="Player First Name"
+              />
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="surname" className="sr-only">Surname</Label>
+              <Input
+                id="surname"
+                type="text"
+                placeholder="Enter your surname"
+                value={surname}
+                onChange={(e) => setSurname(e.target.value)}
+                className="text-lg p-6 w-full text-center"
+                aria-label="Player Surname"
+              />
+          </div>
+          <div className="space-y-2">
+              <Label htmlFor="idNumber" className="sr-only">ID Number</Label>
+              <Input
+                id="idNumber"
+                type="text"
+                placeholder="Enter your ID number"
+                value={idNumber}
+                onChange={(e) => setIdNumber(e.target.value)}
+                className="text-lg p-6 w-full text-center"
+                aria-label="Player ID Number"
+              />
+          </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {teams.map((team) => (

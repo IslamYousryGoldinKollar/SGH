@@ -63,7 +63,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                         <feBlend in="firstPass" in2="SourceGraphic" mode="overlay" />
                     </filter>
                 </defs>
-                <g transform="scale(0.92) translate(85, 200)">
+                <g transform="scale(0.92) translate(85, 170)">
                     {hexPaths.map((path, index) => {
                         const square = grid.find(s => s.id === index);
                         const isColored = !!square?.coloredBy;
@@ -75,10 +75,10 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                                 d={path}
                                 onClick={() => !isDisabled && onHexClick(index)}
                                 fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
-                                style={{ fillOpacity: isColored ? 0.7 : 0, strokeDasharray: '10, 10' }}
+                                style={{ fillOpacity: isColored ? 0.7 : 0, strokeDasharray: '10, 10', strokeWidth: 1.5 }}
                                 className={cn(
                                     "stroke-black/50 dark:stroke-white/50",
-                                    "stroke-2 transition-all duration-300",
+                                    "transition-all duration-300",
                                     isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100",
                                     isClickable && !isColored && "hover:[filter:url(#inner-shadow)]",
                                     isColored && "cursor-not-allowed",
