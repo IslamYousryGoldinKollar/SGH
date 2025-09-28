@@ -1,7 +1,11 @@
 
+"use client";
+
+import { useEffect, useRef } from "react";
 import type { GridSquare, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import confetti from "canvas-confetti";
 
 const hexPaths = [
     "M826 969.8 826 1038.2 1004 1116.3 1181.9 1038.2 1181.9 969.8 1004 891.7 826 969.8",
@@ -31,7 +35,7 @@ const hexPaths = [
 type HexMapProps = {
     grid: GridSquare[];
     teams: Team[];
-    onHexClick: (id: number) => void;
+    onHexClick: (id: number, event: React.MouseEvent<SVGPathElement>) => void;
 }
 
 export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
@@ -73,7 +77,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                             <path
                                 key={index}
                                 d={path}
-                                onClick={() => !isDisabled && onHexClick(index)}
+                                onClick={(e) => !isDisabled && onHexClick(index, e)}
                                 fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
                                 style={{ fillOpacity: isColored ? 0.7 : 0, strokeDasharray: '10, 10', strokeWidth: 1.5 }}
                                 className={cn(

@@ -5,6 +5,7 @@ import type { GridSquare, Team } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import HexMap from "@/components/game/HexMap";
 import { cn } from "@/lib/utils";
+import confetti from 'canvas-confetti';
 
 type ColorGridScreenProps = {
   grid: GridSquare[];
@@ -16,6 +17,32 @@ type ColorGridScreenProps = {
 };
 
 export default function ColorGridScreen({ grid, teams, onColorSquare, teamColoring, credits, onSkip }: ColorGridScreenProps) {
+
+  const handleHexClick = (squareId: number, event: React.MouseEvent<SVGPathElement>) => {
+    // Only fire confetti if the square isn't already colored
+    const square = grid.find(s => s.id === squareId);
+    if (!square || square.coloredBy) {
+      return;
+    }
+    
+    const rect = (event.target as SVGPathElement).getBoundingClientRect();
+    const x = (rect.left + rect.right) / 2;
+    const y = (rect.top + rect.bottom) / 2;
+    const origin = {
+      x: x / window.innerWidth,
+      y: y / window.innerHeight,
+    };
+    
+    confetti({
+      particleCount: 50,
+      spread: 40,
+      origin,
+      colors: [teamColoring],
+      scalar: 0.8
+    });
+
+    onColorSquare(squareId);
+  }
 
   return (
     <div className="flex flex-col items-center justify-between flex-1 text-center w-full relative mobile-grid-background p-4">
@@ -31,7 +58,7 @@ export default function ColorGridScreen({ grid, teams, onColorSquare, teamColori
         <HexMap 
           grid={grid}
           teams={teams}
-          onHexClick={onColorSquare}
+          onHexClick={handleHexClick}
         />
       </div>
     </div>
