@@ -48,6 +48,16 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
     
     return (
         <div className="relative w-full h-full">
+             <svg width="100%" height="100%" className="absolute inset-0 z-0">
+                <defs>
+                    <filter id="water-ripple">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.02 0.05" numOctaves="3" result="turbulence" />
+                        <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="15" />
+                         <animate attributeName="baseFrequency" from="0.02 0.05" to="0.03 0.07" dur="6s" repeatCount="indefinite" />
+                    </filter>
+                </defs>
+                <rect width="100%" height="100%" fill="#4682B4" filter="url(#water-ripple)" />
+            </svg>
             <Image
                 src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb"
                 alt="Game Map"
@@ -80,10 +90,10 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                                 data-hex-id={index}
                                 onClick={(e) => !isDisabled && onHexClick(index, e)}
                                 fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
-                                style={{ fillOpacity: isColored ? 0.7 : 0, strokeDasharray: '10, 10', strokeWidth: 1.5 }}
                                 className={cn(
                                     "stroke-black/50 dark:stroke-white/50",
-                                    "transition-all duration-300",
+                                    "transition-all duration-300 [stroke-dasharray:10_10] [stroke-width:1.5px]",
+                                    isColored ? "fill-opacity-70" : "fill-opacity-0",
                                     isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100",
                                     isClickable && !isColored && "hover:[filter:url(#inner-shadow)]",
                                     isColored && "cursor-not-allowed",
@@ -101,3 +111,5 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
+
+    
