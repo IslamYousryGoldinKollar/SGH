@@ -33,10 +33,8 @@ const hexPaths = [
     "M1004 530.3 1004 598.8 1181.9 676.8 1359.9 598.8 1359.9 530.3 1181.9 452.2 1004 530.3"
 ];
 
-// The correct, clean base URL for the storage bucket.
 const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2F";
 
-// IMPORTANT: You must get the access token for each image from the Firebase Console and add it here.
 const accessTokens: Record<string, string> = {
     "01": "3df822fb-e8e5-4ee4-b217-e99b075719e3",
     "02": "a8e68836-42f6-4879-a105-e8546c0e0e6c",
@@ -63,15 +61,12 @@ const accessTokens: Record<string, string> = {
 };
 
 
-// This map correctly assigns the image number to the index of the hex path in the array above.
-// The key is the visual image number (1-22), the value is the index in the hexPaths array.
 const imageMap: Record<number, number> = {
     1: 20, 2: 17, 3: 12, 4: 1, 5: 7, 6: 0, 7: 18, 8: 13, 9: 3,
     10: 10, 11: 6, 12: 14, 13: 4, 14: 15, 15: 8, 16: 19, 17: 21,
     18: 2, 19: 5, 20: 9, 21: 11, 22: 16
 };
 
-// We need to reverse the map for easier lookup: pathIndex -> imageFileNumber
 const pathIndexToImageNumber: Record<number, number> = Object.entries(imageMap).reduce((acc, [imgNum, pathIdx]) => {
     acc[pathIdx] = parseInt(imgNum, 10);
     return acc;
@@ -80,7 +75,7 @@ const pathIndexToImageNumber: Record<number, number> = Object.entries(imageMap).
 
 export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     const getTeamColor = (teamName: string | null) => {
-        if (!teamName) return 'transparent'; // No color if not claimed
+        if (!teamName) return 'transparent';
         return teams.find(t => t.name === teamName)?.color || '#333';
     };
 
@@ -112,9 +107,9 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                             href={imageUrl} 
                             x="0" 
                             y="0" 
-                            width="2048" 
-                            height="2048" 
-                            preserveAspectRatio="xMidYMid slice"
+                            width="100%" 
+                            height="100%" 
+                            preserveAspectRatio="none"
                             className={cn(
                                 "transition-all duration-300",
                                 isClickable && !isColored && "cursor-pointer group-hover:opacity-80 group-hover:scale-[1.02]",
