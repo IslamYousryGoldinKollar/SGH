@@ -67,7 +67,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                                 style={{ fillOpacity: isColored ? 0.7 : 0 }}
                                 className={cn(
                                     "stroke-black/50 dark:stroke-white/50",
-                                    "stroke-[5px] transition-all duration-300",
+                                    "stroke-2 transition-all duration-300",
                                     isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]",
                                     isColored && "cursor-not-allowed",
                                 )}
