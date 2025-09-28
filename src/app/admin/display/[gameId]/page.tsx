@@ -175,14 +175,16 @@ export default function DisplayPage() {
          const teamRight = game.teams.length > 1 ? game.teams[1] : null;
 
         return (
-             <div className="flex-1 w-full h-full flex items-center justify-center p-8 relative">
-                <div className="absolute left-8 top-1/2 -translate-y-1/2">
+             <div className="flex-1 w-full h-full flex items-center justify-center relative">
+                <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
                 </div>
-                <div className="w-full h-full max-w-[50vh] aspect-[1065/666] p-4">
-                   <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}}/>
+                <div className="h-full w-full flex items-center justify-center">
+                    <div className="w-full h-full max-h-[100vh] max-w-[100vw] aspect-[1065/666] p-4">
+                        <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}}/>
+                    </div>
                 </div>
-                <div className="absolute right-8 top-1/2 -translate-y-1/2">
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
                     {teamRight && <TeamScorePod team={teamRight} alignment="right" />}
                 </div>
              </div>
@@ -215,7 +217,7 @@ export default function DisplayPage() {
             const isTie = sortedTeams.length > 1 && sortedTeams[0].score === sortedTeams[1].score;
 
             return (
-                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-10 animate-in fade-in">
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20 animate-in fade-in">
                     <Card className="max-w-xl text-center p-8 bg-background/90">
                         <CardHeader>
                             <CardTitle className="text-7xl font-display text-yellow-400">{isTie ? "Draw!" : "Game Over"}</CardTitle>
