@@ -309,7 +309,7 @@ export default function DisplayPage() {
 
         return (
             <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20 animate-in fade-in">
-                <Card className="max-w-4xl w-full text-center p-8 bg-background/90">
+                <Card className="max-w-4xl w-full text-center p-8 bg-slate-900/90">
                     <CardHeader>
                         <div className="flex justify-center items-center">
                             <Trophy className="h-16 w-16 text-yellow-400 drop-shadow-lg mr-4" />
@@ -318,7 +318,7 @@ export default function DisplayPage() {
                             </CardTitle>
                         </div>
                          {winningTeams.length > 0 && (
-                            <CardDescription className="text-2xl pt-4">
+                            <CardDescription className="text-2xl pt-4 text-slate-200">
                                 Congratulations to the Trivia Titans!
                             </CardDescription>
                         )}
@@ -400,5 +400,6 @@ export default function DisplayPage() {
     
 
     
+
 
 
