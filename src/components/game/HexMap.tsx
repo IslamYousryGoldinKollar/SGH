@@ -62,13 +62,13 @@ const accessTokens: Record<string, string> = {
 
 
 const imageMap: Record<number, number> = {
-    1: 20, 2: 17, 3: 12, 4: 1, 5: 7, 6: 0, 7: 18, 8: 13, 9: 3,
-    10: 10, 11: 6, 12: 14, 13: 4, 14: 15, 15: 8, 16: 19, 17: 21,
-    18: 2, 19: 5, 20: 9, 21: 11, 22: 16
+    0: 20, 1: 17, 2: 12, 3: 1, 4: 7, 5: 0, 6: 18, 7: 13, 8: 3,
+    9: 10, 10: 6, 11: 14, 12: 4, 13: 15, 14: 8, 15: 19, 16: 21,
+    17: 2, 18: 5, 19: 9, 20: 11, 21: 16
 };
 
-const pathIndexToImageNumber: Record<number, number> = Object.entries(imageMap).reduce((acc, [imgNum, pathIdx]) => {
-    acc[pathIdx] = parseInt(imgNum, 10);
+const pathIndexToImageNumber: Record<number, number> = Object.entries(imageMap).reduce((acc, [pathIdx, imgNum]) => {
+    acc[parseInt(pathIdx, 10)] = imgNum + 1;
     return acc;
 }, {} as Record<number, number>);
 
@@ -84,61 +84,64 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     return (
         <svg viewBox="0 0 2048 2048" className="w-full h-full drop-shadow-lg">
             <defs>
-                {hexPaths.map((path, index) => (
-                    <clipPath key={`clip-${index}`} id={`clip-hex-${index}`}>
-                        <path d={path} />
-                    </clipPath>
-                ))}
+                {hexPaths.map((_, index) => {
+                    const imageFileNumber = pathIndexToImageNumber[index];
+                    const paddedNum = String(imageFileNumber).padStart(2, '0');
+                    const token = accessTokens[paddedNum] || "";
+                    const imageUrl = `${BUCKET_BASE_URL}${paddedNum}.png?alt=media${token ? `&token=${token}` : ""}`;
+
+                    return (
+                        <pattern
+                            key={`hex-bg-${index}`}
+                            id={`hex-bg-${index}`}
+                            patternContentUnits="objectBoundingBox"
+                            width="1"
+                            height="1"
+                        >
+                            <image
+                                href={imageUrl}
+                                x="0"
+                                y="0"
+                                width="1"
+                                height="1"
+                                preserveAspectRatio="xMidYMid slice"
+                            />
+                        </pattern>
+                    );
+                })}
             </defs>
 
             {hexPaths.map((path, index) => {
                 const square = grid.find(s => s.id === index);
                 const isColored = !!square?.coloredBy;
                 const isDisabled = isColored || !isClickable;
-                const imageFileNumber = pathIndexToImageNumber[index];
-                const paddedNum = String(imageFileNumber).padStart(2, '0');
-                const token = accessTokens[paddedNum];
-                const imageUrl = `${BUCKET_BASE_URL}${paddedNum}.png?alt=media${token ? `&token=${token}` : ''}`;
 
                 return (
-                    <g key={index} onClick={() => !isDisabled && onHexClick(index)} clipPath={`url(#clip-hex-${index})`}>
-                        {/* Background Image */}
-                        <image 
-                            href={imageUrl} 
-                            x="0" 
-                            y="0" 
-                            width="100%" 
-                            height="100%" 
-                            preserveAspectRatio="none"
+                    <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
+                        {/* Hex background with pattern */}
+                        <path
+                            d={path}
+                            style={{ fill: `url(#hex-bg-${index})` }}
                             className={cn(
-                                "transition-all duration-300",
-                                isClickable && !isColored && "cursor-pointer group-hover:opacity-80 group-hover:scale-[1.02]",
+                                "stroke-black/50 dark:stroke-white/50",
+                                "stroke-[3px] transition-all duration-300",
+                                isClickable && !isColored && "cursor-pointer hover:opacity-80 hover:scale-[1.02] hover:stroke-primary",
+                                isColored && "cursor-not-allowed",
                             )}
                         />
 
-                        {/* Team Color Overlay */}
+                        {/* Team color overlay */}
                         {isColored && (
-                            <path 
+                            <path
                                 d={path}
                                 style={{ fill: getTeamColor(square?.coloredBy || null), fillOpacity: 0.7 }}
                                 className="pointer-events-none"
                             />
                         )}
-
-                        {/* Border (rendered on top) */}
-                        <path
-                            d={path}
-                            fill="none"
-                            className={cn(
-                                "stroke-black/50 dark:stroke-white/50",
-                                "stroke-[3px] transition-all duration-300",
-                                isClickable && !isColored && "cursor-pointer group-hover:stroke-primary",
-                                isColored && "cursor-not-allowed",
-                            )}
-                        />
                     </g>
-                )
+                );
             })}
         </svg>
-    )
+    );
 }
+
