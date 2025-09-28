@@ -41,17 +41,9 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     };
 
     const isClickable = !!onHexClick;
-    const mapImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fland%203.png?alt=media&token=0624248a-f3bc-4719-b2dd-81de2b7b7201";
     
     return (
         <div className="relative w-full h-full">
-            <Image
-                src={mapImageUrl}
-                alt="Island map background"
-                fill
-                className="object-contain"
-                data-ai-hint="island map"
-            />
             <svg viewBox="293.1 452.2 1600.7 1103.7" className="relative w-full h-full drop-shadow-lg">
                 {hexPaths.map((path, index) => {
                     const square = grid.find(s => s.id === index);
