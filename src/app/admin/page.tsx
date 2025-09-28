@@ -194,7 +194,7 @@ export default function AdminDashboard() {
                                  <Copy className="mr-2 h-4 w-4"/>
                                  Duplicate
                              </Button>
-                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)} disabled={session.adminId !== user.uid}>
+                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)}>
                                  <Trash2 className="mr-2 h-4 w-4"/>
                                  Delete
                              </Button>
