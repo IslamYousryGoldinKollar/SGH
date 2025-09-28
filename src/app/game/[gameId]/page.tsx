@@ -270,11 +270,13 @@ export default function GamePage() {
         transaction.update(gameRef, { teams: updatedTeams });
     });
 
-    if (!isCorrect) {
-       setCurrentQuestion(getNextQuestion());
-    }
+    // Let the QuestionCard's timeout and the useEffect hook handle fetching the next question
   };
   
+  const handleNextQuestion = () => {
+    setCurrentQuestion(getNextQuestion());
+  };
+
   const handleColorSquare = async (squareId: number) => {
     if (!game || !currentPlayer) return;
     
@@ -440,6 +442,7 @@ export default function GamePage() {
             currentPlayer={currentPlayer}
             question={currentQuestion}
             onAnswer={handleAnswer}
+            onNextQuestion={handleNextQuestion}
             duration={game.timer || 300}
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}
@@ -458,5 +461,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    

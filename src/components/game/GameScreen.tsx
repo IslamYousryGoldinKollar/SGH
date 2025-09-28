@@ -9,6 +9,7 @@ type GameScreenProps = {
   currentPlayer: Player;
   question: Question;
   onAnswer: (question: Question, answer: string) => void;
+  onNextQuestion: () => void;
   duration: number;
   onTimeout: () => void;
   gameStartedAt: Timestamp | null | undefined;
@@ -19,6 +20,7 @@ export default function GameScreen({
   currentPlayer,
   question,
   onAnswer,
+  onNextQuestion,
   duration,
   onTimeout,
   gameStartedAt,
@@ -26,12 +28,6 @@ export default function GameScreen({
 
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
   if (!playerTeam) return null;
-
-  const handleNextQuestion = () => {
-    // The logic to get the next question is handled in the parent component (`GamePage`)
-    // after an answer is submitted. This function is just a placeholder in case
-    // we need a manual "skip" button in the future.
-  };
 
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -41,7 +37,7 @@ export default function GameScreen({
             key={question.question} 
             question={question} 
             onAnswer={onAnswer} 
-            onNextQuestion={handleNextQuestion}
+            onNextQuestion={onNextQuestion}
           />
         ) : (
           <div className="flex items-center justify-center h-full">

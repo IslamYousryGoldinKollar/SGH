@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, XCircle, Lightbulb, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Lightbulb, Loader2, ChevronRight } from "lucide-react";
 
 type QuestionCardProps = {
   question: Question;
   onAnswer: (question: Question, answer: string) => void;
-  onNextQuestion: () => void; // This is called after the feedback timeout
+  onNextQuestion: () => void;
 };
 
 export default function QuestionCard({ question, onAnswer, onNextQuestion }: QuestionCardProps) {
@@ -36,12 +36,13 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
     const isCorrect = question.answer.trim().toLowerCase() === option.trim().toLowerCase();
     setFeedback(isCorrect ? "correct" : "incorrect");
     
-    // Simulate network latency for onAnswer and then move to the next question
+    // The backend call
+    onAnswer(question, option);
+    
+    // Wait for feedback animation before telling parent to get next question
     setTimeout(() => {
-      onAnswer(question, option);
-      // The parent component (`GamePage`) will now provide a new question,
-      // which will trigger the useEffect hook above to reset the card.
-    }, 1200); // Wait for feedback animation
+      onNextQuestion();
+    }, 1500);
   };
 
   const getButtonClass = (option: string) => {
@@ -92,12 +93,14 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
                <div className="flex flex-col items-center gap-2 text-red-400">
                  <XCircle className="h-8 w-8" />
                  <p className="text-2xl font-bold">Incorrect!</p>
-                 <p className="text-lg flex items-center gap-2"><Lightbulb className="h-5 w-5"/> The correct answer was: <strong className="text-foreground">{question.answer}</strong></p>
                </div>
              )}
               <div className="flex justify-center items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin"/>
                 <span>Loading next question...</span>
+                <Button variant="ghost" size="sm" onClick={onNextQuestion} className="ml-4">
+                    Next Question <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
               </div>
            </div>
         )}
