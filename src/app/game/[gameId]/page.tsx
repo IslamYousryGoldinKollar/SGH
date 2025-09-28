@@ -70,12 +70,12 @@ export default function GamePage() {
         }
         
         const scores = new Map<string, number>();
-        gameData.teams.forEach(team => scores.set(team.name, 0));
-        gameData.grid?.forEach(square => {
-            if (square.coloredBy) {
-                scores.set(square.coloredBy, (scores.get(square.coloredBy) || 0) + 1);
-            }
+        gameData.teams.forEach(team => {
+            const teamGridScore = gameData.grid?.filter(sq => sq.coloredBy === team.name).length || 0;
+            const teamAnswerScore = team.players.reduce((sum, p) => sum + p.score, 0);
+            scores.set(team.name, teamGridScore + teamAnswerScore);
         });
+
         gameData.teams.forEach(team => {
             team.score = scores.get(team.name) || 0;
         });
@@ -96,7 +96,7 @@ export default function GamePage() {
     return () => unsubGame();
   }, [GAME_ID, authUser, toast]);
 
- const handleJoinTeam = async (playerName: string, teamName: string) => {
+ const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
     if (!playerName.trim()) {
       toast({ title: "Invalid Name", description: "Please enter your name.", variant: "destructive" });
       return;
@@ -130,10 +130,12 @@ export default function GamePage() {
 
         const newPlayer: Player = {
           id: authUser.uid,
+          playerId: playerId,
           name: playerName,
           teamName: teamName,
           answeredQuestions: [],
           coloringCredits: 0,
+          score: 0,
         };
         
         const updatedTeams = [...currentGame.teams];
@@ -180,7 +182,7 @@ export default function GamePage() {
           gameStartedAt: serverTimestamp(),
           teams: game.teams.map(team => ({
             ...team,
-            players: team.players.map(p => ({ ...p, answeredQuestions: [], coloringCredits: 0 })),
+            players: team.players.map(p => ({ ...p, answeredQuestions: [], coloringCredits: 0, score: 0 })),
             score: 0
           }))
        });
@@ -256,6 +258,7 @@ export default function GamePage() {
 
         if (isCorrect) {
             playerToUpdate.coloringCredits += 1;
+            playerToUpdate.score += 1; // Add 1 point for a correct answer
         }
         
         transaction.update(gameRef, { teams: updatedTeams });
@@ -306,6 +309,7 @@ export default function GamePage() {
         
         const updatedTeams = [...currentGame.teams];
         updatedTeams[teamIndex].players[playerIndex].coloringCredits -= 1;
+        updatedTeams[teamIndex].players[playerIndex].score += 1; // Add 1 point for coloring a square
 
         transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
       });

@@ -11,7 +11,7 @@ import { Users, Swords, Loader2 } from "lucide-react";
 
 type LobbyProps = {
   game: Game;
-  onJoinTeam: (playerName: string, teamName: string) => void;
+  onJoinTeam: (playerName: string, playerId: string, teamName: string) => void;
   onStartGame: () => void;
   currentPlayer: Player | null;
   isAdmin: boolean;
@@ -19,17 +19,15 @@ type LobbyProps = {
 
 export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, isAdmin }: LobbyProps) {
   const [playerName, setPlayerName] = useState("");
-  const [surname, setSurname] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const { teams, status } = game;
 
   const handleJoin = (teamName: string) => {
-    if (!playerName.trim() || !surname.trim() || !idNumber.trim()) {
-        alert("Please fill in your name, surname, and ID number.");
+    if (!playerName.trim() || !idNumber.trim()) {
+        alert("Please fill in your name and ID number.");
         return;
     }
-    const fullName = `${playerName.trim()} ${surname.trim()}`;
-    onJoinTeam(fullName, teamName);
+    onJoinTeam(playerName.trim(), idNumber.trim(), teamName);
   }
 
   const TeamCard = ({ team }: { team: Team }) => (
@@ -99,27 +97,15 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
       
       <div className="my-8 w-full max-w-md space-y-4">
           <div className="space-y-2">
-              <Label htmlFor="playerName" className="sr-only">First Name</Label>
+              <Label htmlFor="playerName" className="sr-only">Full Name</Label>
               <Input
                 id="playerName"
                 type="text"
-                placeholder="Enter your first name"
+                placeholder="Enter your full name"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 className="text-lg p-6 w-full text-center"
-                aria-label="Player First Name"
-              />
-          </div>
-          <div className="space-y-2">
-              <Label htmlFor="surname" className="sr-only">Surname</Label>
-              <Input
-                id="surname"
-                type="text"
-                placeholder="Enter your surname"
-                value={surname}
-                onChange={(e) => setSurname(e.target.value)}
-                className="text-lg p-6 w-full text-center"
-                aria-label="Player Surname"
+                aria-label="Player Full Name"
               />
           </div>
           <div className="space-y-2">
@@ -140,7 +126,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
             <Button 
                 key={team.name} 
                 onClick={() => handleJoin(team.name)} 
-                disabled={!playerName.trim() || !surname.trim() || !idNumber.trim() || team.players.length >= team.capacity}
+                disabled={!playerName.trim() || !idNumber.trim() || team.players.length >= team.capacity}
                 size="lg"
             >
                 Join {team.name}

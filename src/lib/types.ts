@@ -14,10 +14,12 @@ export interface Question {
 
 export interface Player {
   id: string; // Firebase Auth UID
+  playerId: string; // User-provided ID number
   name: string;
   teamName: string;
   answeredQuestions: string[]; // Array of question strings they've already answered
   coloringCredits: number;
+  score: number; // Individual player score
 }
 
 export interface GridSquare {
