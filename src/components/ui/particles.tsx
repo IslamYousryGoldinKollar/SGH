@@ -90,7 +90,7 @@ export default function Particles({
     const translateY = 0
     const size = Math.floor(Math.random() * 2) + 0.5 // Allow smaller particles
     const alpha = 0
-    const targetAlpha = parseFloat((Math.random() * 0.4 + 0.1).toFixed(1)) // Lower alpha for subtlety
+    const targetAlpha = parseFloat((Math.random() * 0.6 + 0.2).toFixed(1)) // Lower alpha for subtlety
     const dx = (Math.random() - 0.5) * 0.1 // Slower movement
     const dy = (Math.random() - 0.5) * 0.1 // Slower movement
     const magnetism = 0.1 + Math.random() * 4
@@ -119,8 +119,8 @@ export default function Particles({
       context.current.beginPath()
       context.current.arc(x, y, size, 0, 2 * Math.PI)
       // Modify fillStyle to use the circle's color property
-      const a = color.split(',').pop()?.replace(')','');
-      context.current.fillStyle = color.replace(`1)` || `${a})`, `${alpha})`)
+      const baseAlpha = parseFloat(color.split(',')[3] || '1');
+      context.current.fillStyle = color.replace(`${baseAlpha})`, `${alpha})`)
       context.current.fill()
       context.current.setTransform(dpr, 0, 0, dpr, 0, 0)
 

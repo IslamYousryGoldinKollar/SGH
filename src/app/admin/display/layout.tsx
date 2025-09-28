@@ -50,7 +50,7 @@ export default function DisplayLayout({
     <div className={cn(
         "bg-transparent text-foreground h-screen w-screen overflow-hidden"
         )}>
-        <Particles className="absolute inset-0 -z-10" quantity={150} />
+        <Particles className="absolute inset-0 -z-10" quantity={250} />
         {children}
     </div>
   );
