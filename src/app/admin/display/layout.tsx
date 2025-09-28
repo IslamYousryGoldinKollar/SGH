@@ -9,6 +9,7 @@ import { db } from "@/lib/firebase";
 import type { Game } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Particles from "@/components/ui/particles";
+import RippleEffect from "@/components/ui/ripple-effect";
 
 // Note: We can't export metadata from a client component. 
 // This should be handled in a parent server component if needed.
@@ -50,6 +51,7 @@ export default function DisplayLayout({
     <div className={cn(
         "bg-transparent text-foreground h-screen w-screen overflow-hidden"
         )}>
+        <RippleEffect className="absolute inset-0 -z-20" />
         <Particles className="absolute inset-0 -z-10" quantity={250} />
         {children}
     </div>
