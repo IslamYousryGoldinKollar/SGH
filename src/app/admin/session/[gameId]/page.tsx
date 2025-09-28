@@ -42,7 +42,13 @@ const sessionSchema = z.object({
       question: z.string().min(1, "Question text is required."),
       options: z.array(z.string().min(1, "Option text is required.")).min(2, "At least two options are required.").max(4, "You can have a maximum of 4 options."),
       answer: z.string().min(1, "An answer is required."),
-  })),
+  })).refine(
+      (questions) => questions.every(q => q.options.includes(q.answer)), 
+      {
+        message: "The correct answer must be one of the options.",
+        path: ["questions"], // You might need to adjust the path to point to the specific question/answer
+      }
+  ),
   topic: z.string(),
   theme: z.enum(["default", "team-alpha", "team-bravo"]),
 });
@@ -71,15 +77,15 @@ function QuestionItem({ control, index, removeQuestion, getValues }: { control: 
                   <FormLabel>Options &amp; Correct Answer</FormLabel>
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
-                      {optionFields.map((optionField, optionIndex) => (
+                      {optionFields.map((optionItem, optionIndex) => (
                         <FormField
-                          key={optionField.id}
+                          key={optionItem.id}
                           control={control}
                           name={`questions.${index}.options.${optionIndex}`}
                           render={({ field: optionField }) => (
                             <FormItem className="flex items-center space-x-3 space-y-0">
                               <FormControl>
-                                <RadioGroupItem value={getValues(`questions.${index}.options.${optionIndex}`)} />
+                                <RadioGroupItem value={optionField.value} />
                               </FormControl>
                               <Input {...optionField} placeholder={`Option ${optionIndex + 1}`} className="flex-1" />
                                <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(optionIndex)} disabled={optionFields.length <= 2}>
