@@ -36,31 +36,37 @@ const hexPaths = [
 const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.appspot.com/o/assets%2F";
 
 // This map correctly assigns the image number to the index of the hex path in the array above.
-// The order is based on the visual layout of the SVG paths, from top-to-bottom, left-to-right.
-const imageMap = [
-    10, // index 0  -> visual hex for 10.png
-    8,  // index 1  -> visual hex for 8.png
-    11, // index 2  -> visual hex for 11.png
-    12, // index 3  -> visual hex for 12.png
-    15, // index 4  -> visual hex for 15.png
-    16, // index 5  -> visual hex for 16.png
-    13, // index 6  -> visual hex for 13.png
-    9,  // index 7  -> visual hex for 9.png
-    19, // index 8  -> visual hex for 19.png
-    20, // index 9  -> visual hex for 20.png
-    17, // index 10 -> visual hex for 17.png
-    14, // index 11 -> visual hex for 14.png
-    4,  // index 12 -> visual hex for 4.png
-    5,  // index 13 -> visual hex for 5.png
-    6,  // index 14 -> visual hex for 6.png
-    7,  // index 15 -> visual hex for 7.png
-    18, // index 16 -> visual hex for 18.png
-    2,  // index 17 -> visual hex for 2.png
-    3,  // index 18 -> visual hex for 3.png
-    21, // index 19 -> visual hex for 21.png
-    1,  // index 20 -> visual hex for 1.png
-    22, // index 21 -> visual hex for 22.png
-];
+// The key is the visual image number (1-22), the value is the index in the hexPaths array.
+const imageMap: Record<number, number> = {
+    1: 20,
+    2: 17,
+    3: 18,
+    4: 12,
+    5: 13,
+    6: 14,
+    7: 15,
+    8: 1,
+    9: 7,
+    10: 0,
+    11: 2,
+    12: 3,
+    13: 6,
+    14: 11,
+    15: 4,
+    16: 5,
+    17: 10,
+    18: 16,
+    19: 8,
+    20: 9,
+    21: 19,
+    22: 21,
+};
+
+// We need to reverse the map for easier lookup: pathIndex -> imageFileNumber
+const pathIndexToImageNumber: Record<number, number> = Object.entries(imageMap).reduce((acc, [imgNum, pathIdx]) => {
+    acc[pathIdx] = parseInt(imgNum, 10);
+    return acc;
+}, {} as Record<number, number>);
 
 
 export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
@@ -90,8 +96,8 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                 const isColored = !!square?.coloredBy;
                 const isDisabled = isColored || !isClickable;
 
-                // Use the imageMap to find the correct background image for this hexagon path index
-                const imageFileNumber = imageMap[index];
+                // Use the map to find the correct background image for this hexagon path index
+                const imageFileNumber = pathIndexToImageNumber[index];
 
                 return (
                     <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
@@ -118,3 +124,5 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
         </svg>
     )
 }
+
+    
