@@ -92,6 +92,16 @@ export default function GamePage() {
     const gameRef = doc(db, "games", GAME_ID);
     
     try {
+        const newPlayer: Player = {
+          id: authUser.uid,
+          playerId: playerId,
+          name: playerName,
+          teamName: teamName,
+          answeredQuestions: [],
+          coloringCredits: 0,
+          score: 0,
+        };
+
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameRef);
             if (!gameDoc.exists()) throw "Game does not exist!";
@@ -113,16 +123,6 @@ export default function GamePage() {
             if (team.players.length >= team.capacity) {
               throw new Error(`Sorry, ${teamName} is full.`);
             }
-
-            const newPlayer: Player = {
-              id: authUser.uid,
-              playerId: playerId,
-              name: playerName,
-              teamName: teamName,
-              answeredQuestions: [],
-              coloringCredits: 0,
-              score: 0,
-            };
             
             const updatedTeams = [...currentGame.teams];
             updatedTeams[teamIndex].players.push(newPlayer);
@@ -138,6 +138,9 @@ export default function GamePage() {
             teamName: teamName,
             joinedAt: serverTimestamp()
         });
+        
+        // Manually set the player state to force a re-render immediately
+        setCurrentPlayer(newPlayer);
 
     } catch (error: any) {
         console.error("Error joining team: ", error);
@@ -461,3 +464,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
