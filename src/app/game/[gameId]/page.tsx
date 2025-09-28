@@ -16,7 +16,7 @@ import ResultsScreen from "@/components/game/ResultsScreen";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1", "rFmz1nJvm6X5d0jR7l6qZ8wY3gE2"];
+const ADMIN_UIDS = ["GLdvOzQWorMcsmOpcwvqqZcpCIN2", "40J7xdA4thUfcFf9vGvxUpTfSAD3", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
 
 export default function GamePage() {
   const params = useParams();
@@ -421,6 +421,13 @@ export default function GamePage() {
 
     switch (game.status) {
       case "starting":
+        return (
+            <div className="flex flex-col items-center justify-center flex-1 text-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
+                <p className="text-muted-foreground mt-2">Get ready for battle!</p>
+            </div>
+        );
       case "lobby": 
         return (
           <Lobby
@@ -483,4 +490,4 @@ export default function GamePage() {
   );
 }
 
-  
+    

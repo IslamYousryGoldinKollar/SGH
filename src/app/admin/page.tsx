@@ -15,7 +15,7 @@ import type { Game, GridSquare } from "@/lib/types";
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 const GRID_SIZE = 22; // Based on the number of hexagons in the SVG
-const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1", "rFmz1nJvm6X5d0jR7l6qZ8wY3gE2"];
+const ADMIN_UIDS = ["GLdvOzQWorMcsmOpcwvqqZcpCIN2", "40J7xdA4thUfcFf9vGvxUpTfSAD3", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
 
 export default function AdminDashboard() {
   const [user, loading, error] = useAuthState(auth);
@@ -215,3 +215,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
