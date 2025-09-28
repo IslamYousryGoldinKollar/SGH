@@ -323,15 +323,6 @@ export default function GamePage() {
             if (originalOwnerName === currentPlayer.teamName) {
                 throw new Error("Your team already owns this square.");
             }
-
-            // --- Game Logic: Land Grab vs. Capture ---
-            if (originalOwnerName !== null) {
-                // This is a capture attempt. Check if free land is available.
-                const hasFreeSquares = currentGrid.some(s => s.coloredBy === null);
-                if (hasFreeSquares) {
-                    throw new Error("You can only capture free land while it's available.");
-                }
-            }
             
             // --- If we've passed the checks, proceed with the update ---
 
@@ -472,7 +463,7 @@ export default function GamePage() {
              return (
                 <ColorGridScreen 
                     grid={game.grid}
-                    teams={teams}
+                    teams={game.teams}
                     onColorSquare={handleColorSquare}
                     teamColoring={playerTeam.color}
                     credits={currentPlayer.coloringCredits}
@@ -519,3 +510,4 @@ export default function GamePage() {
     
 
     
+
