@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Game, Team, GridSquare } from "@/lib/types";
+import type { Game, Team, GridSquare, Player } from "@/lib/types";
 import { Loader2, Play, Square, RotateCw, Users, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
@@ -40,21 +40,8 @@ export default function DisplayPage() {
             if (doc.exists()) {
                 const gameData = { id: doc.id, ...doc.data() } as Game;
                 
-                const scores = new Map<string, number>();
-                gameData.teams.forEach(team => scores.set(team.name, 0));
+                // Team scores are now directly read from the database, no need to calculate here
                 
-                if (gameData.grid) {
-                    gameData.grid.forEach(square => {
-                        if (square.coloredBy) {
-                            scores.set(square.coloredBy, (scores.get(square.coloredBy) || 0) + 1);
-                        }
-                    });
-                }
-
-                gameData.teams.forEach(team => {
-                    team.score = scores.get(team.name) || 0;
-                });
-
                 setGame(gameData);
             } else {
                 setGame(null);
@@ -130,7 +117,10 @@ export default function DisplayPage() {
         await updateDoc(gameRef, {
             status: "lobby",
             teams: game.teams.map(t => ({
-                ...t,
+                name: t.name,
+                capacity: t.capacity,
+                color: t.color,
+                icon: t.icon,
                 score: 0, 
                 players: [],
             })),
@@ -246,10 +236,10 @@ export default function DisplayPage() {
         )
     }
 
-    const TeamScorePod = ({ team, alignment = 'left' }: { team: Team, alignment?: 'left' | 'right' }) => (
+    const TeamScorePod = ({ team }: { team: Team }) => (
         <div className={cn(
             "p-6 rounded-2xl bg-card/80 backdrop-blur-sm shadow-xl text-center transition-all duration-500 border-4 w-64",
-            alignment === 'left' ? "rounded-l-2xl" : "rounded-r-2xl"
+             "rounded-2xl"
             )} 
             style={{ borderColor: team.color }}>
             <div className="flex items-center justify-center gap-4">
@@ -272,10 +262,10 @@ export default function DisplayPage() {
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
                 <div className="absolute left-8 top-8 z-10 w-64">
-                    <Timer duration={game.timer} onTimeout={() => {}} gameStartedAt={game.gameStartedAt}/>
+                    <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
                 <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
-                    {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
+                    {teamLeft && <TeamScorePod team={teamLeft} />}
                 </div>
                 <div className="w-auto h-full flex items-center justify-center">
                     <div className="w-auto h-full aspect-[1065/666] relative">
@@ -283,7 +273,7 @@ export default function DisplayPage() {
                     </div>
                 </div>
                 <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
-                    {teamRight && <TeamScorePod team={teamRight} alignment="right" />}
+                    {teamRight && <TeamScorePod team={teamRight} />}
                 </div>
              </div>
         )
@@ -292,12 +282,13 @@ export default function DisplayPage() {
     const GameOverOverlay = () => {
         if (!game || game.status !== 'finished') return null;
 
-        const sortedTeams = [...game.teams].sort((a,b) => b.score - a.score);
-        const winner = sortedTeams.length > 0 ? sortedTeams[0] : null;
-        const isTie = sortedTeams.length > 1 && sortedTeams[0].score === sortedTeams[1].score;
+        const allPlayers = game.teams.flatMap(t => t.players);
+        const sortedPlayers = [...allPlayers].sort((a, b) => b.score - a.score);
+        const topScore = sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
+        const winners = sortedPlayers.filter(p => p.score === topScore && topScore > 0);
 
         useEffect(() => {
-            if (winner && !isTie) {
+            if (winners.length > 0) {
               const duration = 5 * 1000;
               const animationEnd = Date.now() + duration;
               const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
@@ -310,23 +301,43 @@ export default function DisplayPage() {
                   return clearInterval(interval);
                 }
                 const particleCount = 50 * (timeLeft / duration);
-                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: game.teams.map(t=>t.color) });
-                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: game.teams.map(t=>t.color) });
+                // Use team colors for the confetti
+                const winnerColors = winners.map(w => game.teams.find(t => t.name === w.teamName)?.color || '#ffffff');
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: winnerColors });
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: winnerColors });
               }, 250);
             }
-        }, [winner, isTie, game.teams]);
+        }, [winners, game.teams]);
 
         return (
             <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20 animate-in fade-in">
-                <Card className="max-w-xl text-center p-8 bg-background/90">
+                <Card className="max-w-2xl text-center p-8 bg-background/90">
                     <CardHeader>
-                        <CardTitle className="text-7xl font-display text-yellow-400">{isTie ? "Draw!" : "Game Over"}</CardTitle>
-                        <CardDescription className="text-2xl pt-4">
-                            {isTie ? "Both teams got the same score!" : winner ? `${winner.name} Wins!` : 'The game has ended.'}
-                        </CardDescription>
+                        <div className="flex justify-center items-center">
+                            <Trophy className="h-16 w-16 text-yellow-400 drop-shadow-lg mr-4" />
+                            <CardTitle className="text-7xl font-display text-yellow-400">
+                                {winners.length > 0 ? "We have a Winner!" : "Game Over"}
+                            </CardTitle>
+                        </div>
+                        {winners.length > 0 && (
+                            <CardDescription className="text-2xl pt-4">
+                                Congratulations to our Trivia Titan{winners.length > 1 ? 's' : ''}!
+                            </CardDescription>
+                        )}
                     </CardHeader>
-                    <CardContent>
-                         <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl mt-8">
+                    <CardContent className="flex flex-col items-center">
+                        <div className="flex flex-wrap justify-center gap-4 mt-4">
+                            {winners.map(winner => {
+                                const team = game.teams.find(t => t.name === winner.teamName);
+                                return (
+                                <div key={winner.id} className="p-4 bg-card rounded-lg shadow-lg border-2" style={{borderColor: team?.color}}>
+                                    <p className="text-3xl font-bold" style={{color: team?.color}}>{winner.name}</p>
+                                    <p className="text-sm text-muted-foreground">ID: {winner.playerId}</p>
+                                </div>
+                                )
+                            })}
+                        </div>
+                         <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl mt-12">
                             <RotateCw className="mr-4"/> Play Again
                         </Button>
                     </CardContent>
@@ -382,3 +393,6 @@ export default function DisplayPage() {
     );
 
     }
+
+
+    
