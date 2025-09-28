@@ -51,7 +51,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
              <Image
                 id="team-tower-0"
                 src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue_tower.png?alt=media&token=c2763375-f09c-485a-8b1e-72b64b18406f"
-                alt="Blue Team Tower"
+                alt=""
                 width={150}
                 height={150}
                 className="absolute top-[20%] left-[25%] z-10"
@@ -60,7 +60,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
             <Image
                 id="team-tower-1"
                 src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred_tower.png?alt=media&token=189e924c-1d74-4f05-901c-66258055c0c8"
-                alt="Red Team Tower"
+                alt=""
                 width={150}
                 height={150}
                 className="absolute top-[20%] right-[25%] z-10"
@@ -119,5 +119,3 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
-
-    
