@@ -19,7 +19,7 @@ export default function ColorGridScreen({ grid, teams, onColorSquare, teamColori
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 text-center w-full relative mobile-grid-background">
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 flex items-center justify-center">
         <HexMap 
           grid={grid}
           teams={teams}
@@ -27,13 +27,12 @@ export default function ColorGridScreen({ grid, teams, onColorSquare, teamColori
         />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-between h-full w-full pt-8 pb-4">
-        <div className="bg-background/80 backdrop-blur-sm p-4 rounded-lg shadow-xl">
+      <div className="relative z-10 flex flex-col items-center justify-end h-full w-full p-4">
+        <div className="bg-background/80 backdrop-blur-sm p-4 rounded-lg shadow-xl text-center">
             <h1 className="font-display text-3xl" style={{color: teamColoring}}>Claim Your Territory!</h1>
             <p className="text-muted-foreground mt-1">You have {credits} credit{credits !== 1 && 's'}. Click a hex to claim it for your team.</p>
+             <Button variant="link" onClick={onSkip} className="text-foreground drop-shadow-md mt-2">Skip and answer next question</Button>
         </div>
-
-        <Button variant="link" onClick={onSkip} className="text-background drop-shadow-md">Skip and answer next question</Button>
       </div>
     </div>
   );
