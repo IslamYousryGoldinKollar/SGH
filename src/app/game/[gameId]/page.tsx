@@ -69,17 +69,6 @@ export default function GamePage() {
             setIsAdmin(false);
         }
         
-        const scores = new Map<string, number>();
-        gameData.teams.forEach(team => {
-            const teamGridScore = gameData.grid?.filter(sq => sq.coloredBy === team.name).length || 0;
-            const teamAnswerScore = team.players.reduce((sum, p) => sum + p.score, 0);
-            scores.set(team.name, teamGridScore + teamAnswerScore);
-        });
-
-        gameData.teams.forEach(team => {
-            team.score = scores.get(team.name) || 0;
-        });
-
         setGame(gameData);
         
         if (authUser) {
@@ -253,12 +242,14 @@ export default function GamePage() {
         
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
+        const teamToUpdate = updatedTeams[teamIndex];
 
         playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
 
         if (isCorrect) {
             playerToUpdate.coloringCredits += 1;
             playerToUpdate.score += 1; // Add 1 point for a correct answer
+            teamToUpdate.score += 1; // Also update the team's score
         }
         
         transaction.update(gameRef, { teams: updatedTeams });
@@ -310,6 +301,7 @@ export default function GamePage() {
         const updatedTeams = [...currentGame.teams];
         updatedTeams[teamIndex].players[playerIndex].coloringCredits -= 1;
         updatedTeams[teamIndex].players[playerIndex].score += 1; // Add 1 point for coloring a square
+        updatedTeams[teamIndex].score += 1; // Also update the team's score
 
         transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
       });
