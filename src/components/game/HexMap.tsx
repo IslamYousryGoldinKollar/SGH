@@ -51,8 +51,8 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                 className="object-contain"
                 priority
             />
-            <svg viewBox="293.1 452.2 1600.7 1103.7" className="absolute inset-0 w-full h-full drop-shadow-lg">
-                <g>
+            <svg viewBox="0 0 2048 2048" className="absolute inset-0 w-full h-full drop-shadow-lg">
+                <g transform="scale(0.58) translate(370, 440)">
                     {hexPaths.map((path, index) => {
                         const square = grid.find(s => s.id === index);
                         const isColored = !!square?.coloredBy;
