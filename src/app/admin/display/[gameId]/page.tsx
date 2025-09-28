@@ -177,12 +177,12 @@ export default function DisplayPage() {
          const teamRight = game.teams.length > 1 ? game.teams[1] : null;
 
         return (
-             <div className="flex-1 w-full h-full flex items-center justify-center relative">
+             <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
                 <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
                 </div>
-                <div className="w-full h-full flex items-center justify-center p-4">
-                    <div className="w-full h-full max-h-[calc(100vh-200px)] max-w-[calc(100vw-600px)] aspect-[1065/666] relative">
+                <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-auto h-full aspect-[1065/666] relative">
                         <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}}/>
                     </div>
                 </div>
@@ -266,3 +266,5 @@ export default function DisplayPage() {
     );
 
     }
+
+    
