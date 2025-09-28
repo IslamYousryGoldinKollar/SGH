@@ -73,7 +73,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                 className="object-contain"
                 priority
             />
-            <svg viewBox="0 0 2048 2048" ref={ref} className="absolute inset-0 w-full h-full" style={{filter: 'drop-shadow(0px 4px 4px #a3e635)'}}>
+            <svg viewBox="0 0 2048 2048" ref={ref} className="absolute inset-0 w-full h-full" style={{filter: 'drop-shadow(0px 4px 4px #3b82f6)'}}>
                 <defs>
                     <filter id="inner-shadow" x="-50%" y="-50%" width="200%" height="200%">
                         <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur" />
@@ -119,3 +119,5 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
+
+    

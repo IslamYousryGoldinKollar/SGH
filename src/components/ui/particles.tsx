@@ -14,8 +14,8 @@ interface ParticlesProps {
 
 export default function Particles({
   className = '',
-  quantity = 30,
-  staticity = 50,
+  quantity = 50, // Increased quantity for a fuller effect
+  staticity = 40,
   ease = 50,
   refresh = false,
 }: ParticlesProps) {
@@ -66,6 +66,7 @@ export default function Particles({
     dx: number
     dy: number
     magnetism: number
+    color: string // Added color property
   }
 
   const resizeCanvas = () => {
@@ -86,12 +87,13 @@ export default function Particles({
     const y = Math.floor(Math.random() * canvasSize.current.h)
     const translateX = 0
     const translateY = 0
-    const size = Math.floor(Math.random() * 2) + 1
+    const size = Math.floor(Math.random() * 2) + 0.5 // Allow smaller particles
     const alpha = 0
-    const targetAlpha = parseFloat((Math.random() * 0.6 + 0.1).toFixed(1))
-    const dx = (Math.random() - 0.5) * 0.2
-    const dy = (Math.random() - 0.5) * 0.2
+    const targetAlpha = parseFloat((Math.random() * 0.4 + 0.1).toFixed(1)) // Lower alpha for subtlety
+    const dx = (Math.random() - 0.5) * 0.1 // Slower movement
+    const dy = (Math.random() - 0.5) * 0.1 // Slower movement
     const magnetism = 0.1 + Math.random() * 4
+    const color = Math.random() > 0.3 ? 'rgba(0, 122, 255, 1)' : 'rgba(255, 255, 255, 1)' // 30% chance of being white
     return {
       x,
       y,
@@ -103,16 +105,19 @@ export default function Particles({
       dx,
       dy,
       magnetism,
+      color,
     }
   }
 
   const drawCircle = (circle: Circle, update = false) => {
     if (context.current) {
-      const { x, y, translateX, translateY, size, alpha } = circle
+      const { x, y, translateX, translateY, size, alpha, color } = circle
       context.current.translate(translateX, translateY)
       context.current.beginPath()
       context.current.arc(x, y, size, 0, 2 * Math.PI)
-      context.current.fillStyle = `rgba(0, 122, 255, ${alpha})`
+      // Modify fillStyle to use the circle's color property
+      const a = color.split(',').pop()?.replace(')','');
+      context.current.fillStyle = color.replace(`1)` || `${a})`, `${alpha})`)
       context.current.fill()
       context.current.setTransform(dpr, 0, 0, dpr, 0, 0)
 
@@ -215,3 +220,5 @@ export default function Particles({
     </div>
   )
 }
+
+    
