@@ -7,7 +7,7 @@ import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc } from "firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import type { Game, GameTheme } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
