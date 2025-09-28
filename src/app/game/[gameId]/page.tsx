@@ -64,6 +64,8 @@ export default function GamePage() {
       if (docSnap.exists()) {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
         
+        setGame(gameData);
+
         if (authUser) {
             const isUserAdmin = gameData.adminId === authUser.uid || ADMIN_UIDS.includes(authUser.uid);
             setIsAdmin(isUserAdmin);
@@ -71,11 +73,12 @@ export default function GamePage() {
             setCurrentPlayer(player);
         }
         
-        setGame(gameData);
-
-        if (gameData.status === "playing" && !currentPlayer) {
-          // A game is in progress but the current user is not a player.
-          // This ensures they are shown the correct "Game in Progress" screen.
+        if (gameData.status === 'playing' && !currentPlayer && authUser) {
+           const player = gameData.teams?.flatMap(t => t.players).find(p => p.id === authUser.uid) || null;
+           if (!player) {
+                // A game is in progress but the current user is not a player.
+                // This ensures they are shown the correct "Game in Progress" screen.
+           }
         }
 
       } else {
@@ -87,7 +90,7 @@ export default function GamePage() {
     });
 
     return () => unsubGame();
-  }, [GAME_ID, authUser, toast, currentPlayer]);
+  }, [GAME_ID, authUser, toast]);
 
  const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
     if (!playerName.trim()) {
@@ -300,7 +303,7 @@ export default function GamePage() {
 
             const currentGame = gameDoc.data() as Game;
             const updatedTeams = JSON.parse(JSON.stringify(currentGame.teams)) as Team[];
-            const currentGrid = currentGame.grid;
+            const currentGrid = [...currentGame.grid];
 
             const playerTeamIndex = updatedTeams.findIndex(t => t.name === currentPlayer.teamName);
             if (playerTeamIndex === -1) throw new Error("Your team could not be found.");
@@ -321,12 +324,11 @@ export default function GamePage() {
                 throw new Error("Your team already owns this square.");
             }
 
-            // Phase 1: Land Grab
+            // --- Game Logic: Land Grab vs. Capture ---
             if (originalOwnerName === null) {
-                // This is always allowed
-            }
-            // Phase 2: Capture
-            else {
+                // Phase 1: Land Grab. This is always allowed.
+            } else {
+                // Phase 2: Capture. Only allowed if no free squares are left.
                 const hasFreeSquares = currentGrid.some(s => s.coloredBy === null);
                 if (hasFreeSquares) {
                     throw new Error("You can only capture free land while it's available.");
@@ -349,11 +351,10 @@ export default function GamePage() {
             }
 
             // 3. Update grid ownership
-            const updatedGrid = [...currentGrid];
-            updatedGrid[squareIndex].coloredBy = currentPlayer.teamName;
+            currentGrid[squareIndex].coloredBy = currentPlayer.teamName;
 
             // 4. Commit transaction
-            transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
+            transaction.update(gameRef, { grid: currentGrid, teams: updatedTeams });
         });
 
         setCurrentQuestion(getNextQuestion());
@@ -401,7 +402,7 @@ export default function GamePage() {
   };
 
   const renderContent = () => {
-    if (loading || !game || !authUser) {
+    if (loading || !authUser) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -415,6 +416,15 @@ export default function GamePage() {
       )
     }
 
+    if (!game) {
+        return (
+             <div className="flex flex-col items-center justify-center flex-1 text-center">
+                <h1 className="text-4xl font-bold font-display">Session Not Found</h1>
+                <p className="text-muted-foreground mt-2">The session PIN you entered is invalid. Please check the PIN and try again.</p>
+            </div>
+        )
+    }
+
     if (!currentPlayer && game.status !== 'lobby') {
        return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
@@ -424,18 +434,6 @@ export default function GamePage() {
         );
     }
     
-    if (game.status === 'lobby') {
-        return (
-             <Lobby
-                game={game}
-                onJoinTeam={handleJoinTeam}
-                onStartGame={handleStartGame}
-                currentPlayer={currentPlayer}
-                isAdmin={isAdmin}
-            />
-        );
-    }
-
     switch (game.status) {
       case "starting":
         return (
@@ -516,3 +514,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
