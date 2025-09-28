@@ -38,8 +38,8 @@ type HexMapProps = {
 
 const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick }, ref) => {
     
-    // Function to convert hex color to rgba with 50% opacity
-    const hexToRgba = (hex: string, alpha = 0.5) => {
+    // Function to convert hex color to rgba with 70% opacity
+    const hexToRgba = (hex: string, alpha = 0.7) => {
         const r = parseInt(hex.slice(1, 3), 16);
         const g = parseInt(hex.slice(3, 5), 16);
         const b = parseInt(hex.slice(5, 7), 16);
@@ -49,7 +49,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
     const getTeamColor = (teamName: string | null) => {
         if (!teamName) return 'transparent';
         const teamColor = teams.find(t => t.name === teamName)?.color;
-        return teamColor ? hexToRgba(teamColor, 0.5) : 'rgba(51, 51, 51, 0.5)';
+        return teamColor ? hexToRgba(teamColor) : 'rgba(51, 51, 51, 0.7)';
     };
 
     const isClickable = !!onHexClick;
@@ -96,5 +96,3 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
-
-    
