@@ -91,12 +91,12 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                                 onClick={(e) => !isDisabled && onHexClick(index, e)}
                                 fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
                                 className={cn(
-                                    "stroke-black/50 dark:stroke-white/50",
+                                    "stroke-black/50 dark:stroke-white/50 fill-opacity-70",
                                     "transition-all duration-300 [stroke-dasharray:10_10] [stroke-width:1.5px]",
-                                    isColored ? "fill-opacity-70" : "fill-opacity-0",
+                                    !isColored && "fill-opacity-0",
                                     isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100",
                                     isClickable && !isColored && "hover:[filter:url(#inner-shadow)]",
-                                    isColored && "cursor-not-allowed",
+                                    isClickable && isColored && "cursor-pointer",
                                     isColored && "[filter:url(#inner-shadow)]",
                                 )}
                             />
