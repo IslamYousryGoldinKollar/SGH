@@ -14,7 +14,7 @@ interface ParticlesProps {
 
 export default function Particles({
   className = '',
-  quantity = 50, // Increased quantity for a fuller effect
+  quantity = 150, // Increased quantity for a fuller effect
   staticity = 40,
   ease = 50,
   refresh = false,
@@ -67,6 +67,7 @@ export default function Particles({
     dy: number
     magnetism: number
     color: string // Added color property
+    waveAngle: number;
   }
 
   const resizeCanvas = () => {
@@ -93,7 +94,8 @@ export default function Particles({
     const dx = (Math.random() - 0.5) * 0.1 // Slower movement
     const dy = (Math.random() - 0.5) * 0.1 // Slower movement
     const magnetism = 0.1 + Math.random() * 4
-    const color = Math.random() > 0.3 ? 'rgba(0, 122, 255, 1)' : 'rgba(255, 255, 255, 1)' // 30% chance of being white
+    const color = Math.random() > 0.5 ? 'rgba(0, 122, 255, 1)' : 'rgba(255, 255, 255, 1)' // 50% chance of being white
+    const waveAngle = Math.random() * Math.PI * 2;
     return {
       x,
       y,
@@ -106,6 +108,7 @@ export default function Particles({
       dy,
       magnetism,
       color,
+      waveAngle,
     }
   }
 
@@ -177,7 +180,8 @@ export default function Particles({
         circle.alpha = circle.targetAlpha * remapClosestEdge
       }
       circle.x += circle.dx
-      circle.y += circle.dy
+      circle.waveAngle += 0.01;
+      circle.y += circle.dy + Math.sin(circle.waveAngle) * 0.2;
       circle.translateX +=
         (mouse.current.x / (staticity / circle.magnetism) - circle.translateX) /
         ease
@@ -220,5 +224,3 @@ export default function Particles({
     </div>
   )
 }
-
-    
