@@ -7,7 +7,7 @@ import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firestore";
 import type { Game, GameTheme } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +66,7 @@ function QuestionItem({ control, index, removeQuestion, getValues }: { control: 
               name={`questions.${index}.answer`}
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel>Options & Correct Answer</FormLabel>
+                  <FormLabel>Options &amp; Correct Answer</FormLabel>
                   <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="space-y-2">
                       {optionFields.map((optionField, optionIndex) => (
@@ -143,8 +143,9 @@ export default function SessionConfigPage() {
     const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
+        const isOwner = user && (gameData.adminId === user.uid || !gameData.adminId);
 
-        if (user && gameData.adminId === user.uid) {
+        if (isOwner) {
             setIsAuthorized(true);
             setGame(gameData);
             // Check if form is dirty to avoid overwriting user's input
@@ -247,22 +248,22 @@ export default function SessionConfigPage() {
   };
 
   if (loading || authLoading) {
-    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin" /></div>;
+    return <div><Loader2 className="h-16 w-16 animate-spin" /></div>;
   }
   
   if (!isAuthorized) {
-    return <div className="flex h-screen items-center justify-center"><h1 className="text-2xl text-destructive">You are not authorized to edit this session.</h1></div>;
+    return <div><h1>You are not authorized to edit this session.</h1></div>;
   }
   
   if (!game) {
-    return <div className="flex h-screen items-center justify-center"><h1 className="text-2xl">Game session not found.</h1></div>;
+    return <div><h1>Game session not found.</h1></div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div>
       <Card>
         <CardHeader>
-          <CardTitle className="font-display">Configure Session: {gameId}</CardTitle>
+          <CardTitle>Configure Session: {gameId}</CardTitle>
           <CardDescription>Edit the details for this trivia game session.</CardDescription>
         </CardHeader>
         <CardContent>
