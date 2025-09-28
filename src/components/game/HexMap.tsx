@@ -45,7 +45,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     return (
         <div className="relative w-full aspect-[2048/2048]">
             <Image
-                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land.png?alt=media&token=b1d9a1b9-66df-4b4a-97cc-8b9903725bd3"
+                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fjffj.png?alt=media&token=656867cc-387c-4dfb-9e21-f17b65b8c50a"
                 alt="Game Map"
                 fill
                 className="object-contain"
