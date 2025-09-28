@@ -351,19 +351,11 @@ export default function GamePage() {
             // 3. Update grid ownership
             currentGrid[squareIndex].coloredBy = currentPlayer.teamName;
             
-            const updates: { grid: GridSquare[]; teams: Team[]; status?: GameStatus } = {
-              grid: currentGrid,
-              teams: updatedTeams,
-            };
-
-            // 4. Check if the game should end
-            const isGridFull = currentGrid.every(s => s.coloredBy !== null);
-            if (isGridFull) {
-                updates.status = "finished";
-            }
-
-            // 5. Commit transaction
-            transaction.update(gameRef, updates);
+            // 4. Commit transaction
+            transaction.update(gameRef, {
+                grid: currentGrid,
+                teams: updatedTeams,
+            });
         });
 
         setCurrentQuestion(getNextQuestion());
@@ -480,7 +472,7 @@ export default function GamePage() {
              return (
                 <ColorGridScreen 
                     grid={game.grid}
-                    teams={game.teams}
+                    teams={teams}
                     onColorSquare={handleColorSquare}
                     teamColoring={playerTeam.color}
                     credits={currentPlayer.coloringCredits}

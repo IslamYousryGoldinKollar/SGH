@@ -96,5 +96,3 @@ HexMap.displayName = 'HexMap';
 export default HexMap;
 
     
-
-    
