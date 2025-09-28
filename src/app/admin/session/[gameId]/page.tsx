@@ -7,7 +7,7 @@ import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import type { Game, GameTheme } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ const sessionSchema = z.object({
     name: z.string().min(1, "Team name is required."),
     capacity: z.coerce.number().min(1, "Capacity must be at least 1."),
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color"),
-    icon: z.string().url("Must be a valid URL."),
+    icon: z.string().url("Must be a valid URL.").or(z.literal('')),
   })).min(1, "At least one team is required."),
   questions: z.array(z.object({
       question: z.string().min(1, "Question text is required."),
@@ -139,28 +139,35 @@ export default function SessionConfigPage() {
   useEffect(() => {
     if (!gameId || authLoading) return;
     const gameRef = doc(db, "games", gameId);
-    getDoc(gameRef).then((docSnap) => {
+    
+    const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
 
         if (user && gameData.adminId === user.uid) {
             setIsAuthorized(true);
             setGame(gameData);
-            form.reset({
-              title: gameData.title || "Trivia Titans",
-              timer: gameData.timer,
-              teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff', icon: t.icon || '' })),
-              questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
-              topic: gameData.topic,
-              theme: gameData.theme || 'default',
-            });
-        } else {
+            // Check if form is dirty to avoid overwriting user's input
+            if (!form.formState.isDirty) {
+              form.reset({
+                title: gameData.title || "Trivia Titans",
+                timer: gameData.timer,
+                teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff', icon: t.icon || '' })),
+                questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
+                topic: gameData.topic,
+                theme: gameData.theme || 'default',
+              });
+            }
+        } else if (user) { // user is logged in but not the admin
             setIsAuthorized(false);
         }
       }
       setLoading(false);
     });
-  }, [gameId, form, user, authLoading]);
+
+    return () => unsubscribe();
+
+  }, [gameId, user, authLoading, form]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -380,3 +387,5 @@ export default function SessionConfigPage() {
     </div>
   );
 }
+
+    
