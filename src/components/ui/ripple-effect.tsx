@@ -19,7 +19,7 @@ export default function RippleEffect({ className }: { className?: string }) {
 
   return (
     <div className={cn("w-full h-full grid place-items-center", className)}>
-      <div className="w-[min(90vw,560px)] aspect-[1.6]">
+      <div className="w-[min(180vw,1120px)] aspect-[1.6]">
         <svg
           key={key}
           ref={svgRef}
