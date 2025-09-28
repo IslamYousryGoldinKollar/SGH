@@ -52,6 +52,17 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                 priority
             />
             <svg viewBox="0 0 2048 2048" className="absolute inset-0 w-full h-full" style={{filter: 'drop-shadow(0px 4px 4px #a3e635)'}}>
+                <defs>
+                    <filter id="inner-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur" />
+                        <feOffset dy="0" dx="0" />
+                        <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowDiff" />
+                        <feFlood floodColor="#ffffff" floodOpacity="0.75" />
+                        <feComposite in2="shadowDiff" operator="in" />
+                        <feComposite in2="SourceGraphic" operator="over" result="firstPass"/>
+                        <feBlend in="firstPass" in2="SourceGraphic" mode="overlay" />
+                    </filter>
+                </defs>
                 <g transform="scale(0.92) translate(85, 200)">
                     {hexPaths.map((path, index) => {
                         const square = grid.find(s => s.id === index);
@@ -68,7 +79,8 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                                 className={cn(
                                     "stroke-black/50 dark:stroke-white/50",
                                     "stroke-2 transition-all duration-300",
-                                    isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.7)]",
+                                    isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100",
+                                    isClickable && !isColored && "hover:[filter:url(#inner-shadow)]",
                                     isColored && "cursor-not-allowed",
                                 )}
                             />
