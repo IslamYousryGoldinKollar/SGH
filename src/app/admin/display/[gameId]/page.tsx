@@ -185,7 +185,7 @@ export default function DisplayPage() {
                 <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
                 </div>
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="w-auto h-full flex items-center justify-center">
                     <div className="w-auto h-full aspect-[1065/666] relative">
                         <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}}/>
                     </div>
