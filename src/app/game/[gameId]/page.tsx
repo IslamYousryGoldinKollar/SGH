@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import type { Player, Question, Game, Team, GridSquare } from "@/lib/types";
 import { generateQuestionsAction }from "@/lib/actions";
 import { db, auth } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, getDoc, serverTimestamp, runTransaction } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, getDoc, serverTimestamp, runTransaction, collection, addDoc } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, type User } from "firebase/auth";
 
 import Lobby from "@/components/game/Lobby";
@@ -96,43 +96,62 @@ export default function GamePage() {
 
     const gameRef = doc(db, "games", GAME_ID);
     
-    await runTransaction(db, async (transaction) => {
-        const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) throw "Game does not exist!";
-        
-        const currentGame = gameDoc.data() as Game;
+    try {
+        await runTransaction(db, async (transaction) => {
+            const gameDoc = await transaction.get(gameRef);
+            if (!gameDoc.exists()) throw "Game does not exist!";
+            
+            const currentGame = gameDoc.data() as Game;
 
-        const isAlreadyInTeam = currentGame.teams.some(t => t.players.some(p => p.id === authUser.uid));
-        if(isAlreadyInTeam) {
-            toast({ title: "Already in a team", description: "You have already joined a team.", variant: "destructive" });
-            return;
-        }
-        
-        const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
-        if(teamIndex === -1) return;
+            const isAlreadyInTeam = currentGame.teams.some(t => t.players.some(p => p.id === authUser.uid));
+            if(isAlreadyInTeam) {
+                toast({ title: "Already in a team", description: "You have already joined a team.", variant: "destructive" });
+                return;
+            }
+            
+            const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
+            if(teamIndex === -1) throw "Team not found!";
 
-        const team = currentGame.teams[teamIndex];
+            const team = currentGame.teams[teamIndex];
 
-        if (team.players.length >= team.capacity) {
-          toast({ title: "Team Full", description: `Sorry, ${teamName} is full.`, variant: "destructive" });
-          return;
-        }
+            if (team.players.length >= team.capacity) {
+              throw new Error(`Sorry, ${teamName} is full.`);
+            }
 
-        const newPlayer: Player = {
-          id: authUser.uid,
-          playerId: playerId,
-          name: playerName,
-          teamName: teamName,
-          answeredQuestions: [],
-          coloringCredits: 0,
-          score: 0,
-        };
-        
-        const updatedTeams = [...currentGame.teams];
-        updatedTeams[teamIndex].players.push(newPlayer);
+            const newPlayer: Player = {
+              id: authUser.uid,
+              playerId: playerId,
+              name: playerName,
+              teamName: teamName,
+              answeredQuestions: [],
+              coloringCredits: 0,
+              score: 0,
+            };
+            
+            const updatedTeams = [...currentGame.teams];
+            updatedTeams[teamIndex].players.push(newPlayer);
 
-        transaction.update(gameRef, { teams: updatedTeams });
-    });
+            transaction.update(gameRef, { teams: updatedTeams });
+        });
+
+        // Log the player join event to the new collection
+        const playerJoinsCollection = collection(db, "player_joins");
+        await addDoc(playerJoinsCollection, {
+            gameId: GAME_ID,
+            playerName: playerName,
+            playerId: playerId,
+            teamName: teamName,
+            joinedAt: serverTimestamp()
+        });
+
+    } catch (error: any) {
+        console.error("Error joining team: ", error);
+        toast({
+            title: "Could Not Join",
+            description: error.message || "An unexpected error occurred. Please try again.",
+            variant: "destructive"
+        })
+    }
   };
 
   const handleStartGame = async () => {
@@ -284,16 +303,14 @@ export default function GamePage() {
         const playerToUpdate = currentGame.teams[teamIndex].players[playerIndex];
         
         if (playerToUpdate.coloringCredits <= 0) {
-            toast({ title: "No credits!", description: "Answer more questions correctly to earn credits.", variant: "destructive" });
-            throw "No coloring credits!";
+            throw new Error("No coloring credits!");
         }
 
         const squareIndex = currentGame.grid.findIndex(s => s.id === squareId);
         if (squareIndex === -1) throw "Square not found!";
         
         if (currentGame.grid[squareIndex].coloredBy) {
-            toast({ title: "Already colored!", description: "This square has already been claimed.", variant: "destructive" });
-            throw "Square already colored!";
+            throw new Error("This square has already been claimed.");
         }
 
         const updatedGrid = [...currentGame.grid];
@@ -312,9 +329,7 @@ export default function GamePage() {
 
     } catch (error: any) {
         console.error("Failed to color square: ", error);
-        if (error.message && !error.message.includes('No coloring credits') && !error.message.includes('Square already colored')) {
-            toast({ title: "Error", description: "Could not color the square. Please try again.", variant: "destructive" });
-        }
+        toast({ title: "Error Coloring Square", description: error.message, variant: "destructive" });
     }
   };
 
