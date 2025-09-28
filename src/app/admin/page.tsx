@@ -82,7 +82,7 @@ export default function AdminDashboard() {
     if (window.confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
         try {
             await deleteDoc(doc(db, "games", gameId));
-            setSessions(prevSessions => prevSessions.filter(s => s.id !== gameId));
+            // Let onSnapshot handle the state update
         } catch (err) {
             console.error("Failed to delete session:", err);
             alert("Failed to delete session.");
@@ -106,16 +106,20 @@ export default function AdminDashboard() {
       const newGameRef = doc(db, "games", newPin);
       
       const duplicatedGame: Omit<Game, 'id'> = {
-        ...originalGameData,
+        title: originalGameData.title,
         status: "lobby",
-        adminId: user.uid, // Assign the current user as the new admin
+        adminId: user.uid,
         teams: originalGameData.teams.map((team: any) => ({ ...team, score: 0, players: [] })),
+        questions: originalGameData.questions,
+        grid: originalGameData.grid,
         createdAt: serverTimestamp() as any,
         gameStartedAt: null,
+        timer: originalGameData.timer,
+        topic: originalGameData.topic,
+        theme: originalGameData.theme,
       };
 
       await setDoc(newGameRef, duplicatedGame);
-      setSessions(prev => prev.filter(s => s.id !== gameId)); // Remove old session from local state to prevent key error
       router.push(`/admin/session/${newPin}`);
 
     } catch (err) {
@@ -171,7 +175,7 @@ export default function AdminDashboard() {
                         </CardHeader>
                         <CardContent className="flex-1">
                              <p className="text-sm text-muted-foreground">
-                                {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + t.players.length, 0) || 0} players
+                                {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players
                             </p>
                              <p className="text-xs text-muted-foreground mt-1">
                                 Admin: {session.adminId ? "Assigned" : "None"}
