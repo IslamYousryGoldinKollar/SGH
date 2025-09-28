@@ -65,12 +65,19 @@ export default function GamePage() {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
         
         if (authUser) {
-            setIsAdmin(gameData.adminId === authUser.uid || ADMIN_UIDS.includes(authUser.uid));
+            const isUserAdmin = gameData.adminId === authUser.uid || ADMIN_UIDS.includes(authUser.uid);
+            setIsAdmin(isUserAdmin);
             const player = gameData.teams?.flatMap(t => t.players).find(p => p.id === authUser.uid) || null;
             setCurrentPlayer(player);
         }
         
         setGame(gameData);
+
+        if (gameData.status === "playing" && !currentPlayer) {
+          // A game is in progress but the current user is not a player.
+          // This ensures they are shown the correct "Game in Progress" screen.
+        }
+
       } else {
         toast({ title: "Game not found", description: "This game session does not exist.", variant: "destructive" });
         setGame(null);
@@ -80,7 +87,7 @@ export default function GamePage() {
     });
 
     return () => unsubGame();
-  }, [GAME_ID, authUser, toast]);
+  }, [GAME_ID, authUser, toast, currentPlayer]);
 
  const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
     if (!playerName.trim()) {
@@ -293,49 +300,59 @@ export default function GamePage() {
 
             const currentGame = gameDoc.data() as Game;
             const updatedTeams = JSON.parse(JSON.stringify(currentGame.teams)) as Team[];
-            const updatedGrid = [...currentGame.grid];
+            const currentGrid = currentGame.grid;
 
             const playerTeamIndex = updatedTeams.findIndex(t => t.name === currentPlayer.teamName);
             if (playerTeamIndex === -1) throw new Error("Your team could not be found.");
 
             const playerIndex = updatedTeams[playerTeamIndex].players.findIndex(p => p.id === currentPlayer.id);
             if (playerIndex === -1) throw new Error("Could not find your player data.");
-
+            
             const playerToUpdate = updatedTeams[playerTeamIndex].players[playerIndex];
             if (playerToUpdate.coloringCredits <= 0) throw new Error("You have no coloring credits.");
 
-            const squareIndex = updatedGrid.findIndex(s => s.id === squareId);
+            const squareIndex = currentGrid.findIndex(s => s.id === squareId);
             if (squareIndex === -1) throw new Error("Square not found.");
             
-            const squareToUpdate = updatedGrid[squareIndex];
+            const squareToUpdate = currentGrid[squareIndex];
             const originalOwnerName = squareToUpdate.coloredBy;
 
             if (originalOwnerName === currentPlayer.teamName) {
                 throw new Error("Your team already owns this square.");
             }
 
-            // New Rule: Check if any free squares exist
-            if (originalOwnerName) { // Trying to capture an owned square
-                const hasFreeSquares = updatedGrid.some(s => s.coloredBy === null);
+            // Phase 1: Land Grab
+            if (originalOwnerName === null) {
+                // This is always allowed
+            }
+            // Phase 2: Capture
+            else {
+                const hasFreeSquares = currentGrid.some(s => s.coloredBy === null);
                 if (hasFreeSquares) {
                     throw new Error("You can only capture free land while it's available.");
                 }
             }
             
-            // Update scores and ownership
+            // --- If we've passed the checks, proceed with the update ---
+
+            // 1. Update player and team scores
             playerToUpdate.coloringCredits -= 1;
             playerToUpdate.score += 1;
             updatedTeams[playerTeamIndex].score += 1;
-            squareToUpdate.coloredBy = currentPlayer.teamName;
 
-            // If the square was previously owned, deduct score from the original owner team
+            // 2. If it was an opponent's square, deduct their score
             if (originalOwnerName) {
                 const originalOwnerTeamIndex = updatedTeams.findIndex(t => t.name === originalOwnerName);
                 if (originalOwnerTeamIndex !== -1) {
-                    updatedTeams[originalOwnerTeamIndex].score -= 1;
+                    updatedTeams[originalOwnerTeamIndex].score = Math.max(0, updatedTeams[originalOwnerTeamIndex].score - 1);
                 }
             }
 
+            // 3. Update grid ownership
+            const updatedGrid = [...currentGrid];
+            updatedGrid[squareIndex].coloredBy = currentPlayer.teamName;
+
+            // 4. Commit transaction
             transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
         });
 
@@ -439,8 +456,18 @@ export default function GamePage() {
           />
         );
       case "playing":
+        if (!currentPlayer) {
+          // This can happen if the game starts while a user is on the join screen
+          return (
+            <div className="flex flex-col items-center justify-center flex-1 text-center">
+              <h1 className="text-4xl font-bold font-display">The Game Has Started!</h1>
+              <p className="text-muted-foreground mt-2">A game is currently being played. You can join the next round once this one is finished.</p>
+            </div>
+          );
+        }
+
         const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
-        if (!playerTeam || !currentPlayer) return <p>Error: Your team or player data could not be found.</p>;
+        if (!playerTeam) return <p>Error: Your team or player data could not be found.</p>;
         
         if (view === 'grid') {
              return (
@@ -489,5 +516,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
