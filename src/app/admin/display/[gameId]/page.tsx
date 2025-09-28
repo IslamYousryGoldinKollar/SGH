@@ -94,30 +94,34 @@ export default function DisplayPage() {
     };
 
     const TeamDisplayCard = ({ team }: { team: Team }) => (
-        <Card className="w-full h-full flex flex-col bg-background/80 backdrop-blur-sm" style={{ borderColor: team.color }}>
-            <CardHeader className="text-center flex-shrink-0 relative p-4">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background p-1 rounded-full">
+        <div className="relative pt-8 w-full h-full">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10">
+                <div className="bg-background p-1 rounded-full shadow-lg">
                     <div className="w-16 h-16 rounded-full border-4 flex items-center justify-center" style={{borderColor: team.color, backgroundColor: team.color+'30'}}>
                        {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={48} height={48} className="object-contain" /> : <Trophy className="w-8 h-8" style={{color: team.color}} />}
                     </div>
                 </div>
-                 <CardTitle className="text-4xl font-display pt-8" style={{ color: team.color }}>{team.name}</CardTitle>
-                 <div className="flex items-center justify-center text-muted-foreground pt-2">
-                    <Users className="mr-2 h-5 w-5" /> 
-                    <span className="text-2xl">{team.players.length} / {team.capacity}</span>
-                </div>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-0 p-4">
-                <ScrollArea className="flex-1">
-                    <ul className="space-y-2 text-lg text-center pr-4">
-                        {team.players.map(p => (
-                            <li key={p.id} className="truncate bg-secondary/30 p-2 rounded-md">{p.name}</li>
-                        ))}
-                         {team.players.length === 0 && <li className="text-muted-foreground italic">No players yet...</li>}
-                    </ul>
-                </ScrollArea>
-            </CardContent>
-        </Card>
+            </div>
+            <Card className="w-full h-full flex flex-col bg-background/80 backdrop-blur-sm" style={{ borderColor: team.color }}>
+                <CardHeader className="text-center flex-shrink-0 p-4 pt-12">
+                     <CardTitle className="text-4xl font-display" style={{ color: team.color }}>{team.name}</CardTitle>
+                     <div className="flex items-center justify-center text-muted-foreground pt-2">
+                        <Users className="mr-2 h-5 w-5" /> 
+                        <span className="text-2xl">{team.players.length} / {team.capacity}</span>
+                    </div>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col min-h-0 p-4">
+                    <ScrollArea className="flex-1">
+                        <ul className="space-y-2 text-lg text-center pr-4">
+                            {team.players.map(p => (
+                                <li key={p.id} className="truncate bg-secondary/30 p-2 rounded-md">{p.name}</li>
+                            ))}
+                             {team.players.length === 0 && <li className="text-muted-foreground italic">No players yet...</li>}
+                        </ul>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+        </div>
     );
     
     const renderLobby = () => {
@@ -267,4 +271,5 @@ export default function DisplayPage() {
 
     }
 
+    
     
