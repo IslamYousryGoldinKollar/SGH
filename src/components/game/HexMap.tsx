@@ -4,8 +4,6 @@
 import { useEffect, useRef, forwardRef } from "react";
 import type { GridSquare, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
-import confetti from "canvas-confetti";
 
 const hexPaths = [
     "M826 969.8 826 1038.2 1004 1116.3 1181.9 1038.2 1181.9 969.8 1004 891.7 826 969.8",
@@ -35,26 +33,36 @@ const hexPaths = [
 type HexMapProps = {
     grid: GridSquare[];
     teams: Team[];
-    onHexClick: (id: number, event: React.MouseEvent<SVGPathElement>) => void;
+    onHexClick?: (id: number, event: React.MouseEvent<SVGPathElement>) => void;
 }
 
 const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick }, ref) => {
+    
+    // Function to convert hex color to rgba with 50% opacity
+    const hexToRgba = (hex: string, alpha = 0.5) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+
     const getTeamColor = (teamName: string | null) => {
         if (!teamName) return 'transparent';
-        return teams.find(t => t.name === teamName)?.color || '#333';
+        const teamColor = teams.find(t => t.name === teamName)?.color;
+        return teamColor ? hexToRgba(teamColor, 0.5) : 'rgba(51, 51, 51, 0.5)';
     };
 
     const isClickable = !!onHexClick;
     
     return (
-        <div className="relative w-full h-full">
-            <Image
-                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb"
-                alt="Game Map"
-                fill
-                className="object-contain"
-                priority
-            />
+        <div className="relative w-full h-full pointer-events-none">
+            <div className="absolute inset-0">
+                <img
+                    src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb"
+                    alt="Game Map"
+                    className="w-full h-full object-contain"
+                />
+            </div>
             <svg viewBox="0 0 2048 2048" ref={ref} className="absolute inset-0 w-full h-full">
                 <g transform="scale(0.92) translate(85, 170)">
                     {hexPaths.map((path, index) => {
@@ -68,12 +76,12 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                                 d={path}
                                 data-hex-id={index}
                                 onClick={(e) => !isDisabled && onHexClick(index, e)}
-                                fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
+                                fill={getTeamColor(square?.coloredBy || null)}
                                 className={cn(
-                                    "stroke-black/50 dark:stroke-white/50 fill-opacity-50",
+                                    "stroke-black/50 dark:stroke-white/50",
                                     "transition-all duration-300 [stroke-dasharray:10_10] [stroke-width:1.5px]",
-                                    !isColored && "fill-opacity-0",
-                                    isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100",
+                                    isClickable && "pointer-events-auto",
+                                    isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30",
                                     isClickable && isColored && "cursor-pointer"
                                 )}
                             />
