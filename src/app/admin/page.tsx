@@ -159,10 +159,10 @@ export default function AdminDashboard() {
 
   const handleShare = (gameId: string) => {
     const joinUrl = `${window.location.origin}/game/${gameId}`;
-    navigator.clipboard.writeText(joinUrl);
+    window.open(joinUrl, '_blank');
     toast({
-      title: "Link Copied!",
-      description: "The session join link has been copied to your clipboard.",
+      title: "Session Link Opened",
+      description: "The session join link has been opened in a new tab.",
     });
   };
 
@@ -263,5 +263,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
