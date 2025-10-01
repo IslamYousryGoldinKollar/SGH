@@ -541,5 +541,3 @@ export default function SessionConfigPage() {
     </div>
   );
 }
-
-    
