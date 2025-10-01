@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, Plus, Upload, Users, User } from "lucide-react";
+import { Loader2, Trash2, Plus, Upload, Users, User, Swords } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
@@ -33,7 +33,7 @@ const themes: {value: GameTheme, label: string}[] = [
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
-  sessionType: z.enum(['team', 'individual']),
+  sessionType: z.enum(['team', 'individual', 'matchmaking']),
   teams: z.array(z.object({
     name: z.string().min(1, "Team name is required."),
     capacity: z.coerce.number().min(1, "Capacity must be at least 1."),
@@ -267,8 +267,8 @@ export default function SessionConfigPage() {
                 score: game?.teams.find(originalTeam => originalTeam.name === t.name)?.score || 0,
                 players: game?.teams.find(originalTeam => originalTeam.name === t.name)?.players || []
             }));
-        } else { // individual
-            // For individual, we create a "virtual" team to hold all players.
+        } else { // individual or matchmaking
+            // For these modes, we create a "virtual" team to hold all players/state.
             teamsUpdate = [{
                 name: "Participants",
                 score: 0,
@@ -396,7 +396,7 @@ export default function SessionConfigPage() {
                                 <RadioGroup
                                     onValueChange={field.onChange}
                                     defaultValue={field.value}
-                                    className="grid grid-cols-2 gap-4"
+                                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
                                 >
                                     <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                                         <RadioGroupItem value="team" className="sr-only" />
@@ -407,6 +407,11 @@ export default function SessionConfigPage() {
                                         <RadioGroupItem value="individual" className="sr-only" />
                                         <User className="mb-3 h-6 w-6" />
                                         Individual Challenge
+                                    </Label>
+                                     <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                        <RadioGroupItem value="matchmaking" className="sr-only" />
+                                        <Swords className="mb-3 h-6 w-6" />
+                                        1v1 Matchmaking
                                     </Label>
                                 </RadioGroup>
                              </FormControl>
@@ -446,7 +451,7 @@ export default function SessionConfigPage() {
                         ))}
                     </CardContent>
                 </Card>
-              ) : (
+              ) : sessionType === 'individual' ? (
                 <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
@@ -481,6 +486,13 @@ export default function SessionConfigPage() {
                         {fieldFields.length === 0 && <p className="text-muted-foreground text-sm text-center">No custom fields defined. Players will only be asked for a display name.</p>}
                     </CardContent>
                 </Card>
+              ) : (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>1v1 Matchmaking</CardTitle>
+                        <CardDescription>Players who join this session will be automatically matched for 1v1 games. No further configuration is needed here.</CardDescription>
+                    </CardHeader>
+                </Card>
               )}
 
 
@@ -499,7 +511,7 @@ export default function SessionConfigPage() {
                                 </Button>
                             </div>
                         </div>
-                        <CardDescription>Add custom multiple-choice questions here. You can also import them from a PDF.</CardDescription>
+                        <CardDescription>Add custom multiple-choice questions here. These questions will be used for all game types in this session.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {questionFields.map((field, index) => (

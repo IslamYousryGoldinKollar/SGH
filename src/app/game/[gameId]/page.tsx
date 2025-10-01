@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
-import type { Player, Question, Game, Team, GridSquare, CustomPlayerField, SessionType } from "@/lib/types";
+import { useParams, useRouter } from "next/navigation";
+import type { Player, Question, Game, Team, GridSquare, MatchmakingTicket } from "@/lib/types";
 import { generateQuestionsAction } from "@/lib/actions";
 import { db, auth } from "@/lib/firebase";
 import {
@@ -16,6 +16,10 @@ import {
   collection,
   addDoc,
   Timestamp,
+  query,
+  where,
+  limit,
+  writeBatch,
 } from "firebase/firestore";
 import {
   signInAnonymously,
@@ -28,14 +32,15 @@ import GameScreen from "@/components/game/GameScreen";
 import ColorGridScreen from "@/components/game/ColorGridScreen";
 import ResultsScreen from "@/components/game/ResultsScreen";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { v4 as uuidv4 } from 'uuid';
 
-const GRID_SIZE_INDIVIDUAL = 22;
+// A simple random PIN generator
+const generatePin = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
 const IndividualLobby = ({ game, onJoin }: { game: Game, onJoin: (formData: Record<string, string>) => void }) => {
     const [formData, setFormData] = useState<Record<string, string>>({});
@@ -93,8 +98,56 @@ const IndividualLobby = ({ game, onJoin }: { game: Game, onJoin: (formData: Reco
     )
 }
 
+const MatchmakingLobby = ({ onJoinQueue, isJoining, onCancel, ticket }: { onJoinQueue: (name: string, id:string) => void, isJoining: boolean, onCancel: () => void, ticket: MatchmakingTicket | null }) => {
+    const [playerName, setPlayerName] = useState("");
+    const [idNumber, setIdNumber] = useState("");
+
+    const handleJoin = () => {
+        if (!playerName.trim() || !idNumber.trim()) {
+            alert("Please enter your name and ID.");
+            return;
+        }
+        onJoinQueue(playerName.trim(), idNumber.trim());
+    }
+
+    if (ticket && ticket.status === 'waiting') {
+        return (
+            <div className="flex flex-col items-center justify-center flex-1 text-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <h1 className="text-4xl font-bold mt-4 font-display">Waiting for an opponent...</h1>
+                <p className="text-muted-foreground mt-2">You are in the queue, {ticket.playerName}. A match will begin automatically.</p>
+                <Button variant="outline" className="mt-8" onClick={onCancel}>Cancel</Button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex flex-col items-center justify-center flex-1">
+            <div className="text-center">
+                <Swords className="h-16 w-16 text-primary mx-auto mb-4" />
+                <h1 className="text-5xl font-bold font-display">1v1 Matchmaking</h1>
+                <p className="text-muted-foreground mt-2 max-w-xl">Enter your name and ID to find a worthy opponent. The battle begins soon!</p>
+            </div>
+             <div className="my-8 w-full max-w-md space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="playerName" className="sr-only">Full Name</Label>
+                    <Input id="playerName" type="text" placeholder="Enter your full name" value={playerName} onChange={(e) => setPlayerName(e.target.value)} className="text-lg p-6 w-full text-center" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="idNumber" className="sr-only">ID Number</Label>
+                    <Input id="idNumber" type="text" placeholder="Enter your ID number" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} className="text-lg p-6 w-full text-center" />
+                </div>
+                <Button size="lg" className="w-full" onClick={handleJoin} disabled={isJoining || !playerName.trim() || !idNumber.trim()}>
+                    {isJoining ? <Loader2 className="animate-spin" /> : "Find Match"}
+                </Button>
+            </div>
+        </div>
+    )
+}
+
 export default function GamePage() {
   const params = useParams();
+  const router = useRouter();
   const GAME_ID = (params.gameId as string).toUpperCase();
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,6 +157,9 @@ export default function GamePage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [view, setView] = useState<"question" | "grid">("question");
+  const [ticket, setTicket] = useState<MatchmakingTicket | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
+
 
   useEffect(() => {
     if (game?.theme) {
@@ -113,6 +169,7 @@ export default function GamePage() {
     }
   }, [game?.theme]);
 
+  // Authenticate user
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -131,8 +188,9 @@ export default function GamePage() {
     return () => unsubAuth();
   }, [toast]);
 
+  // Listen to game document and player state
   useEffect(() => {
-    if (!GAME_ID) return;
+    if (!GAME_ID || !authUser) return;
     const gameRef = doc(db, "games", GAME_ID);
 
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
@@ -140,15 +198,12 @@ export default function GamePage() {
       if (docSnap.exists()) {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
         setGame(gameData);
-
-        if (authUser) {
-          const isUserAdmin = gameData.adminId === authUser.uid;
-          setIsAdmin(isUserAdmin);
-          
-          // The "team" is the container for all players in both modes
-          const player = gameData.teams?.flatMap((t) => t.players).find((p) => p.id === authUser.uid) || null;
-          setCurrentPlayer(player);
-        }
+        
+        const isUserAdmin = gameData.adminId === authUser.uid;
+        setIsAdmin(isUserAdmin);
+        
+        const player = gameData.teams?.flatMap((t) => t.players).find((p) => p.id === authUser.uid) || null;
+        setCurrentPlayer(player);
 
       } else {
         toast({
@@ -164,6 +219,99 @@ export default function GamePage() {
 
     return () => unsubGame();
   }, [GAME_ID, authUser, toast]);
+
+    // Matchmaking Logic
+    useEffect(() => {
+        if (!game || game.sessionType !== 'matchmaking' || !authUser) return;
+
+        // Listen to player's own ticket
+        const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
+        const unsubTicket = onSnapshot(ticketRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const ticketData = docSnap.data() as MatchmakingTicket;
+                setTicket(ticketData);
+                if (ticketData.status === 'matched' && ticketData.gameId) {
+                    router.replace(`/game/${ticketData.gameId}`);
+                }
+            } else {
+                setTicket(null);
+            }
+        });
+
+        // Trigger matchmaking logic if we are an admin (for simulation)
+        if(isAdmin) {
+            const q = query(
+                collection(db, "matchmakingTickets"),
+                where("status", "==", "waiting"),
+                where("matchmakingSessionId", "==", game.id),
+                limit(2)
+            );
+            const unsubQueue = onSnapshot(q, async (snapshot) => {
+                if (snapshot.docs.length >= 2) {
+                    const player1Ticket = snapshot.docs[0].data() as MatchmakingTicket;
+                    const player2Ticket = snapshot.docs[1].data() as MatchmakingTicket;
+                    
+                    const batch = writeBatch(db);
+                    
+                    // Create new private game
+                    const newGameId = generatePin();
+                    const newGameRef = doc(db, "games", newGameId);
+                    
+                    const newGame: Omit<Game, 'id'> = {
+                        ...game,
+                        id: newGameId,
+                        title: `1v1: ${player1Ticket.playerName} vs ${player2Ticket.playerName}`,
+                        status: "playing",
+                        sessionType: "team", // Treat it as a team game for UI purposes
+                        teams: [
+                            { name: player1Ticket.playerName, score: 0, players: [{id: player1Ticket.playerId, playerId: player1Ticket.playerId, name: player1Ticket.playerName, teamName: player1Ticket.playerName, answeredQuestions: [], coloringCredits: 0, score: 0 }], capacity: 1, color: "#FF6347", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258" },
+                            { name: player2Ticket.playerName, score: 0, players: [{id: player2Ticket.playerId, playerId: player2Ticket.playerId, name: player2Ticket.playerName, teamName: player2Ticket.playerName, answeredQuestions: [], coloringCredits: 0, score: 0 }], capacity: 1, color: "#4682B4", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd" },
+                        ],
+                        gameStartedAt: serverTimestamp(),
+                    };
+                    batch.set(newGameRef, newGame);
+
+                    // Update tickets
+                    batch.update(doc(db, "matchmakingTickets", player1Ticket.playerId), { status: 'matched', gameId: newGameId });
+                    batch.update(doc(db, "matchmakingTickets", player2Ticket.playerId), { status: 'matched', gameId: newGameId });
+                    
+                    await batch.commit();
+                }
+            });
+             return () => unsubQueue();
+        }
+
+        return () => unsubTicket();
+
+    }, [game, authUser, isAdmin, router]);
+
+  const handleJoinQueue = async (playerName: string, playerId: string) => {
+      if (!game || !authUser) return;
+      setIsJoining(true);
+      try {
+          const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
+          const newTicket: MatchmakingTicket = {
+              id: authUser.uid,
+              playerId: authUser.uid,
+              playerName: playerName,
+              status: 'waiting',
+              createdAt: serverTimestamp() as Timestamp,
+              matchmakingSessionId: game.id,
+          };
+          await setDoc(ticketRef, newTicket);
+      } catch (error) {
+          console.error("Error joining queue:", error);
+          toast({ title: "Error", description: "Could not join the matchmaking queue.", variant: "destructive" });
+      } finally {
+          setIsJoining(false);
+      }
+  };
+
+  const handleCancelQueue = async () => {
+    if(!authUser) return;
+    const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
+    await deleteDoc(ticketRef);
+  }
 
   // Handler for team mode
   const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
@@ -272,9 +420,8 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!game || !currentPlayer) return;
-
-    // Logic for team mode game status
-    if(game.sessionType === 'team' && game.status !== "playing") return;
+    
+    if(game.status !== "playing") return;
     
     // Logic for individual mode (check timer)
     if(game.sessionType === 'individual') {
@@ -339,17 +486,13 @@ export default function GamePage() {
         if (!gameDoc.exists()) throw new Error("Game does not exist!");
         let currentGame = gameDoc.data() as Game;
         
-        let currentGrid: GridSquare[];
-        let playerTeamIndex: number, playerIndex: number;
-        
-        // For individual games, player state is stored in the main team array.
-        playerTeamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
+        const playerTeamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
         if(playerTeamIndex === -1) throw new Error("Could not find player's team.");
-        playerIndex = currentGame.teams[playerTeamIndex].players.findIndex(p => p.id === currentPlayer.id);
+        const playerIndex = currentGame.teams[playerTeamIndex].players.findIndex(p => p.id === currentPlayer.id);
         if (playerIndex === -1) throw new Error("Could not find player data.");
         
-        currentGrid = currentGame.grid;
-
+        let currentGrid = currentGame.grid;
+        
         const playerToUpdate = currentGame.teams[playerTeamIndex].players[playerIndex];
         if (playerToUpdate.coloringCredits <= 0) throw new Error("You have no coloring credits.");
         
@@ -359,17 +502,17 @@ export default function GamePage() {
         const originalOwnerName = currentGrid[squareIndex].coloredBy;
         const coloredByName = game.sessionType === 'individual' ? playerToUpdate.id : currentPlayer.teamName;
 
-        if (originalOwnerName === coloredByName) throw new Error("You already own this square.");
+        if (originalOwnerName === coloredByName) return;
 
         playerToUpdate.coloringCredits -= 1;
         playerToUpdate.score += 1;
         currentGame.teams[playerTeamIndex].score += 1;
 
-        if (originalOwnerName && game.sessionType === 'team') {
-          const originalOwnerTeamIndex = currentGame.teams.findIndex(t => t.name === originalOwnerName);
-          if (originalOwnerTeamIndex !== -1) {
-            currentGame.teams[originalOwnerTeamIndex].score = Math.max(0, currentGame.teams[originalOwnerTeamIndex].score - 1);
-          }
+        if (originalOwnerName) { // A square is being captured
+            const originalOwnerTeamIndex = currentGame.teams.findIndex(t => t.name === originalOwnerName);
+            if (originalOwnerTeamIndex !== -1) {
+                currentGame.teams[originalOwnerTeamIndex].score = Math.max(0, currentGame.teams[originalOwnerTeamIndex].score - 1);
+            }
         }
         
         currentGrid[squareIndex].coloredBy = coloredByName;
@@ -379,7 +522,7 @@ export default function GamePage() {
         transaction.update(gameRef, {
           grid: currentGrid,
           teams: currentGame.teams,
-          status: isGridFull && game.sessionType === 'team' ? "finished" : currentGame.status,
+          status: isGridFull ? "finished" : currentGame.status,
         });
       });
       setCurrentQuestion(getNextQuestion());
@@ -390,7 +533,7 @@ export default function GamePage() {
   };
 
   const handleTimeout = async () => {
-    if (game?.sessionType === 'team' && game?.status === "playing" && isAdmin) {
+    if (game?.status === "playing" && isAdmin) {
       await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
       toast({ title: "Time's Up!", description: `The game timer has expired.` });
     }
@@ -411,6 +554,10 @@ export default function GamePage() {
         </div>
       );
     }
+    
+    if (game.sessionType === 'matchmaking' && game.status === 'lobby') {
+        return <MatchmakingLobby onJoinQueue={handleJoinQueue} isJoining={isJoining} onCancel={handleCancelQueue} ticket={ticket} />;
+    }
 
     if (game.sessionType === 'individual') {
         if (!currentPlayer) {
@@ -422,7 +569,6 @@ export default function GamePage() {
         const isGridFull = game.grid.every(s => s.coloredBy !== null);
 
         if (isTimeUp || isGridFull) {
-            // Show a summary for the individual player
              return <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>;
         }
 
@@ -445,7 +591,7 @@ export default function GamePage() {
         return <GameScreen teams={game.teams} currentPlayer={currentPlayer} question={currentQuestion} onAnswer={handleAnswer} onNextQuestion={handleNextQuestion} duration={game.timer} onTimeout={handleTimeout} gameStartedAt={currentPlayer.gameStartedAt}/>;
     }
 
-    // Team Mode Logic
+    // Team Mode Logic (and private 1v1 rooms)
     if (game.status === 'lobby' || game.status === 'starting' || ((game.status === 'playing' || game.status === 'finished') && !currentPlayer)) {
       if ((game.status === 'playing' || game.status === 'finished') && !currentPlayer) {
         return (
