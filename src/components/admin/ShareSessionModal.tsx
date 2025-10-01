@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -71,7 +70,6 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
       await persistShareData({
         title,
         description,
-        thumbnailUrl: thumbnailUrl ?? undefined,
       });
       toast({ title: "Success", description: "Share settings updated." });
       onClose();
@@ -139,7 +137,7 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
     try {
       await deleteThumbnailFromStorage(thumbnailUrl);
       setThumbnailUrl(null);
-      await persistShareData({ thumbnailUrl: undefined });
+      await persistShareData({ thumbnailUrl: "" });
       toast({ title: "Thumbnail removed", description: "The share image has been cleared." });
     } catch (error: any) {
       console.error("Error removing thumbnail:", error);
