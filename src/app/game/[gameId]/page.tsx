@@ -21,6 +21,7 @@ import {
   limit,
   writeBatch,
   deleteDoc,
+  setDoc,
 } from "firebase/firestore";
 import {
   signInAnonymously,
@@ -239,52 +240,58 @@ export default function GamePage() {
             }
         });
 
-        // Trigger matchmaking logic if we are an admin (for simulation)
-        if(isAdmin) {
-            const q = query(
+        // Find a match if we are a waiting player (but not an admin, to avoid loops)
+        if (ticket?.status === 'waiting' && !isAdmin) {
+             const q = query(
                 collection(db, "matchmakingTickets"),
                 where("status", "==", "waiting"),
                 where("matchmakingSessionId", "==", game.id),
-                limit(2)
+                where("playerId", "!=", authUser.uid),
+                limit(1)
             );
             const unsubQueue = onSnapshot(q, async (snapshot) => {
-                if (snapshot.docs.length >= 2) {
-                    const player1Ticket = snapshot.docs[0].data() as MatchmakingTicket;
-                    const player2Ticket = snapshot.docs[1].data() as MatchmakingTicket;
-                    
-                    const batch = writeBatch(db);
-                    
-                    // Create new private game
-                    const newGameId = generatePin();
-                    const newGameRef = doc(db, "games", newGameId);
-                    
-                    const newGame: Omit<Game, 'id'> = {
-                        ...game,
-                        id: newGameId,
-                        title: `1v1: ${player1Ticket.playerName} vs ${player2Ticket.playerName}`,
-                        status: "playing",
-                        sessionType: "team", // Treat it as a team game for UI purposes
-                        teams: [
-                            { name: player1Ticket.playerName, score: 0, players: [{id: player1Ticket.playerId, playerId: player1Ticket.playerId, name: player1Ticket.playerName, teamName: player1Ticket.playerName, answeredQuestions: [], coloringCredits: 0, score: 0 }], capacity: 1, color: "#FF6347", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258" },
-                            { name: player2Ticket.playerName, score: 0, players: [{id: player2Ticket.playerId, playerId: player2Ticket.playerId, name: player2Ticket.playerName, teamName: player2Ticket.playerName, answeredQuestions: [], coloringCredits: 0, score: 0 }], capacity: 1, color: "#4682B4", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd" },
-                        ],
-                        gameStartedAt: serverTimestamp(),
-                    };
-                    batch.set(newGameRef, newGame);
+                 if (snapshot.docs.length > 0) {
+                     const player1Ticket = ticket;
+                     const player2TicketDoc = snapshot.docs[0];
+                     const player2Ticket = player2TicketDoc.data() as MatchmakingTicket;
 
-                    // Update tickets
-                    batch.update(doc(db, "matchmakingTickets", player1Ticket.playerId), { status: 'matched', gameId: newGameId });
-                    batch.update(doc(db, "matchmakingTickets", player2Ticket.playerId), { status: 'matched', gameId: newGameId });
-                    
-                    await batch.commit();
-                }
+                     // One player (the one with the smaller UID) will create the game
+                     // This prevents both players from trying to create a game simultaneously
+                     if (player1Ticket.playerId < player2Ticket.playerId) {
+                         const batch = writeBatch(db);
+                         
+                         const newGameId = generatePin();
+                         const newGameRef = doc(db, "games", newGameId);
+                         
+                         const newGame: Omit<Game, 'id'> = {
+                             ...game,
+                             id: newGameId,
+                             title: `1v1: ${player1Ticket.playerName} vs ${player2Ticket.playerName}`,
+                             status: "playing",
+                             sessionType: "team",
+                             teams: [
+                                 { name: player1Ticket.playerName, score: 0, players: [{id: player1Ticket.playerId, playerId: player1Ticket.playerId, name: player1Ticket.playerName, teamName: player1Ticket.playerName, answeredQuestions: [], coloringCredits: 0, score: 0 }], capacity: 1, color: "#FF6347", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258" },
+                                 { name: player2Ticket.playerName, score: 0, players: [{id: player2Ticket.playerId, playerId: player2Ticket.playerId, name: player2Ticket.playerName, teamName: player2Ticket.playerName, answeredQuestions: [], coloringCredits: 0, score: 0 }], capacity: 1, color: "#4682B4", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd" },
+                             ],
+                             gameStartedAt: serverTimestamp(),
+                             adminId: game.adminId // maintain original admin
+                         };
+                         batch.set(newGameRef, newGame);
+
+                         batch.update(doc(db, "matchmakingTickets", player1Ticket.playerId), { status: 'matched', gameId: newGameId });
+                         batch.update(doc(db, "matchmakingTickets", player2Ticket.playerId), { status: 'matched', gameId: newGameId });
+                         
+                         await batch.commit();
+                     }
+                 }
             });
-             return () => unsubQueue();
+            return () => unsubQueue();
         }
 
         return () => unsubTicket();
 
-    }, [game, authUser, isAdmin, router]);
+    }, [game, authUser, isAdmin, router, ticket]);
+
 
   const handleJoinQueue = async (playerName: string, playerId: string) => {
       if (!game || !authUser) return;
@@ -367,8 +374,8 @@ export default function GamePage() {
               
               const newPlayer: Player = {
                   id: authUser.uid,
-                  playerId: customData['ID Number'] || uuidv4(), // Use a default or specific field
-                  name: customData['Full Name'] || 'Anonymous', // Use a default or specific field
+                  playerId: customData['ID Number'] || uuidv4(),
+                  name: customData['Full Name'] || 'Anonymous', 
                   teamName: "Participants",
                   answeredQuestions: [],
                   coloringCredits: 0,
@@ -424,13 +431,11 @@ export default function GamePage() {
     
     if(game.status !== "playing") return;
     
-    // Logic for individual mode (check timer)
     if(game.sessionType === 'individual') {
       const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
-      if (!playerStartTime) return; // Not started yet
+      if (!playerStartTime) return; 
       const endTime = playerStartTime + game.timer * 1000;
       if(Date.now() > endTime) {
-          // Player's time is up, but don't change game status, just UI
           return;
       }
     }
@@ -438,13 +443,21 @@ export default function GamePage() {
     if (currentPlayer.coloringCredits > 0) {
       setView("grid");
     } else {
-      if (!currentQuestion) setCurrentQuestion(getNextQuestion());
+      const nextQ = getNextQuestion();
+      if (!nextQ) {
+         // This can happen if questions run out but grid isn't full
+         // We let the timer run out or the grid fill up
+         return;
+      }
+      if (!currentQuestion || currentQuestion.question !== nextQ.question) {
+        setCurrentQuestion(nextQ);
+      }
       setView("question");
     }
   }, [game, currentPlayer, currentQuestion, getNextQuestion]);
 
   const handleAnswer = async (question: Question, answer: string) => {
-    if (!game || !currentPlayer) return;
+    if (!game || !currentPlayer || !authUser) return;
     const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
     
     try {
@@ -462,14 +475,37 @@ export default function GamePage() {
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
         const teamToUpdate = updatedTeams[teamIndex];
+        let updatedGrid = [...currentGame.grid];
 
         playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
+        
         if (isCorrect) {
           playerToUpdate.coloringCredits += 1;
           playerToUpdate.score += 1;
-          teamToUpdate.score += 1; // In individual mode, team score is the sum of all player scores
+          if(currentGame.sessionType !== 'individual') {
+            teamToUpdate.score += 1; 
+          }
+        } else if (currentGame.sessionType === 'individual') {
+            // Incorrect answer in solo challenge
+            const playerColoredSquares = updatedGrid.filter(sq => sq.coloredBy === authUser.uid);
+            if (playerColoredSquares.length > 0) {
+                const randomIndex = Math.floor(Math.random() * playerColoredSquares.length);
+                const squareToClearId = playerColoredSquares[randomIndex].id;
+                const gridIndex = updatedGrid.findIndex(sq => sq.id === squareToClearId);
+                if (gridIndex !== -1) {
+                    updatedGrid[gridIndex].coloredBy = null;
+                }
+            }
         }
-        transaction.update(gameRef, { teams: updatedTeams });
+        
+        // Recalculate individual session score
+        if (currentGame.sessionType === 'individual') {
+            const coloredCount = updatedGrid.filter(sq => sq.coloredBy === authUser.uid).length;
+            playerToUpdate.score = coloredCount;
+            teamToUpdate.score = coloredCount; // Team score reflects this one player's score
+        }
+
+        transaction.update(gameRef, { teams: updatedTeams, grid: updatedGrid });
       });
     } catch (error) {
         console.error("Error handling answer:", error);
@@ -479,7 +515,7 @@ export default function GamePage() {
   const handleNextQuestion = () => setCurrentQuestion(getNextQuestion());
 
   const handleColorSquare = async (squareId: number) => {
-    if (!game || !currentPlayer) return;
+    if (!game || !currentPlayer || !authUser) return;
     try {
       await runTransaction(db, async (transaction) => {
         const gameRef = doc(db, "games", GAME_ID);
@@ -500,23 +536,33 @@ export default function GamePage() {
         const squareIndex = currentGrid.findIndex((s) => s.id === squareId);
         if (squareIndex === -1) throw new Error("Square not found.");
         
-        const originalOwnerName = currentGrid[squareIndex].coloredBy;
-        const coloredByName = game.sessionType === 'individual' ? playerToUpdate.id : currentPlayer.teamName;
+        // In individual mode, owner is player's UID. In team mode, it's team name.
+        const coloredByName = currentGame.sessionType === 'individual' ? authUser.uid : currentPlayer.teamName;
 
-        if (originalOwnerName === coloredByName) return;
+        if (currentGrid[squareIndex].coloredBy === coloredByName) return; // Can't color own square
 
         playerToUpdate.coloringCredits -= 1;
-        playerToUpdate.score += 1;
-        currentGame.teams[playerTeamIndex].score += 1;
-
-        if (originalOwnerName) { // A square is being captured
-            const originalOwnerTeamIndex = currentGame.teams.findIndex(t => t.name === originalOwnerName);
-            if (originalOwnerTeamIndex !== -1) {
-                currentGame.teams[originalOwnerTeamIndex].score = Math.max(0, currentGame.teams[originalOwnerTeamIndex].score - 1);
+        
+        // In team mode, capturing gives points. In individual, only having hexes counts.
+        if (currentGame.sessionType === 'team') {
+            playerToUpdate.score += 1;
+            currentGame.teams[playerTeamIndex].score += 1;
+            if (currentGrid[squareIndex].coloredBy) { // A square is being captured
+                const originalOwnerTeamIndex = currentGame.teams.findIndex(t => t.name === currentGrid[squareIndex].coloredBy);
+                if (originalOwnerTeamIndex !== -1) {
+                    currentGame.teams[originalOwnerTeamIndex].score = Math.max(0, currentGame.teams[originalOwnerTeamIndex].score - 1);
+                }
             }
         }
         
         currentGrid[squareIndex].coloredBy = coloredByName;
+        
+        // Recalculate score for individual mode
+        if (currentGame.sessionType === 'individual') {
+            const coloredCount = currentGrid.filter(sq => sq.coloredBy === authUser.uid).length;
+            playerToUpdate.score = coloredCount;
+            currentGame.teams[playerTeamIndex].score = coloredCount;
+        }
 
         const isGridFull = currentGrid.every((s) => s.coloredBy !== null);
         
@@ -526,6 +572,7 @@ export default function GamePage() {
           status: isGridFull ? "finished" : currentGame.status,
         });
       });
+      // After coloring, immediately try to get the next question.
       setCurrentQuestion(getNextQuestion());
     } catch (error: any) {
       console.error("Failed to color square: ", error);
@@ -538,7 +585,6 @@ export default function GamePage() {
       await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
       toast({ title: "Time's Up!", description: `The game timer has expired.` });
     }
-    // For individual mode, timeout is handled client-side to show results.
   };
 
   const handleSkipColoring = () => {
@@ -567,8 +613,8 @@ export default function GamePage() {
         
         const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
         const isTimeUp = playerStartTime && (Date.now() > playerStartTime + game.timer * 1000);
-        const isGridFull = game.grid.every(s => s.coloredBy !== null);
-        const allQuestionsAnswered = currentPlayer.answeredQuestions.length >= game.questions.length;
+        const isGridFull = game.grid.every(s => s.coloredBy === currentPlayer.id);
+        const allQuestionsAnswered = game.questions.length > 0 && (currentPlayer.answeredQuestions.length >= game.questions.length) && currentPlayer.coloringCredits === 0;
 
         if (isTimeUp || isGridFull || allQuestionsAnswered) {
              return <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>;
@@ -578,16 +624,14 @@ export default function GamePage() {
         if (!playerTeam) return <p>Error: Player data could not be found.</p>;
 
         if (view === "grid") {
-            return <ColorGridScreen grid={game.grid} teams={game.teams} onColorSquare={handleColorSquare} teamColoring={playerTeam.color} credits={currentPlayer.coloringCredits} onSkip={handleSkipColoring} sessionType='individual'/>;
+            return <ColorGridScreen grid={game.grid} teams={game.teams} onColorSquare={handleColorSquare} teamColoring={playerTeam.color} credits={currentPlayer.coloringCredits} onSkip={handleSkipColoring} sessionType='individual' playerId={currentPlayer.id} />;
         }
 
         if (!currentQuestion) {
-            // This case should now be handled by the allQuestionsAnswered check above,
-            // but we keep it as a fallback.
             return (
                 <div className="flex flex-col items-center justify-center flex-1 text-center">
                     <h1 className="text-4xl font-bold font-display">You've answered all available questions!</h1>
-                    <p className="mt-2 text-muted-foreground">Great job! Here are your results.</p>
+                    <p className="mt-2 text-muted-foreground">Great job! See your final score when time is up.</p>
                 </div>
             );
         }
@@ -639,5 +683,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    

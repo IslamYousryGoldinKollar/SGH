@@ -35,9 +35,10 @@ type HexMapProps = {
     teams: Team[];
     onHexClick?: (id: number, event: React.MouseEvent<SVGPathElement>) => void;
     sessionType?: SessionType;
+    playerId?: string;
 }
 
-const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick, sessionType = 'team' }, ref) => {
+const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick, sessionType = 'team', playerId }, ref) => {
     
     const hexToRgba = (hex: string, alpha = 0.7) => {
         const r = parseInt(hex.slice(1, 3), 16);
@@ -50,9 +51,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
         if (!coloredBy) return 'transparent';
         
         if (sessionType === 'individual') {
-             // In individual mode, all players are in one "Participants" team.
-             // We can assign a color, or handle it differently if needed.
-             // For now, let's use the team color, assuming one is set for the virtual team.
+             // In individual mode, find the 'Participants' team for the base color.
              const team = teams.find(t => t.name === "Participants");
              return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
         }
@@ -88,7 +87,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                                 d={path}
                                 data-hex-id={index}
                                 onClick={(e) => isClickable && onHexClick(index, e)}
-                                fill={getTeamColor(square?.coloredBy || null)}
+                                fill={getFillColor(square?.coloredBy || null)}
                                 className={cn(
                                     "stroke-black/50 dark:stroke-white/50",
                                     "transition-all duration-300 [stroke-dasharray:10_10] [stroke-width:1.5px]",
@@ -102,6 +101,23 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
             </svg>
         </div>
     );
+
+    function getFillColor(coloredBy: string | null) {
+        if (!coloredBy) return 'transparent';
+
+        if (sessionType === 'team') {
+            const team = teams.find(t => t.name === coloredBy);
+            return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
+        }
+
+        if (sessionType === 'individual') {
+            const player = teams.flatMap(t => t.players).find(p => p.id === coloredBy);
+            const team = teams.find(t => t.name === player?.teamName);
+            return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
+        }
+        
+        return 'transparent';
+    }
 });
 
 HexMap.displayName = 'HexMap';
