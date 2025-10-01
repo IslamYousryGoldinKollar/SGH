@@ -46,7 +46,7 @@ export default function AdminDashboard() {
         querySnapshot.forEach((doc) => {
           sessionsData.push({ id: doc.id, ...doc.data() } as Game);
         });
-        setSessions(sessionsData);
+        setSessions(sessionsData.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0)));
         setIsLoadingSessions(false);
       }, (error) => {
           console.error("Error fetching sessions: ", error);
@@ -60,9 +60,9 @@ export default function AdminDashboard() {
   const createNewSession = async () => {
     if (!user) return;
     
+    let newPin: string | undefined;
     try {
         await runTransaction(db, async (transaction) => {
-            let newPin;
             let gameRef;
             let pinExists = true;
 
@@ -124,13 +124,17 @@ export default function AdminDashboard() {
                 });
             }
             
-            // Check if user has seen storage rules info
-            if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_RULES_KEY)) {
-                setShowStorageInfo(true);
-            } else {
-                 router.push(`/admin/session/${newPin}`);
-            }
         });
+
+         // This part runs after the transaction is successful
+        if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_RULES_KEY)) {
+            setShowStorageInfo(true);
+        } else {
+            if (newPin) {
+                router.push(`/admin/session/${newPin}`);
+            }
+        }
+
     } catch (e) {
         console.error("Transaction failed: ", e);
         alert("Failed to create new session.");
