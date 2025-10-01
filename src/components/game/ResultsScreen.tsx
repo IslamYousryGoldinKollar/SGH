@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Trophy, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 
 type ResultsScreenProps = {
@@ -17,7 +18,23 @@ type ResultsScreenProps = {
 };
 
 export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualPlayerId }: ResultsScreenProps) {
+  const router = useRouter();
   
+  useEffect(() => {
+    if (individualPlayerId) {
+      const gameId = teams[0]?.players.find(p => p.id === individualPlayerId)?.teamName === 'Participants' ? teams[0].name : null;
+      const game = teams.length > 0 ? teams[0] : null;
+
+      const sessionGameId = game?.players[0]?.customData?.gameId;
+      
+      const timer = setTimeout(() => {
+        router.push(`/leaderboard/${teams[0].name}`);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [individualPlayerId, teams, router]);
+
   if (individualPlayerId) {
     const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
     if (!player) return <div className="text-center">Could not load your results.</div>;
@@ -38,7 +55,7 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
                     <p className="text-muted-foreground">total points</p>
                 </CardContent>
             </Card>
-            <p className="text-muted-foreground">You can now close this window.</p>
+            <p className="text-muted-foreground">Redirecting to the leaderboard...</p>
        </div>
     )
   }
@@ -134,5 +151,3 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
     </div>
   );
 }
-
-    

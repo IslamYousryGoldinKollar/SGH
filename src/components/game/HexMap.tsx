@@ -62,9 +62,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 
     const isClickable = !!onHexClick;
     
-    const mapImage = sessionType === 'individual' 
-        ? "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Findividual_land.png?alt=media&token=26d8479e-c856-4277-8822-7789966b490f" 
-        : "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb";
+    const mapImage = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land.png?alt=media&token=b1d9a1b9-66df-4b4a-97cc-8b9903725bd3";
 
     return (
         <div className="relative w-full h-full pointer-events-none">
