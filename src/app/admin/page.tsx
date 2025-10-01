@@ -55,7 +55,12 @@ export default function AdminDashboard() {
         await runTransaction(db, async (transaction) => {
             const newPin = generatePin();
             const gameRef = doc(db, "games", newPin);
-            
+            const adminRef = doc(db, "admins", user.uid);
+
+            // 1. All READS must happen before any writes.
+            const adminDoc = await transaction.get(adminRef);
+
+            // 2. Prepare all data and logic.
             const initialGrid: GridSquare[] = Array.from({ length: GRID_SIZE }, (_, i) => ({
                 id: i,
                 coloredBy: null,
@@ -80,10 +85,8 @@ export default function AdminDashboard() {
                 requiredPlayerFields: [],
             };
 
+            // 3. Now, perform all WRITES.
             transaction.set(gameRef, newGame);
-
-            const adminRef = doc(db, "admins", user.uid);
-            const adminDoc = await transaction.get(adminRef);
 
             if (!adminDoc.exists()) {
                 transaction.set(adminRef, {
