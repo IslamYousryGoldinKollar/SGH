@@ -152,10 +152,15 @@ export default function GamePage() {
 
         const currentGame = gameDoc.data() as Game;
 
-        const isAlreadyInTeam = currentGame.teams.some((t) =>
+        const isAlreadyInAnyTeamInThisGame = currentGame.teams.some((t) =>
           t.players.some((p) => p.id === authUser.uid),
         );
-        if (isAlreadyInTeam) {
+        if (isAlreadyInAnyTeamInThisGame) {
+           toast({
+            title: "Already in a team",
+            description: "You have already joined a team in this session.",
+            variant: "destructive",
+          });
           return;
         }
 
@@ -185,7 +190,6 @@ export default function GamePage() {
         joinedAt: serverTimestamp(),
       });
 
-      setCurrentPlayer(newPlayer);
     } catch (error: any) {
       console.error("Error joining team: ", error);
       toast({
@@ -507,7 +511,7 @@ export default function GamePage() {
       );
     }
 
-    if (game.status === 'lobby' && currentPlayer) {
+    if (game.status === 'lobby' || (game.status === 'starting' && currentPlayer)) {
       return (
         <Lobby
           game={game}
@@ -619,5 +623,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    

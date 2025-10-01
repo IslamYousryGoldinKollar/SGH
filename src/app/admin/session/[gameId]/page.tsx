@@ -43,7 +43,7 @@ const sessionSchema = z.object({
       options: z.array(z.string().min(1, "Option text is required.")).min(2, "At least two options are required.").max(4, "You can have a maximum of 4 options."),
       answer: z.string().min(1, "An answer is required."),
   })).refine(
-      (questions) => questions.every(q => q.options.includes(q.answer)), 
+      (questions) => questions.every(q => q.options.includes(q.answer)),
       {
         message: "The correct answer must be one of the options.",
         path: ["questions"], // You might need to adjust the path to point to the specific question/answer
@@ -145,7 +145,13 @@ export default function SessionConfigPage() {
   });
 
   useEffect(() => {
-    if (!gameId || authLoading || !user) return;
+    if (!gameId || authLoading) return;
+    
+    if (!user) {
+        router.replace('/admin/login');
+        return;
+    }
+
     const gameRef = doc(db, "games", gameId.toUpperCase());
     
     const unsubscribe = onSnapshot(gameRef, (docSnap) => {
@@ -169,13 +175,15 @@ export default function SessionConfigPage() {
         } else {
             setIsAuthorized(false);
         }
+      } else {
+        setIsAuthorized(false);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
 
-  }, [gameId, user, authLoading, form]);
+  }, [gameId, user, authLoading, form, router]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -255,11 +263,6 @@ export default function SessionConfigPage() {
 
   if (loading || authLoading) {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-16 w-16 animate-spin" /></div>;
-  }
-  
-  if (!user) {
-     router.replace("/admin/login");
-     return null;
   }
 
   if (!isAuthorized) {
@@ -411,5 +414,3 @@ export default function SessionConfigPage() {
     </div>
   );
 }
-
-    
