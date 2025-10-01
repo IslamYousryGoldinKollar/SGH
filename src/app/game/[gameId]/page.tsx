@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -276,6 +275,8 @@ export default function GamePage() {
   const [view, setView] = useState<"question" | "grid">("question");
   const [ticket, setTicket] = useState<MatchmakingTicket | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+
 
   useEffect(() => {
     if (game?.theme) {
@@ -311,7 +312,6 @@ export default function GamePage() {
     const gameRef = doc(db, "games", GAME_ID);
 
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
-      setLoading(true);
       if (docSnap.exists()) {
         const gameData = {
           id: docSnap.id,
@@ -327,20 +327,24 @@ export default function GamePage() {
             ?.flatMap((t) => t.players)
             .find((p) => p.id === authUser.uid) || null;
         setCurrentPlayer(player);
+        setLoading(false);
+        setInitialLoad(false);
       } else {
-        toast({
-          title: "Game not found",
-          description: "This game session does not exist.",
-          variant: "destructive",
-        });
-        setGame(null);
-        setCurrentPlayer(null);
+        if (!initialLoad) {
+            toast({
+            title: "Game not found",
+            description: "This game session does not exist.",
+            variant: "destructive",
+            });
+            setGame(null);
+            setCurrentPlayer(null);
+            setLoading(false);
+        }
       }
-      setLoading(false);
     });
 
     return () => unsubGame();
-  }, [GAME_ID, authUser, toast]);
+  }, [GAME_ID, authUser, toast, initialLoad]);
 
   useEffect(() => {
     if (!game || game.sessionType !== "matchmaking" || !authUser)
@@ -632,7 +636,7 @@ export default function GamePage() {
     }
   };
 
- const handleJoinIndividual = async (
+  const handleJoinIndividual = async (
     customData: Record<string, string>,
     name: string
   ) => {
@@ -698,7 +702,7 @@ export default function GamePage() {
       await setDoc(newGameRef, newGame);
       
       // 5. Redirect the player to their new personal game
-      router.replace(`/game/${newGameId}`);
+      router.push(`/game/${newGameId}`);
 
     } catch (error: any) {
       console.error("Error joining individual challenge: ", error);
@@ -935,7 +939,7 @@ export default function GamePage() {
   };
 
   const renderContent = () => {
-    if (loading || !authUser || !game) {
+    if (loading || !authUser || (!game && !initialLoad)) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -944,6 +948,17 @@ export default function GamePage() {
           </h1>
         </div>
       );
+    }
+    
+    if (!game) {
+        // This case handles when the game is truly not found after the initial load attempt.
+        return (
+             <div className="flex flex-col items-center justify-center flex-1 text-center">
+                <h1 className="text-4xl font-bold font-display text-destructive">Session Not Found</h1>
+                <p className="mt-2 text-muted-foreground">The game PIN you entered does not exist or has expired.</p>
+                <Button onClick={() => router.push('/')} className="mt-8">Back to Home</Button>
+            </div>
+        )
     }
 
     if (
@@ -1097,5 +1112,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
