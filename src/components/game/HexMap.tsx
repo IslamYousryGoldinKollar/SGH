@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useRef, forwardRef } from "react";
-import type { GridSquare, Team } from "@/lib/types";
+import type { GridSquare, Team, SessionType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const hexPaths = [
@@ -34,11 +34,11 @@ type HexMapProps = {
     grid: GridSquare[];
     teams: Team[];
     onHexClick?: (id: number, event: React.MouseEvent<SVGPathElement>) => void;
+    sessionType?: SessionType;
 }
 
-const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick }, ref) => {
+const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick, sessionType = 'team' }, ref) => {
     
-    // Function to convert hex color to rgba with 70% opacity
     const hexToRgba = (hex: string, alpha = 0.7) => {
         const r = parseInt(hex.slice(1, 3), 16);
         const g = parseInt(hex.slice(3, 5), 16);
@@ -46,19 +46,32 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
 
-    const getTeamColor = (teamName: string | null) => {
-        if (!teamName) return 'transparent';
-        const teamColor = teams.find(t => t.name === teamName)?.color;
-        return teamColor ? hexToRgba(teamColor) : 'rgba(51, 51, 51, 0.7)';
+    const getTeamColor = (coloredBy: string | null) => {
+        if (!coloredBy) return 'transparent';
+        
+        if (sessionType === 'individual') {
+             // In individual mode, all players are in one "Participants" team.
+             // We can assign a color, or handle it differently if needed.
+             // For now, let's use the team color, assuming one is set for the virtual team.
+             const team = teams.find(t => t.name === "Participants");
+             return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
+        }
+
+        const team = teams.find(t => t.name === coloredBy);
+        return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
     };
 
     const isClickable = !!onHexClick;
     
+    const mapImage = sessionType === 'individual' 
+        ? "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Findividual_land.png?alt=media&token=26d8479e-c856-4277-8822-7789966b490f" 
+        : "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb";
+
     return (
         <div className="relative w-full h-full pointer-events-none">
             <div className="absolute inset-0">
                 <img
-                    src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb"
+                    src={mapImage}
                     alt="Game Map"
                     className="w-full h-full object-contain"
                 />
@@ -94,5 +107,3 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
-
-    

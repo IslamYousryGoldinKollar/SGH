@@ -13,10 +13,36 @@ type ResultsScreenProps = {
   teams: Team[];
   onPlayAgain: () => void;
   isAdmin: boolean;
+  individualPlayerId?: string;
 };
 
-export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsScreenProps) {
+export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualPlayerId }: ResultsScreenProps) {
   
+  if (individualPlayerId) {
+    const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
+    if (!player) return <div className="text-center">Could not load your results.</div>;
+
+    return (
+       <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
+            <Trophy className="h-24 w-24 text-yellow-400 drop-shadow-lg" />
+            <h1 className="text-5xl font-bold mt-4 font-display">Challenge Complete!</h1>
+            <CardDescription className="text-2xl pt-4">
+                Well done, {player.name}! Here's your score.
+            </CardDescription>
+            <Card className="my-12 shadow-lg w-full max-w-sm">
+                <CardHeader>
+                    <CardTitle className="text-2xl font-display text-primary">{player.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-6xl font-bold text-primary">{player.score}</p>
+                    <p className="text-muted-foreground">total points</p>
+                </CardContent>
+            </Card>
+            <p className="text-muted-foreground">You can now close this window.</p>
+       </div>
+    )
+  }
+
   const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
   const topScore = sortedTeams.length > 0 ? sortedTeams[0].score : 0;
   const winningTeams = sortedTeams.filter(t => t.score === topScore && topScore > 0);

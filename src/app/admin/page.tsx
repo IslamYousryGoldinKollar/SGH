@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc, query, where, runTransaction } from "firebase/firestore";
-import { Loader2, Plus, Eye, Edit, Trash2, Copy } from "lucide-react";
+import { Loader2, Plus, Eye, Edit, Trash2, Copy, Users, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import type { Game, GridSquare } from "@/lib/types";
@@ -30,7 +30,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (user) {
-      // Query for games where the current user is the admin.
       const q = query(collection(db, "games"), where("adminId", "==", user.uid));
       
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -77,11 +76,12 @@ export default function AdminDashboard() {
                 timer: 300, // 5 minutes default
                 topic: "General Knowledge",
                 theme: "team-alpha",
+                sessionType: 'team',
+                requiredPlayerFields: [],
             };
 
             transaction.set(gameRef, newGame);
 
-            // Also, create or update the admin user's record
             const adminRef = doc(db, "admins", user.uid);
             const adminDoc = await transaction.get(adminRef);
 
@@ -111,7 +111,6 @@ export default function AdminDashboard() {
     if (window.confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
         try {
             await deleteDoc(doc(db, "games", gameId));
-            // Let onSnapshot handle the state update
         } catch (err) {
             console.error("Failed to delete session:", err);
             alert("Failed to delete session.");
@@ -135,17 +134,13 @@ export default function AdminDashboard() {
       const newGameRef = doc(db, "games", newPin);
       
       const duplicatedGame: Omit<Game, 'id'> = {
-        title: originalGameData.title,
+        ...originalGameData,
         status: "lobby",
         adminId: user.uid, // Belongs to the user who duplicates it
         teams: originalGameData.teams.map((team: any) => ({ ...team, score: 0, players: [] })),
-        questions: originalGameData.questions,
         grid: Array.from({ length: GRID_SIZE }, (_, i) => ({ id: i, coloredBy: null })),
         createdAt: serverTimestamp() as any,
         gameStartedAt: null,
-        timer: originalGameData.timer,
-        topic: originalGameData.topic,
-        theme: originalGameData.theme,
       };
 
       await setDoc(newGameRef, duplicatedGame);
@@ -192,27 +187,38 @@ export default function AdminDashboard() {
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => {
-                  // Only the user who created it can edit/delete
                   const isOwner = session.adminId === user.uid;
+                  const isIndividual = session.sessionType === 'individual';
                   return (
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex justify-between items-start">
                                 <span>{session.title || 'Trivia Titans'}</span>
-                                <span className="text-sm px-2 py-1 rounded-md bg-secondary text-secondary-foreground">{session.status}</span>
+                                 <span className="text-sm px-2 py-1 rounded-md bg-secondary text-secondary-foreground capitalize">{session.sessionType || 'team'}</span>
                             </CardTitle>
                             <CardDescription>
                                 PIN: {session.id}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1">
-                             <p className="text-sm text-muted-foreground">
-                                {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players
+                             <p className="text-sm text-muted-foreground flex items-center">
+                                <Users className="mr-2 h-4 w-4"/>
+                                {isIndividual 
+                                    ? `${session.teams?.[0]?.players?.length || 0} participants`
+                                    : `${session.teams?.length || 0} teams, ${session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players`
+                                }
                             </p>
-                            <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
-                                <Eye className="mr-2"/>
-                                Open Big Screen
-                            </Button>
+                            {isIndividual ? (
+                                 <Button className="w-full mt-4" variant="outline" onClick={() => router.push(`/leaderboard/${session.id}`)}>
+                                    <BarChart className="mr-2 h-4 w-4"/>
+                                    View Leaderboard
+                                </Button>
+                            ) : (
+                                <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
+                                    <Eye className="mr-2"/>
+                                    Open Big Screen
+                                </Button>
+                            )}
                         </CardContent>
                          <CardFooter className="grid grid-cols-3 gap-2">
                              <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)} disabled={!isOwner}>

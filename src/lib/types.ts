@@ -12,6 +12,12 @@ export interface Question {
   answer: string;
 }
 
+export type CustomPlayerField = {
+  id: string;
+  label: string;
+  type: 'text' | 'email' | 'tel';
+};
+
 export interface Player {
   id: string; // Firebase Auth UID
   playerId: string; // User-provided ID number
@@ -20,11 +26,13 @@ export interface Player {
   answeredQuestions: string[]; // Array of question strings they've already answered
   coloringCredits: number;
   score: number; // Individual player score
+  customData?: Record<string, string>; // For individual mode custom fields
+  gameStartedAt?: Timestamp; // For individual mode start time
 }
 
 export interface GridSquare {
   id: number;
-  coloredBy: string | null; // Team name
+  coloredBy: string | null; // Team name or Player ID in individual mode
 }
 
 export interface Team {
@@ -38,6 +46,7 @@ export interface Team {
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
 export type GameTheme = "default" | "team-alpha" | "team-bravo";
+export type SessionType = "team" | "individual";
 
 export interface Game {
     id: string; // The game PIN
@@ -52,6 +61,8 @@ export interface Game {
     topic: string;
     theme?: GameTheme;
     adminId: string; // UID of the user who created the game
+    sessionType: SessionType;
+    requiredPlayerFields: CustomPlayerField[];
 }
 
 // Represents a tenant/admin user in the system

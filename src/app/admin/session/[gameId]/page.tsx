@@ -8,19 +8,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
-import type { Game, GameTheme } from "@/lib/types";
+import type { Game, GameTheme, SessionType, CustomPlayerField } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, Plus, Upload } from "lucide-react";
+import { Loader2, Trash2, Plus, Upload, Users, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { SUPER_ADMIN_UIDS } from "@/lib/constants";
+import { v4 as uuidv4 } from 'uuid';
+
 
 const themes: {value: GameTheme, label: string}[] = [
     { value: 'default', label: 'Default' },
@@ -31,12 +33,18 @@ const themes: {value: GameTheme, label: string}[] = [
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
+  sessionType: z.enum(['team', 'individual']),
   teams: z.array(z.object({
     name: z.string().min(1, "Team name is required."),
     capacity: z.coerce.number().min(1, "Capacity must be at least 1."),
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color"),
     icon: z.string().url("Must be a valid URL.").or(z.literal('')),
   })).min(1, "At least one team is required."),
+  requiredPlayerFields: z.array(z.object({
+    id: z.string(),
+    label: z.string().min(1, "Field label cannot be empty."),
+    type: z.enum(['text', 'email', 'tel']),
+  })),
   questions: z.array(z.object({
       question: z.string().min(1, "Question text is required."),
       options: z.array(z.string().min(1, "Option text is required.")).min(2, "At least two options are required.").max(4, "You can have a maximum of 4 options."),
@@ -45,7 +53,7 @@ const sessionSchema = z.object({
       (questions) => questions.every(q => q.options.includes(q.answer)),
       {
         message: "The correct answer must be one of the options.",
-        path: ["questions"], // You might need to adjust the path to point to the specific question/answer
+        path: ["questions"], 
       }
   ),
   topic: z.string(),
@@ -54,7 +62,6 @@ const sessionSchema = z.object({
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
 
-// New component for rendering a single question's form fields
 function QuestionItem({ control, index, removeQuestion, getValues }: { control: Control<any>, index: number, removeQuestion: (index: number) => void, getValues: any }) {
     const { fields: optionFields, append: appendOption, remove: removeOption } = useFieldArray({
         control,
@@ -103,11 +110,9 @@ function QuestionItem({ control, index, removeQuestion, getValues }: { control: 
             {optionFields.length < 4 && (
               <Button type="button" size="sm" variant="outline" onClick={() => appendOption('')}>Add Option</Button>
             )}
-
         </div>
     );
 }
-
 
 export default function SessionConfigPage() {
   const params = useParams();
@@ -126,16 +131,25 @@ export default function SessionConfigPage() {
     defaultValues: {
         title: "Trivia Titans",
         timer: 300,
+        sessionType: 'team',
         teams: [],
+        requiredPlayerFields: [],
         questions: [],
         topic: "General Knowledge",
         theme: "default",
     }
   });
+
+  const sessionType = form.watch('sessionType');
   
   const { fields: teamFields, append: appendTeam, remove: removeTeam } = useFieldArray({
     control: form.control,
     name: "teams",
+  });
+
+  const { fields: fieldFields, append: appendField, remove: removeField } = useFieldArray({
+    control: form.control,
+    name: "requiredPlayerFields",
   });
 
   const { fields: questionFields, append: appendQuestion, remove: removeQuestion, replace: replaceQuestions } = useFieldArray({
@@ -157,19 +171,18 @@ export default function SessionConfigPage() {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
         
-        // Authorization check: User must be the game owner or a super admin.
         const isOwner = gameData.adminId === user.uid;
-        const isSuperAdmin = SUPER_ADMIN_UIDS.includes(user.uid);
-
-        if (isOwner || isSuperAdmin) {
+        if (isOwner) {
             setIsAuthorized(true);
             setGame(gameData);
             if (!form.formState.isDirty) {
               form.reset({
                 title: gameData.title || "Trivia Titans",
                 timer: gameData.timer,
+                sessionType: gameData.sessionType || 'team',
                 teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff', icon: t.icon || '' })),
-                questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
+                requiredPlayerFields: gameData.requiredPlayerFields || [],
+                questions: gameData.questions.map(q => ({...q, options: q.options || []})),
                 topic: gameData.topic,
                 theme: gameData.theme || 'default',
               });
@@ -178,7 +191,6 @@ export default function SessionConfigPage() {
             setIsAuthorized(false);
         }
       } else {
-        // Game does not exist
         toast({ title: "Not Found", description: "This game session does not exist.", variant: "destructive" });
         router.push('/admin');
       }
@@ -236,29 +248,44 @@ export default function SessionConfigPage() {
     try {
         const gameRef = doc(db, "games", gameId);
         
-        // Re-check authorization before updating
         const gameDoc = await getDoc(gameRef);
         if (gameDoc.exists()) {
             const gameData = gameDoc.data();
             const isOwner = gameData.adminId === user.uid;
-            const isSuperAdmin = SUPER_ADMIN_UIDS.includes(user.uid);
-            if (!isOwner && !isSuperAdmin) {
+            if (!isOwner) {
                  toast({ title: "Authorization Error", description: "You are not authorized to edit this session.", variant: "destructive" });
                  router.push('/admin');
                  return;
             }
         }
+        
+        let teamsUpdate;
 
-        const teams = data.teams.map(t => ({
-          ...t,
-          score: game?.teams.find(originalTeam => originalTeam.name === t.name)?.score || 0,
-          players: game?.teams.find(originalTeam => originalTeam.name === t.name)?.players || []
-        }));
+        if (data.sessionType === 'team') {
+            teamsUpdate = data.teams.map(t => ({
+                ...t,
+                score: game?.teams.find(originalTeam => originalTeam.name === t.name)?.score || 0,
+                players: game?.teams.find(originalTeam => originalTeam.name === t.name)?.players || []
+            }));
+        } else { // individual
+            // For individual, we create a "virtual" team to hold all players.
+            teamsUpdate = [{
+                name: "Participants",
+                score: 0,
+                players: game?.teams?.[0]?.players || [],
+                capacity: 999,
+                color: '#888888',
+                icon: ''
+            }];
+        }
+
 
         await updateDoc(gameRef, {
           title: data.title,
           timer: data.timer,
-          teams: teams,
+          sessionType: data.sessionType,
+          teams: teamsUpdate,
+          requiredPlayerFields: data.requiredPlayerFields,
           questions: data.questions,
           topic: data.topic,
           theme: data.theme,
@@ -291,7 +318,7 @@ export default function SessionConfigPage() {
                     <CardTitle className="text-destructive">Access Denied</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p>You are not authorized to edit this session. Please contact the session owner or a super admin.</p>
+                    <p>You are not authorized to edit this session. Please contact the session owner.</p>
                     <Button onClick={() => router.push('/admin')} className="mt-4">Back to Dashboard</Button>
                 </CardContent>
             </Card>
@@ -359,7 +386,37 @@ export default function SessionConfigPage() {
                     )} />
                 </CardContent>
               </Card>
+              
+               <Card>
+                <CardHeader><CardTitle>Session Type</CardTitle></CardHeader>
+                <CardContent>
+                     <FormField control={form.control} name="sessionType" render={({ field }) => (
+                        <FormItem>
+                             <FormControl>
+                                <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="grid grid-cols-2 gap-4"
+                                >
+                                    <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                        <RadioGroupItem value="team" className="sr-only" />
+                                        <Users className="mb-3 h-6 w-6" />
+                                        Team Battle
+                                    </Label>
+                                     <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                        <RadioGroupItem value="individual" className="sr-only" />
+                                        <User className="mb-3 h-6 w-6" />
+                                        Individual Challenge
+                                    </Label>
+                                </RadioGroup>
+                             </FormControl>
+                             <FormMessage />
+                        </FormItem>
+                    )} />
+                </CardContent>
+              </Card>
 
+              {sessionType === 'team' ? (
                 <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
@@ -389,6 +446,43 @@ export default function SessionConfigPage() {
                         ))}
                     </CardContent>
                 </Card>
+              ) : (
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <CardTitle>Required Player Fields</CardTitle>
+                            <Button type="button" variant="outline" size="sm" onClick={() => appendField({ id: uuidv4(), label: '', type: 'text' })}>
+                                <Plus className="mr-2" /> Add Field
+                            </Button>
+                        </div>
+                         <CardDescription>Define the information you want to collect from each player before they start the challenge.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {fieldFields.map((field, index) => (
+                             <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 items-end p-4 border rounded-lg">
+                                <FormField control={form.control} name={`requiredPlayerFields.${index}.label`} render={({ field }) => (
+                                    <FormItem><FormLabel>Field Label</FormLabel><FormControl><Input {...field} placeholder="e.g., Full Name, Email" /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name={`requiredPlayerFields.${index}.type`} render={({ field }) => (
+                                    <FormItem><FormLabel>Field Type</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="text">Text</SelectItem>
+                                                <SelectItem value="email">Email</SelectItem>
+                                                <SelectItem value="tel">Phone Number</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    <FormMessage /></FormItem>
+                                )} />
+                                <Button type="button" variant="destructive" size="icon" onClick={() => removeField(index)}><Trash2 /></Button>
+                            </div>
+                        ))}
+                        {fieldFields.length === 0 && <p className="text-muted-foreground text-sm text-center">No custom fields defined. Players will only be asked for a display name.</p>}
+                    </CardContent>
+                </Card>
+              )}
+
 
                 <Card>
                     <CardHeader>

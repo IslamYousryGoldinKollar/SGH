@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { GridSquare, Team } from "@/lib/types";
+import type { GridSquare, Team, SessionType } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import HexMap from "@/components/game/HexMap";
 import { cn } from "@/lib/utils";
@@ -14,14 +14,15 @@ type ColorGridScreenProps = {
   teamColoring: string;
   credits: number;
   onSkip: () => void;
+  sessionType: SessionType;
 };
 
-export default function ColorGridScreen({ grid, teams, onColorSquare, teamColoring, credits, onSkip }: ColorGridScreenProps) {
+export default function ColorGridScreen({ grid, teams, onColorSquare, teamColoring, credits, onSkip, sessionType }: ColorGridScreenProps) {
 
   const handleHexClick = (squareId: number, event: React.MouseEvent<SVGPathElement>) => {
-    // Only fire confetti if the square isn't already colored
+    // Only fire confetti if the square isn't already colored by the current player/team
     const square = grid.find(s => s.id === squareId);
-    if (!square || square.coloredBy) {
+    if (!square || square.coloredBy === (sessionType === 'team' ? teams.find(t => t.color === teamColoring)?.name : null)) {
       return;
     }
     
@@ -59,6 +60,7 @@ export default function ColorGridScreen({ grid, teams, onColorSquare, teamColori
           grid={grid}
           teams={teams}
           onHexClick={handleHexClick}
+          sessionType={sessionType}
         />
       </div>
     </div>
