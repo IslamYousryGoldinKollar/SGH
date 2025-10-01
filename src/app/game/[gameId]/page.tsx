@@ -655,7 +655,6 @@ export default function GamePage() {
         });
         if (result.questions) {
           templateGameData.questions = result.questions;
-          // Optionally update the template game with questions for future players
           await updateDoc(templateGameRef, { questions: result.questions });
         } else {
           throw new Error("AI failed to generate questions.");
@@ -667,12 +666,12 @@ export default function GamePage() {
         id: authUser.uid,
         playerId: customData["ID Number"] || uuidv4(),
         name: name,
-        teamName: "Team", // A generic name for the single team in this solo game
+        teamName: "Team", 
         answeredQuestions: [],
         coloringCredits: 0,
         score: 0,
         customData: customData,
-        gameStartedAt: serverTimestamp() as Timestamp,
+        gameStartedAt: Timestamp.now(),
       };
 
       // 3. Create the new game object, copying from the template
@@ -680,7 +679,7 @@ export default function GamePage() {
         ...templateGameData,
         title: `${templateGameData.title} - ${name}`,
         status: "playing",
-        parentSessionId: GAME_ID, // Link back to the main individual session
+        parentSessionId: GAME_ID,
         teams: [
           {
             name: "Team",
@@ -691,7 +690,7 @@ export default function GamePage() {
             icon: templateGameData.teams[0]?.icon || "",
           },
         ],
-        grid: templateGameData.grid.map(g => ({ ...g, coloredBy: null })), // Reset grid
+        grid: templateGameData.grid.map(g => ({ ...g, coloredBy: null })),
         gameStartedAt: serverTimestamp(),
       };
 
@@ -1098,3 +1097,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
