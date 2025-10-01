@@ -51,5 +51,15 @@ export interface Game {
     timer: number;
     topic: string;
     theme?: GameTheme;
-    adminId?: string; // UID of the user who created the game
+    adminId: string; // UID of the user who created the game
+}
+
+// Represents a tenant/admin user in the system
+export interface AdminUser {
+    id: string; // Document ID, same as Firebase UID
+    uid: string;
+    email: string;
+    createdAt: Timestamp;
+    plan: 'basic' | 'premium' | 'enterprise';
+    sessionCount: number;
 }

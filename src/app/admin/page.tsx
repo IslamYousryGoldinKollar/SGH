@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc, query, where } from "firebase/firestore";
+import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc, query, where, runTransaction } from "firebase/firestore";
 import { Loader2, Plus, Eye, Edit, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -51,34 +51,60 @@ export default function AdminDashboard() {
 
   const createNewSession = async () => {
     if (!user) return;
-    const newPin = generatePin();
-    const gameRef = doc(db, "games", newPin);
     
-    const initialGrid: GridSquare[] = Array.from({ length: GRID_SIZE }, (_, i) => ({
-        id: i,
-        coloredBy: null,
-    }));
+    try {
+        await runTransaction(db, async (transaction) => {
+            const newPin = generatePin();
+            const gameRef = doc(db, "games", newPin);
+            
+            const initialGrid: GridSquare[] = Array.from({ length: GRID_SIZE }, (_, i) => ({
+                id: i,
+                coloredBy: null,
+            }));
 
-    // Default structure for a new game
-    const newGame: Omit<Game, 'id'> = {
-        title: "Trivia Titans",
-        status: "lobby",
-        adminId: user.uid,
-        teams: [
-          { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258" },
-          { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd" },
-        ],
-        questions: [],
-        grid: initialGrid,
-        createdAt: serverTimestamp() as any,
-        gameStartedAt: null,
-        timer: 300, // 5 minutes default
-        topic: "General Knowledge",
-        theme: "team-alpha",
-    };
+            const newGame: Omit<Game, 'id'> = {
+                title: "Trivia Titans",
+                status: "lobby",
+                adminId: user.uid,
+                teams: [
+                  { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258" },
+                  { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd" },
+                ],
+                questions: [],
+                grid: initialGrid,
+                createdAt: serverTimestamp() as any,
+                gameStartedAt: null,
+                timer: 300, // 5 minutes default
+                topic: "General Knowledge",
+                theme: "team-alpha",
+            };
 
-    await setDoc(gameRef, newGame);
-    router.push(`/admin/session/${newPin}`);
+            transaction.set(gameRef, newGame);
+
+            // Also, create or update the admin user's record
+            const adminRef = doc(db, "admins", user.uid);
+            const adminDoc = await transaction.get(adminRef);
+
+            if (!adminDoc.exists()) {
+                transaction.set(adminRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    createdAt: serverTimestamp(),
+                    plan: 'basic',
+                    sessionCount: 1,
+                });
+            } else {
+                transaction.update(adminRef, {
+                    sessionCount: (adminDoc.data().sessionCount || 0) + 1,
+                });
+            }
+
+            router.push(`/admin/session/${newPin}`);
+        });
+    } catch (e) {
+        console.error("Transaction failed: ", e);
+        alert("Failed to create new session.");
+    }
   };
 
   const deleteSession = async (gameId: string) => {
@@ -104,14 +130,14 @@ export default function AdminDashboard() {
         return;
       }
 
-      const originalGameData = originalGameSnap.data() as Game;
+      const originalGameData = originalGameSnap.data() as Omit<Game, 'id'>;
       const newPin = generatePin();
       const newGameRef = doc(db, "games", newPin);
       
       const duplicatedGame: Omit<Game, 'id'> = {
         title: originalGameData.title,
         status: "lobby",
-        adminId: user.uid,
+        adminId: user.uid, // Belongs to the user who duplicates it
         teams: originalGameData.teams.map((team: any) => ({ ...team, score: 0, players: [] })),
         questions: originalGameData.questions,
         grid: Array.from({ length: GRID_SIZE }, (_, i) => ({ id: i, coloredBy: null })),
@@ -166,8 +192,8 @@ export default function AdminDashboard() {
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => {
-                  // Since we query by adminId, the user is always the owner.
-                  const isOwner = true; 
+                  // Only the user who created it can edit/delete
+                  const isOwner = session.adminId === user.uid;
                   return (
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
@@ -182,9 +208,6 @@ export default function AdminDashboard() {
                         <CardContent className="flex-1">
                              <p className="text-sm text-muted-foreground">
                                 {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players
-                            </p>
-                             <p className="text-xs text-muted-foreground mt-1">
-                                Admin ID: {session.adminId ? session.adminId.slice(0, 8) + '...' : "None"}
                             </p>
                             <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
                                 <Eye className="mr-2"/>
@@ -216,5 +239,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    

@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { SUPER_ADMIN_UIDS } from "@/lib/constants";
 
 const themes: {value: GameTheme, label: string}[] = [
     { value: 'default', label: 'Default' },
@@ -155,10 +156,12 @@ export default function SessionConfigPage() {
     const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
-        // Strict ownership check
+        
+        // Authorization check: User must be the game owner or a super admin.
         const isOwner = gameData.adminId === user.uid;
+        const isSuperAdmin = SUPER_ADMIN_UIDS.includes(user.uid);
 
-        if (isOwner) {
+        if (isOwner || isSuperAdmin) {
             setIsAuthorized(true);
             setGame(gameData);
             if (!form.formState.isDirty) {
@@ -184,7 +187,7 @@ export default function SessionConfigPage() {
 
     return () => unsubscribe();
 
-  }, [gameId, user, authLoading, form, router]);
+  }, [gameId, user, authLoading, form, router, toast]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -229,15 +232,21 @@ export default function SessionConfigPage() {
   };
 
   const onSubmit = async (data: SessionFormValues) => {
+    if (!user) return;
     try {
         const gameRef = doc(db, "games", gameId);
         
-        // Ensure the current user still owns this game before updating.
+        // Re-check authorization before updating
         const gameDoc = await getDoc(gameRef);
-        if (gameDoc.exists() && gameDoc.data().adminId !== user?.uid) {
-            toast({ title: "Authorization Error", description: "You are no longer authorized to edit this session.", variant: "destructive" });
-            router.push('/admin');
-            return;
+        if (gameDoc.exists()) {
+            const gameData = gameDoc.data();
+            const isOwner = gameData.adminId === user.uid;
+            const isSuperAdmin = SUPER_ADMIN_UIDS.includes(user.uid);
+            if (!isOwner && !isSuperAdmin) {
+                 toast({ title: "Authorization Error", description: "You are not authorized to edit this session.", variant: "destructive" });
+                 router.push('/admin');
+                 return;
+            }
         }
 
         const teams = data.teams.map(t => ({
@@ -282,7 +291,7 @@ export default function SessionConfigPage() {
                     <CardTitle className="text-destructive">Access Denied</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p>You are not authorized to edit this session. Please contact the session creator.</p>
+                    <p>You are not authorized to edit this session. Please contact the session owner or a super admin.</p>
                     <Button onClick={() => router.push('/admin')} className="mt-4">Back to Dashboard</Button>
                 </CardContent>
             </Card>
@@ -423,5 +432,3 @@ export default function SessionConfigPage() {
     </div>
   );
 }
-
-    
