@@ -327,7 +327,11 @@ export default function SessionConfigPage() {
   }
   
   if (!game) {
-    return <div><h1>Game session not found.</h1></div>;
+    return (
+      <div>
+        <h1>Game session not found.</h1>
+      </div>
+    );
   }
 
   return (
@@ -538,3 +542,5 @@ export default function SessionConfigPage() {
     </div>
   );
 }
+
+    
