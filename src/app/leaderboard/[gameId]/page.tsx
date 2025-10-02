@@ -126,7 +126,7 @@ export default function LeaderboardPage() {
                         <TableBody>
                             {top10Players.length > 0 ? (
                                 top10Players.map((player, index) => (
-                                    <TableRow key={player.id} className={cn(player.id === currentPlayerId && "bg-primary/20")}>
+                                    <TableRow key={`${player.id}-${player.playerId}-${index}`} className={cn(player.id === currentPlayerId && "bg-primary/20")}>
                                         <TableCell className="font-medium text-lg">{index + 1}</TableCell>
                                         <TableCell>{player.name}</TableCell>
                                         {parentGame.requiredPlayerFields.filter(f => f.id !== nameField?.id).map(field => (
@@ -148,7 +148,7 @@ export default function LeaderboardPage() {
                                     <TableRow>
                                         <TableCell colSpan={parentGame.requiredPlayerFields.length + 2} className="text-center text-muted-foreground py-2">...</TableCell>
                                     </TableRow>
-                                    <TableRow key={currentPlayerRowData.id} className="bg-accent/30 border-y-2 border-accent">
+                                    <TableRow key={`${currentPlayerRowData.id}-${currentPlayerRowData.playerId}-rank`} className="bg-accent/30 border-y-2 border-accent">
                                         <TableCell className="font-medium text-lg">{currentPlayerRank + 1}</TableCell>
                                         <TableCell>{currentPlayerRowData.name}</TableCell>
                                         {parentGame.requiredPlayerFields.filter(f => f.id !== nameField?.id).map(field => (
