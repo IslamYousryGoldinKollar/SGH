@@ -51,7 +51,6 @@ export interface Game {
     id: string; // The game PIN
     title: string;
     description?: string; // For social sharing metadata
-    thumbnailUrl?: string; // For social sharing metadata
     status: GameStatus;
     teams: Team[];
     questions: Question[];

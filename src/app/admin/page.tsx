@@ -6,13 +6,12 @@ import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc, query, where, runTransaction } from "firebase/firestore";
-import { Loader2, Plus, Eye, Edit, Trash2, Copy, Users, BarChart, Share2, ShieldCheck } from "lucide-react";
+import { Loader2, Plus, Eye, Edit, Trash2, Copy, Users, BarChart, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import type { Game, GridSquare } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import ShareSessionModal from "@/components/admin/ShareSessionModal";
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
 
@@ -20,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 const GRID_SIZE = 22; // Based on the number of hexagons in the SVG
-const STORAGE_RULES_KEY = 'storageRulesInfoDismissed';
 
 export default function AdminDashboard() {
   const [user, loading, error] = useAuthState(auth);
@@ -28,7 +26,6 @@ export default function AdminDashboard() {
   const [sessions, setSessions] = useState<Game[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [sharingSession, setSharingSession] = useState<Game | null>(null);
-  const [showStorageInfo, setShowStorageInfo] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -127,13 +124,8 @@ export default function AdminDashboard() {
             
         });
 
-         // This part runs after the transaction is successful
-        if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_RULES_KEY)) {
-            setShowStorageInfo(true);
-        } else {
-            if (newPin) {
-                router.push(`/admin/session/${newPin}`);
-            }
+        if (newPin) {
+            router.push(`/admin/session/${newPin}`);
         }
 
     } catch (e) {
@@ -141,18 +133,6 @@ export default function AdminDashboard() {
         alert("Failed to create new session.");
     }
   };
-
-  const handleDismissStorageInfo = () => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_RULES_KEY, 'true');
-    }
-    setShowStorageInfo(false);
-    // Find the newest session to redirect to
-    const newestSession = sessions.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0))[0];
-    if (newestSession) {
-        router.push(`/admin/session/${newestSession.id}`);
-    }
-  }
 
   const deleteSession = async (gameId: string) => {
     if (window.confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
@@ -215,47 +195,9 @@ export default function AdminDashboard() {
     );
   }
 
-  const storageRules = `
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    // Allow public read access to assets
-    match /assets/{allPaths=**} {
-      allow read;
-    }
-    // Allow authenticated users to write to their own thumbnail folder
-    match /game-thumbnails/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}`.trim();
-
-
   return (
     <>
     <ShareSessionModal session={sharingSession} onClose={() => setSharingSession(null)} />
-
-    <AlertDialog open={showStorageInfo} onOpenChange={setShowStorageInfo}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2"><ShieldCheck /> Required: Update Storage Rules</AlertDialogTitle>
-                <AlertDialogDescription>
-                    To enable thumbnail uploads for shared sessions, you need to update your Firebase Storage security rules. This is a one-time setup.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="text-sm">
-                <p className="mb-2">Please go to your Firebase project's <strong>Storage &gt; Rules</strong> tab and replace the existing content with the following:</p>
-                <pre className="p-4 rounded-md bg-muted text-xs overflow-x-auto">
-                    <code>
-                        {storageRules}
-                    </code>
-                </pre>
-            </div>
-            <AlertDialogFooter>
-                <AlertDialogAction onClick={handleDismissStorageInfo}>I've updated the rules</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
 
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -346,5 +288,3 @@ service firebase.storage {
     </>
   );
 }
-
-    
