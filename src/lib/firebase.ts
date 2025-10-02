@@ -22,14 +22,4 @@ const auth = getAuth(app);
 const storage = getStorage(app, "gs://studio-7831135066-b7ebf.appspot.com");
 
 
-// To enable admin auth, you need to create a user in the Firebase Console 
-// with the email 'admin@trivia.com' and any password.
-if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-  // Point to the emulators running on localhost.
-  // connectAuthEmulator(auth, "http://localhost:9099");
-}
-
-
 export { app, db, rtdb, auth, storage };
-
-    
