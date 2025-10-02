@@ -4,5 +4,5 @@
  * for example, through a separate admin management interface or environment variables.
  */
 export const SUPER_ADMIN_UIDS = [
-    'GLdvOzQWorMcsmOpcwvqqZcpCIN2', // Corresponds to islamyossry3@gmail.com
+    'eEPycxZHbrbUaomlMmppQiHJETs2', // Corresponds to islamyossry3@gmail.com
 ];
