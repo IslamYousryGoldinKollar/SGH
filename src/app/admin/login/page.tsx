@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SUPER_ADMIN_UIDS } from "@/lib/constants";
@@ -77,7 +77,9 @@ export default function AdminLoginPage() {
     } catch (error: any) {
       console.error("Admin login error:", error);
       let description = "Invalid credentials or unauthorized access.";
-      if (error.message) {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+        description = "The email or password you entered is incorrect. Please try again.";
+      } else if (error.message) {
         description = error.message;
       }
       toast({
@@ -106,7 +108,16 @@ export default function AdminLoginPage() {
                 </AlertDescription>
             </Alert>
           )}
-          <form onSubmit={handleLogin} className="space-y-4">
+          {!showSuccessMessage && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>New Admins</AlertTitle>
+              <AlertDescription>
+                If you are a new admin, you must <Link href="/admin/signup" className="font-bold underline">sign up</Link> and be approved before you can log in.
+              </AlertDescription>
+            </Alert>
+          )}
+          <form onSubmit={handleLogin} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
