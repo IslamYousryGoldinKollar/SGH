@@ -283,18 +283,17 @@ service firebase.storage {
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => {
-                  const game = session as Game;
-                  const isOwner = game.adminId === user.uid;
-                  const isIndividual = game.sessionType === 'individual';
+                  const isOwner = session.adminId === user.uid;
+                  const isIndividual = session.sessionType === 'individual';
                   return (
-                    <Card key={game.id} className="flex flex-col">
+                    <Card key={session.id} className="flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex justify-between items-start">
-                                <span>{game.title || 'Trivia Titans'}</span>
-                                 <Badge variant="secondary" className="capitalize">{game.sessionType || 'team'}</Badge>
+                                <span>{session.title || 'Trivia Titans'}</span>
+                                 <Badge variant="secondary" className="capitalize">{session.sessionType || 'team'}</Badge>
                             </CardTitle>
                             <CardDescription>
-                                PIN: {game.id}
+                                PIN: {session.id}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1">
@@ -302,35 +301,35 @@ service firebase.storage {
                                 <Users className="mr-2 h-4 w-4"/>
                                 {isIndividual 
                                     ? `Leaderboard Only`
-                                    : `${game.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players`
+                                    : `${session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players`
                                 }
                             </p>
                             {isIndividual ? (
-                                 <Button className="w-full mt-4" variant="outline" onClick={() => router.push(`/leaderboard/${game.id}`)}>
+                                 <Button className="w-full mt-4" variant="outline" onClick={() => router.push(`/leaderboard/${session.id}`)}>
                                     <BarChart className="mr-2 h-4 w-4"/>
                                     View Leaderboard
                                 </Button>
                             ) : (
-                                <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${game.id}`, '_blank')}>
+                                <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
                                     <Eye className="mr-2"/>
                                     Open Big Screen
                                 </Button>
                             )}
                         </CardContent>
                          <CardFooter className="grid grid-cols-2 gap-2">
-                             <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${game.id}`)} disabled={!isOwner}>
+                             <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)} disabled={!isOwner}>
                                  <Edit className="mr-2 h-4 w-4"/>
                                  Edit
                              </Button>
-                             <Button className="w-full" variant="default" onClick={() => setSharingSession(game)}>
+                             <Button className="w-full" variant="default" onClick={() => setSharingSession(session)}>
                                  <Share2 className="mr-2 h-4 w-4"/>
                                  Share
                              </Button>
-                             <Button className="w-full" variant="outline" onClick={() => duplicateSession(game.id)}>
+                             <Button className="w-full" variant="outline" onClick={() => duplicateSession(session.id)}>
                                  <Copy className="mr-2 h-4 w-4"/>
                                  Duplicate
                              </Button>
-                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(game.id)} disabled={!isOwner}>
+                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)} disabled={!isOwner}>
                                  <Trash2 className="mr-2 h-4 w-4"/>
                                  Delete
                              </Button>
@@ -347,3 +346,5 @@ service firebase.storage {
     </>
   );
 }
+
+    

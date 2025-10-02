@@ -55,7 +55,7 @@ export default function LeaderboardPage() {
             const allPlayers: LeaderboardPlayer[] = [];
             for (const gameDoc of querySnapshot.docs) {
                 const game = gameDoc.data() as Game;
-                if (game.status === 'finished' && game.players.length > 0) {
+                if (game.players.length > 0) {
                     const player = game.players[0];
                     const hexCount = game.grid.filter(sq => sq.coloredBy === player.id).length;
                     allPlayers.push({
@@ -164,3 +164,5 @@ export default function LeaderboardPage() {
         </div>
     )
 }
+
+    

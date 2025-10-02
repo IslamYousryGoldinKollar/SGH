@@ -695,7 +695,7 @@ export default function GamePage() {
           },
         ],
         grid: templateGameData.grid.map(g => ({ ...g, coloredBy: null })),
-        gameStartedAt: serverTimestamp(),
+        gameStartedAt: serverTimestamp() as Timestamp,
       };
 
       // 4. Save the new game to Firestore
@@ -1112,3 +1112,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    

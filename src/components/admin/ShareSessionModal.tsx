@@ -134,6 +134,7 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
 
   const handleRemoveThumbnail = async () => {
     if (!thumbnailUrl) return;
+    setIsUploading(true); // Reuse uploading state to disable buttons
     try {
       await deleteThumbnailFromStorage(thumbnailUrl);
       setThumbnailUrl(null);
@@ -146,6 +147,8 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
         description: "Could not remove thumbnail.",
         variant: "destructive",
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -228,7 +231,7 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
                       {isUploading ? <Loader2 className="mr-2 animate-spin" /> : <Upload className="mr-2" />}
                       Replace Image
                     </Button>
-                    <Button variant="destructive" onClick={handleRemoveThumbnail}>
+                    <Button variant="destructive" onClick={handleRemoveThumbnail} disabled={isUploading}>
                       <Trash2 className="mr-2" /> Remove Thumbnail
                     </Button>
                   </div>
@@ -280,3 +283,5 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
     </Dialog>
   );
 }
+
+    
