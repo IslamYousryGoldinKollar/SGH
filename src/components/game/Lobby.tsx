@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Swords, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { v4 as uuidv4 } from 'uuid';
 
 type LobbyProps = {
   game: Game;
@@ -20,15 +21,16 @@ type LobbyProps = {
 
 export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, isAdmin }: LobbyProps) {
   const [playerName, setPlayerName] = useState("");
-  const [idNumber, setIdNumber] = useState("");
   const { teams, status } = game;
 
   const handleJoin = (teamName: string) => {
-    if (!playerName.trim() || !idNumber.trim()) {
-        alert("Please fill in your name and ID number.");
+    if (!playerName.trim()) {
+        alert("Please fill in your name.");
         return;
     }
-    onJoinTeam(playerName.trim(), idNumber.trim(), teamName);
+    // For team games, we can generate a simple unique ID for the player.
+    const playerId = uuidv4();
+    onJoinTeam(playerName.trim(), playerId, teamName);
   }
 
   const TeamCard = ({ team }: { team: Team }) => (
@@ -108,7 +110,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
         </div>
         <div className="text-center">
             <h1 className="text-5xl font-bold font-display">Join the Battle</h1>
-            <p className="text-muted-foreground mt-2 max-w-xl">Enter your details, choose a team, and get ready to prove your knowledge.</p>
+            <p className="text-muted-foreground mt-2 max-w-xl">Enter your name, choose a team, and get ready to prove your knowledge.</p>
         </div>
       
       <div className="my-8 w-full max-w-md space-y-4">
@@ -124,25 +126,13 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
                 aria-label="Player Full Name"
               />
           </div>
-          <div className="space-y-2">
-              <Label htmlFor="idNumber" className="sr-only">ID Number</Label>
-              <Input
-                id="idNumber"
-                type="text"
-                placeholder="Enter your ID number"
-                value={idNumber}
-                onChange={(e) => setIdNumber(e.target.value)}
-                className="text-lg p-6 w-full text-center"
-                aria-label="Player ID Number"
-              />
-          </div>
-
+          
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {teams.map((team) => (
             <Button 
                 key={team.name} 
                 onClick={() => handleJoin(team.name)} 
-                disabled={!playerName.trim() || !idNumber.trim() || team.players.length >= team.capacity}
+                disabled={!playerName.trim() || team.players.length >= team.capacity}
                 size="lg"
             >
                 Join {team.name}

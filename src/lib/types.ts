@@ -64,7 +64,7 @@ export interface Game {
     adminId: string; // UID of the user who created the game
     sessionType: SessionType;
     requiredPlayerFields: CustomPlayerField[];
-    parentSessionId?: string; // For individual games, the ID of the main session
+    parentSessionId?: string | null;
 }
 
 export interface MatchmakingTicket {
@@ -86,4 +86,6 @@ export interface AdminUser {
     createdAt: Timestamp;
     plan: 'basic' | 'premium' | 'enterprise';
     sessionCount: number;
+    status: 'pending' | 'active' | 'expired' | 'disabled';
+    expiresAt: Timestamp | null;
 }

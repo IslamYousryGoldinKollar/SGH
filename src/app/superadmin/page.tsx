@@ -5,13 +5,16 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, query, getDocs, where } from "firebase/firestore";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { collection, onSnapshot, query, getDocs, where, doc, updateDoc, Timestamp, add } from "firebase/firestore";
+import { Loader2, ShieldAlert, CheckCircle, XCircle, Clock, Ban } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { AdminUser, Game } from "@/lib/types";
 import { SUPER_ADMIN_UIDS } from "@/lib/constants";
-import { format } from "date-fns";
+import { format, addMonths, addYears } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function SuperAdminDashboard() {
   const [user, loading] = useAuthState(auth);
@@ -36,14 +39,13 @@ export default function SuperAdminDashboard() {
       for (const doc of querySnapshot.docs) {
         const admin = { id: doc.id, ...doc.data() } as AdminUser;
         
-        // Fetch session count for each admin
         const gamesQuery = query(collection(db, "games"), where("adminId", "==", admin.uid));
         const gamesSnapshot = await getDocs(gamesQuery);
         admin.sessionCount = gamesSnapshot.size;
 
         adminsData.push(admin);
       }
-      setAdmins(adminsData);
+      setAdmins(adminsData.sort((a,b) => a.createdAt.toMillis() - b.createdAt.toMillis()));
       setIsLoading(false);
     }, (error) => {
         console.error("Error fetching admin users: ", error);
@@ -52,6 +54,34 @@ export default function SuperAdminDashboard() {
 
     return () => unsubscribe();
   }, [isSuperAdmin]);
+
+  const handleUpdateAdminStatus = async (adminId: string, status: AdminUser['status'], expiresAt: Timestamp | null = null) => {
+    const adminRef = doc(db, "admins", adminId);
+    await updateDoc(adminRef, { status, expiresAt });
+  }
+
+  const approveAdmin = (adminId: string, duration: 'month' | 'year' | 'forever') => {
+    let expiryDate: Timestamp | null = null;
+    if (duration === 'month') {
+        expiryDate = Timestamp.fromDate(addMonths(new Date(), 1));
+    } else if (duration === 'year') {
+        expiryDate = Timestamp.fromDate(addYears(new Date(), 1));
+    }
+    handleUpdateAdminStatus(adminId, 'active', expiryDate);
+  }
+
+  const getStatusBadge = (admin: AdminUser) => {
+    const isExpired = admin.expiresAt && admin.expiresAt.toMillis() < Date.now();
+    const status = isExpired ? 'expired' : admin.status;
+
+    switch(status) {
+        case 'active': return <span className="px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Active</span>
+        case 'pending': return <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs flex items-center gap-1"><Clock className="w-3 h-3"/> Pending</span>
+        case 'disabled': return <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 text-xs flex items-center gap-1"><Ban className="w-3 h-3"/> Disabled</span>
+        case 'expired': return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs flex items-center gap-1"><XCircle className="w-3 h-3"/> Expired</span>
+        default: return <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs">{status}</span>
+    }
+  }
 
 
   if (loading || !isSuperAdmin) {
@@ -79,7 +109,7 @@ export default function SuperAdminDashboard() {
         <CardHeader>
           <CardTitle>Registered Admins (Tenants)</CardTitle>
           <CardDescription>
-            Overview of all admin accounts in the system.
+            Overview of all admin accounts in the system. Approve new users and manage their access.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -90,10 +120,11 @@ export default function SuperAdminDashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead>User ID</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Sessions Created</TableHead>
                   <TableHead>Joined On</TableHead>
+                  <TableHead>Sessions</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Expires On</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -101,19 +132,41 @@ export default function SuperAdminDashboard() {
                   admins.map((admin) => (
                     <TableRow key={admin.id}>
                       <TableCell className="font-medium">{admin.email}</TableCell>
-                      <TableCell className="font-mono text-xs">{admin.uid}</TableCell>
-                      <TableCell>
-                        <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-xs">{admin.plan}</span>
-                      </TableCell>
+                      <TableCell>{admin.createdAt ? format(admin.createdAt.toDate(), "PPP") : 'N/A'}</TableCell>
                       <TableCell className="text-center">{admin.sessionCount}</TableCell>
-                      <TableCell>
-                        {admin.createdAt ? format(admin.createdAt.toDate(), "PPP") : 'N/A'}
+                      <TableCell>{getStatusBadge(admin)}</TableCell>
+                       <TableCell>
+                        {admin.expiresAt ? format(admin.expiresAt.toDate(), "PPP") : 'Never'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {admin.status === 'pending' ? (
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">Approve</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuLabel>Set Duration</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => approveAdmin(admin.id, 'month')}>1 Month</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => approveAdmin(admin.id, 'year')}>1 Year</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => approveAdmin(admin.id, 'forever')}>Forever</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                onClick={() => handleUpdateAdminStatus(admin.id, 'disabled')}
+                                disabled={admin.status === 'disabled'}
+                            >
+                                Disable
+                            </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={6} className="text-center">
                       No admin accounts found.
                     </TableCell>
                   </TableRow>
