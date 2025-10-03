@@ -26,16 +26,17 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
   const router = useRouter();
   
   useEffect(() => {
-    // If it's a finished 1v1 game, delete the game document after a short delay
-    // to give players time to see the results.
+    // If it's a finished 1v1 game, redirect to the parent leaderboard after a delay.
     if (parentSessionId && gameId) {
+        const player = teams.flatMap(t => t.players).find(p => p.id); // Find any player to get their auth ID
         const timer = setTimeout(() => {
-            deleteDoc(doc(db, "games", gameId));
-            if(parentSessionId) router.push(`/game/${parentSessionId}`);
-        }, 5000); // 5-second delay before deleting
+            if(parentSessionId && player) {
+              router.push(`/leaderboard/${parentSessionId}?player_id=${player.id}`);
+            }
+        }, 10000); // 10-second delay
         return () => clearTimeout(timer);
     }
-  }, [parentSessionId, gameId, router]);
+  }, [parentSessionId, gameId, router, teams]);
 
   useEffect(() => {
     if (individualPlayerId && parentSessionId) {
@@ -150,7 +151,7 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
       )}
 
       {parentSessionId && (
-         <p className="text-muted-foreground mt-8 animate-pulse">Returning to matchmaking lobby...</p>
+         <p className="text-muted-foreground mt-8 animate-pulse">Redirecting to the leaderboard...</p>
       )}
     </div>
   );

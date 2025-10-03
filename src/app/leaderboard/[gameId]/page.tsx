@@ -33,12 +33,7 @@ export default function LeaderboardPage() {
         const parentGameRef = doc(db, "games", parentGameId);
         const unsubParent = onSnapshot(parentGameRef, (doc) => {
              if (doc.exists()) {
-                const gameData = { id: doc.id, ...doc.data() } as Game;
-                if (gameData.sessionType !== 'individual') {
-                    router.replace(`/game/${parentGameId}`);
-                    return;
-                }
-                setParentGame(gameData);
+                setParentGame({ id: doc.id, ...doc.data() } as Game);
              } else {
                  setParentGame(null);
                  setLoading(false);
@@ -55,9 +50,18 @@ export default function LeaderboardPage() {
             const allPlayers: LeaderboardPlayer[] = [];
             for (const gameDoc of querySnapshot.docs) {
                 const game = gameDoc.data() as Game;
-                if (game.teams && game.teams.length > 0 && game.teams[0].players.length > 0) {
+                if (game.sessionType === 'team' && game.teams.length > 0) { // 1v1 games
+                     game.teams.forEach(team => {
+                         if (team.players.length > 0) {
+                             const player = team.players[0];
+                             allPlayers.push({
+                                 ...player,
+                                 finalScore: team.score
+                             });
+                         }
+                     });
+                } else if (game.sessionType === 'individual' && game.teams?.[0]?.players.length > 0) { // Individual games
                     const player = game.teams[0].players[0];
-                    // Score is the count of hexes colored by the player
                     const hexCount = game.grid.filter(sq => sq.coloredBy === player.teamName).length;
                     allPlayers.push({
                         ...player,
@@ -87,7 +91,10 @@ export default function LeaderboardPage() {
         return <div className="flex h-screen w-full items-center justify-center"><h1>Session not found.</h1></div>;
     }
 
-    const nameField = parentGame.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'));
+    const requiredFields = parentGame.sessionType === 'individual' 
+        ? parentGame.requiredPlayerFields 
+        : [{id: 'name', label: 'Name', type: 'text'}, {id: 'id', label: 'ID', type: 'text'}];
+
 
     const top10Players = players.slice(0, 10);
     const currentPlayerRank = players.findIndex(p => p.id === currentPlayerId);
@@ -108,15 +115,15 @@ export default function LeaderboardPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Top 10 Participants</CardTitle>
-                    <CardDescription>Scores are based on the number of lands colored at the end of the game.</CardDescription>
+                    <CardTitle>Top Participants</CardTitle>
+                    <CardDescription>Scores are based on performance in the game.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[50px]">Rank</TableHead>
-                                {parentGame.requiredPlayerFields.map(field => (
+                                {requiredFields.map(field => (
                                      <TableHead key={field.id}>{field.label}</TableHead>
                                 ))}
                                 <TableHead className="text-right">Score</TableHead>
@@ -127,15 +134,22 @@ export default function LeaderboardPage() {
                                 top10Players.map((player, index) => (
                                     <TableRow key={`${player.id}-${player.playerId}-${index}`} className={cn(player.id === currentPlayerId && "bg-primary/20")}>
                                         <TableCell className="font-medium text-lg">{index + 1}</TableCell>
-                                        {parentGame.requiredPlayerFields.map(field => (
-                                            <TableCell key={field.id}>{player.customData?.[field.label] || player.name || 'N/A'}</TableCell>
-                                        ))}
+                                        {requiredFields.map(field => {
+                                            let cellValue = 'N/A';
+                                            if (parentGame.sessionType === 'individual') {
+                                                cellValue = player.customData?.[field.label] || player.name || 'N/A';
+                                            } else {
+                                                if (field.id === 'name') cellValue = player.name;
+                                                if (field.id === 'id') cellValue = player.playerId;
+                                            }
+                                            return <TableCell key={field.id}>{cellValue}</TableCell>
+                                        })}
                                         <TableCell className="text-right font-bold font-mono text-lg">{player.finalScore}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={parentGame.requiredPlayerFields.length + 2} className="text-center">
+                                    <TableCell colSpan={requiredFields.length + 2} className="text-center">
                                         No participants have completed the challenge yet.
                                     </TableCell>
                                 </TableRow>
@@ -144,13 +158,20 @@ export default function LeaderboardPage() {
                              {!isCurrentPlayerInTop10 && currentPlayerRowData && (
                                 <>
                                     <TableRow>
-                                        <TableCell colSpan={parentGame.requiredPlayerFields.length + 2} className="text-center text-muted-foreground py-2">...</TableCell>
+                                        <TableCell colSpan={requiredFields.length + 2} className="text-center text-muted-foreground py-2">...</TableCell>
                                     </TableRow>
                                     <TableRow key={`${currentPlayerRowData.id}-${currentPlayerRowData.playerId}-rank`} className="bg-accent/30 border-y-2 border-accent">
                                         <TableCell className="font-medium text-lg">{currentPlayerRank + 1}</TableCell>
-                                        {parentGame.requiredPlayerFields.map(field => (
-                                            <TableCell key={field.id}>{currentPlayerRowData.customData?.[field.label] || currentPlayerRowData.name || 'N/A'}</TableCell>
-                                        ))}
+                                        {requiredFields.map(field => {
+                                            let cellValue = 'N/A';
+                                            if (parentGame.sessionType === 'individual') {
+                                                cellValue = currentPlayerRowData.customData?.[field.label] || currentPlayerRowData.name || 'N/A';
+                                            } else {
+                                                if (field.id === 'name') cellValue = currentPlayerRowData.name;
+                                                if (field.id === 'id') cellValue = currentPlayerRowData.playerId;
+                                            }
+                                            return <TableCell key={field.id}>{cellValue}</TableCell>
+                                        })}
                                         <TableCell className="text-right font-bold font-mono text-lg">{currentPlayerRowData.finalScore}</TableCell>
                                     </TableRow>
                                 </>
