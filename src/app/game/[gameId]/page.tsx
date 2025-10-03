@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -590,7 +591,7 @@ export default function GamePage() {
       const idNumberField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('id number'));
       const nameField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'));
       const playerId = idNumberField ? customData[idNumberField.id] : uuidv4();
-      const playerName = nameField ? customData[nameField.id] : name;
+      const playerName = nameField ? name : customData[Object.keys(customData)[0]];
 
       // 2. Create the new player object
       const newPlayer: Player = {
@@ -957,7 +958,7 @@ export default function GamePage() {
     switch (game.status) {
       case "playing":
         if (!currentPlayer) return <p>Joining game...</p>;
-        const playerTeam = teams.find(
+        const playerTeam = game.teams.find(
           (t) => t.name === currentPlayer?.teamName
         );
         if (!playerTeam)
@@ -1041,3 +1042,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
