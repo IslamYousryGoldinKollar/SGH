@@ -25,11 +25,14 @@ export default function GameScreen({
   duration,
   onTimeout,
   gameStartedAt,
-  isIndividualMode
+  isIndividualMode,
 }: GameScreenProps) {
 
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
   if (!playerTeam) return null;
+  
+  const is1v1 = isIndividualMode && teams.length === 2;
+  const opponentTeam = is1v1 ? teams.find(t => t.name !== currentPlayer.teamName) : null;
 
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -49,7 +52,15 @@ export default function GameScreen({
       </div>
       <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-row lg:flex-col gap-4 items-stretch">
         <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
-        {!isIndividualMode && <Scoreboard team={playerTeam} />}
+        
+        {is1v1 ? (
+          <>
+            <Scoreboard team={playerTeam} />
+            {opponentTeam && <Scoreboard team={opponentTeam} />}
+          </>
+        ) : (
+           !isIndividualMode && <Scoreboard team={playerTeam} />
+        )}
       </aside>
     </div>
   );
