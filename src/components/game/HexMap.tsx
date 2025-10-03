@@ -35,7 +35,7 @@ type HexMapProps = {
     teams: Team[];
     onHexClick?: (id: number, event: React.MouseEvent<SVGPathElement>) => void;
     sessionType?: SessionType;
-    playerId?: string;
+    playerId?: string; // The ID of the player in individual mode or teamName in 1v1
 }
 
 const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick, sessionType = 'team', playerId }, ref) => {
@@ -53,13 +53,6 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
         const team = teams.find(t => t.name === coloredBy);
         if (team) {
             return hexToRgba(team.color);
-        }
-        
-        // Fallback for individual mode where coloredBy might be a player ID
-        if (sessionType === 'individual') {
-             const player = teams.flatMap(t => t.players).find(p => p.id === coloredBy);
-             const playerTeam = teams.find(t => t.name === player?.teamName);
-             return playerTeam ? hexToRgba(playerTeam.color) : 'rgba(51, 51, 51, 0.7)';
         }
         
         return 'rgba(51, 51, 51, 0.7)';

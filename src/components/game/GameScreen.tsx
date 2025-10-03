@@ -13,6 +13,7 @@ type GameScreenProps = {
   duration: number;
   onTimeout: () => void;
   gameStartedAt: Timestamp | null | undefined;
+  isIndividualMode: boolean;
 };
 
 export default function GameScreen({
@@ -24,12 +25,11 @@ export default function GameScreen({
   duration,
   onTimeout,
   gameStartedAt,
+  isIndividualMode
 }: GameScreenProps) {
 
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
   if (!playerTeam) return null;
-
-  const isIndividualMode = playerTeam.capacity === 1;
 
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8">

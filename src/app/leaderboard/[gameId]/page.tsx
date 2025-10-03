@@ -58,7 +58,7 @@ export default function LeaderboardPage() {
                 if (game.teams && game.teams.length > 0 && game.teams[0].players.length > 0) {
                     const player = game.teams[0].players[0];
                     // Score is the count of hexes colored by the player
-                    const hexCount = game.grid.filter(sq => sq.coloredBy === player.id).length;
+                    const hexCount = game.grid.filter(sq => sq.coloredBy === player.teamName).length;
                     allPlayers.push({
                         ...player,
                         finalScore: hexCount
@@ -128,7 +128,7 @@ export default function LeaderboardPage() {
                                     <TableRow key={`${player.id}-${player.playerId}-${index}`} className={cn(player.id === currentPlayerId && "bg-primary/20")}>
                                         <TableCell className="font-medium text-lg">{index + 1}</TableCell>
                                         {parentGame.requiredPlayerFields.map(field => (
-                                            <TableCell key={field.id}>{player.customData?.[field.id] || player.name || 'N/A'}</TableCell>
+                                            <TableCell key={field.id}>{player.customData?.[field.label] || player.name || 'N/A'}</TableCell>
                                         ))}
                                         <TableCell className="text-right font-bold font-mono text-lg">{player.finalScore}</TableCell>
                                     </TableRow>
@@ -149,7 +149,7 @@ export default function LeaderboardPage() {
                                     <TableRow key={`${currentPlayerRowData.id}-${currentPlayerRowData.playerId}-rank`} className="bg-accent/30 border-y-2 border-accent">
                                         <TableCell className="font-medium text-lg">{currentPlayerRank + 1}</TableCell>
                                         {parentGame.requiredPlayerFields.map(field => (
-                                            <TableCell key={field.id}>{currentPlayerRowData.customData?.[field.id] || currentPlayerRowData.name || 'N/A'}</TableCell>
+                                            <TableCell key={field.id}>{currentPlayerRowData.customData?.[field.label] || currentPlayerRowData.name || 'N/A'}</TableCell>
                                         ))}
                                         <TableCell className="text-right font-bold font-mono text-lg">{currentPlayerRowData.finalScore}</TableCell>
                                     </TableRow>

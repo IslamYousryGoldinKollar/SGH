@@ -345,7 +345,7 @@ export default function GamePage() {
   useEffect(() => {
     if (!game || !currentPlayer) return;
 
-    const isSoloMode = game.sessionType === "individual";
+    const isSoloMode = game.sessionType === "individual" || game.parentSessionId;
     const canProceed = isSoloMode
       ? ["lobby", "starting", "playing"].includes(game.status)
       : game.status === "playing";
@@ -597,10 +597,13 @@ export default function GamePage() {
         }
       }
 
+      const idNumberField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('id number'));
+      const playerId = idNumberField ? customData[idNumberField.id] : uuidv4();
+
       // 2. Create the new player object
       const newPlayer: Player = {
         id: authUser.uid,
-        playerId: customData["ID Number"] || uuidv4(),
+        playerId: playerId,
         name: name,
         teamName: "Team", 
         answeredQuestions: [],
@@ -799,7 +802,7 @@ export default function GamePage() {
         if (squareIndex === -1)
           throw new Error("Square not found.");
 
-        const coloredByName = (currentGame.sessionType === "individual" || currentGame.parentSessionId)
+        const coloredByName = (game.sessionType === "individual" || game.parentSessionId)
             ? currentPlayer.teamName
             : currentPlayer.teamName;
 
@@ -885,7 +888,8 @@ export default function GamePage() {
 
     if (
       game.sessionType === "matchmaking" &&
-      game.status === "lobby"
+      game.status === "lobby" &&
+      !currentPlayer
     ) {
       return (
         <MatchmakingLobby
@@ -975,7 +979,9 @@ export default function GamePage() {
             <p>Error: Your team or player data could not be found.</p>
           );
         
-        const playerStartTime = (game.gameStartedAt || currentPlayer.gameStartedAt)?.toMillis();
+        const isIndividualMode = game.sessionType === 'individual' || game.parentSessionId;
+        
+        const playerStartTime = (isIndividualMode ? currentPlayer.gameStartedAt : game.gameStartedAt)?.toMillis();
         const isTimeUp = playerStartTime && game.timer ? Date.now() > playerStartTime + game.timer * 1000 : false;
         const allQuestionsAnswered = !getNextQuestion() && game.questions.length > 0;
 
@@ -1023,7 +1029,8 @@ export default function GamePage() {
             onNextQuestion={handleNextQuestion}
             duration={game.timer || 300}
             onTimeout={handleTimeout}
-            gameStartedAt={game.gameStartedAt}
+            gameStartedAt={isIndividualMode ? currentPlayer.gameStartedAt : game.gameStartedAt}
+            isIndividualMode={isIndividualMode}
           />
         );
       case "finished":
