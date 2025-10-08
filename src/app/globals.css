@@ -6,24 +6,24 @@
 @layer base {
   :root, :root[data-theme="default"] {
     --background: 0 0% 100%; /* White */
-    --foreground: 240 10% 3.9%; /* Darker Text */
-    --card: 0 0% 100%; /* White cards */
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 0 84% 60%; /* Strong Red */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 120 60% 96%; /* Very Light Green */
-    --secondary-foreground: 120 25% 15%;
-    --muted: 120 60% 94%;
-    --muted-foreground: 120 10% 45%;
-    --accent: 130 55% 55%; /* Light Green */
-    --accent-foreground: 120 25% 15%;
+    --foreground: 240 10% 3.9%; /* Black */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 240 10% 3.9%; /* Black */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 240 10% 3.9%; /* Black */
+    --primary: 0 84% 60%; /* Red */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 240 5% 96%; /* Light Gray */
+    --secondary-foreground: 240 10% 3.9%; /* Black */
+    --muted: 240 5% 94%; /* Lighter Gray */
+    --muted-foreground: 240 4% 46%; /* Medium Gray */
+    --accent: 0 84% 60%; /* Red */
+    --accent-foreground: 0 0% 100%; /* White */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 120 20% 90%;
-    --input: 120 20% 90%;
-    --ring: 0 84% 60%;
+    --border: 240 6% 90%; /* Light Gray */
+    --input: 240 6% 90%; /* Light Gray */
+    --ring: 0 84% 60%; /* Red */
     --radius: 0.8rem;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
