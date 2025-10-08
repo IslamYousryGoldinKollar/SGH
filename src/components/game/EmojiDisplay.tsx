@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { EmojiEvent } from "@/lib/types";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -12,24 +12,23 @@ type EmojiDisplayProps = {
 
 export default function EmojiDisplay({ emojiEvents, opponentId }: EmojiDisplayProps) {
   const [displayedEmojis, setDisplayedEmojis] = useState<EmojiEvent[]>([]);
+  const lastProcessedEventId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!emojiEvents) return;
+    if (!emojiEvents || emojiEvents.length === 0) return;
 
     const latestOpponentEvent = emojiEvents
       .filter((e) => e.senderId === opponentId)
       .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis())[0];
 
-    if (latestOpponentEvent) {
-      // Check if this emoji is already displayed to avoid duplicates from re-renders
-      if (!displayedEmojis.some(e => e.id === latestOpponentEvent.id)) {
+    if (latestOpponentEvent && latestOpponentEvent.id !== lastProcessedEventId.current) {
+        lastProcessedEventId.current = latestOpponentEvent.id;
+        
         setDisplayedEmojis(prev => [...prev, latestOpponentEvent]);
         
-        // Remove the emoji after a delay
         setTimeout(() => {
           setDisplayedEmojis(prev => prev.filter(e => e.id !== latestOpponentEvent.id));
-        }, 3000);
-      }
+        }, 3000); // Display emoji for 3 seconds
     }
   }, [emojiEvents, opponentId]);
 
@@ -45,8 +44,9 @@ export default function EmojiDisplay({ emojiEvents, opponentId }: EmojiDisplayPr
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className="absolute text-6xl"
             style={{
-              top: `${20 + (index % 4) * 15}%`,
-              left: `${20 + (index % 5) * 15}%`,
+              // Add some randomness to position to avoid overlap
+              top: `${20 + (index % 4) * 15 + Math.random() * 10}%`,
+              left: `${20 + (index % 5) * 15 + Math.random() * 10}%`,
             }}
           >
             {event.emoji}

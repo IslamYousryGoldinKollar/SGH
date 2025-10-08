@@ -252,10 +252,11 @@ export default function GamePage() {
   // When a 1v1 countdown finishes, update status to 'playing'
   const handleCountdownFinish = useCallback(async () => {
     if (game?.status === 'starting') {
-        const gameRef = doc(db, "games", gameId);
-        await updateDoc(gameRef, { status: "playing" });
+      // The game status is now derived from the server, so we just
+      // need to ensure the local state reflects the correct view.
+      // The main useEffect handles setting the view.
     }
-  }, [game?.status, gameId]);
+  }, [game?.status]);
 
 
   useEffect(() => {
@@ -309,7 +310,11 @@ export default function GamePage() {
           gameData.teams
             ?.flatMap((t) => t.players)
             .find((p) => p.id === authUser.uid) || null;
-        setCurrentPlayer(player);
+            
+        // Only update player state if it has meaningfully changed
+        if (JSON.stringify(player) !== JSON.stringify(currentPlayer)) {
+           setCurrentPlayer(player);
+        }
         
         if (gameData.status === 'playing' && !player && gameData.parentSessionId) {
              toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
@@ -329,7 +334,7 @@ export default function GamePage() {
     });
 
     return () => unsubGame();
-  }, [gameId, authUser, toast, router]);
+  }, [gameId, authUser, toast, router, currentPlayer]);
 
   const handleTimeout = useCallback(async () => {
     if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
@@ -371,7 +376,8 @@ export default function GamePage() {
       setView("question");
       // If no credits and no questions, the game might be over for this player
     }
-  }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, game?.status, getNextQuestion, currentQuestion]);
+  // This effect should ONLY run when the player's direct state changes.
+  }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, getNextQuestion, currentQuestion]);
 
 
   // Effect for game timeout
@@ -1052,5 +1058,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
