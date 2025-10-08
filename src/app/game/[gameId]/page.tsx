@@ -763,6 +763,13 @@ export default function GamePage() {
                 if (tileIndexInGrid !== -1) {
                   currentGame.grid[tileIndexInGrid].coloredBy = null;
                    transaction.update(gameRef, { grid: currentGame.grid });
+                   // Also update local state to avoid race conditions on UI
+                   setGame(prevGame => {
+                     if (!prevGame) return null;
+                     const newGrid = [...prevGame.grid];
+                     newGrid[tileIndexInGrid].coloredBy = null;
+                     return {...prevGame, grid: newGrid};
+                   });
                 }
               }
            } else if (currentGame.sessionType === "individual" || currentGame.parentSessionId) { // Penalty applies in 1v1 too

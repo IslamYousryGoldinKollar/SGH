@@ -71,7 +71,10 @@ export default function LandRushBoard({ grid, teams, onTileClick, credits, curre
                      </p>
                 )}
             </div>
-            <div className="grid grid-cols-10 gap-1 flex-1">
+            <div className={cn(
+                "grid grid-cols-10 gap-1 flex-1 transition-all",
+                credits > 0 && !isStealing && "animate-pulse"
+                )}>
                 {grid.map((tile) => {
                     const color = getTileColor(tile.coloredBy);
                     const canClaim = credits > 0 && !tile.coloredBy && !isStealing;
