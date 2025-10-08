@@ -248,7 +248,6 @@ export default function GamePage() {
     useState<Question | null>(null);
   const [view, setView] = useState<"question" | "grid">("question");
   const [isJoining, setIsJoining] = useState(false);
-  const [isStealing, setIsStealing] = useState(false);
 
   useEffect(() => {
     if (game?.theme) {
@@ -340,17 +339,7 @@ export default function GamePage() {
   
   const getNextQuestion = useCallback(() => {
     if (!game || !currentPlayer) return null;
-    
-    // For Land Rush and 1v1, use a sequential question order for fairness
-    if (game.sessionType === 'land-rush' || game.parentSessionId) {
-      const answeredCount = currentPlayer.answeredQuestions?.length || 0;
-      if (answeredCount < game.questions.length) {
-        return game.questions[answeredCount];
-      }
-      return null; // No more questions
-    }
-    
-    // Original random logic for other modes
+
     const answered = currentPlayer.answeredQuestions || [];
     const availableQuestions = game.questions.filter(
       (q) => !answered.includes(q.question)
@@ -365,27 +354,22 @@ export default function GamePage() {
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
 
-    if (game.sessionType !== 'land-rush' && currentPlayer.coloringCredits > 0) {
+    if (currentPlayer.coloringCredits > 0) {
       setView("grid");
       return;
     }
-     if (isStealing) return;
 
     const nextQ = getNextQuestion();
     if (nextQ) {
       if (currentQuestion?.question !== nextQ.question) {
         setCurrentQuestion(nextQ);
       }
-       if (game.sessionType !== 'land-rush') {
-         setView("question");
-       }
+      setView("question");
     } else {
       setCurrentQuestion(null);
-      if (game.sessionType !== 'land-rush') {
-        setView("question");
-      }
+      setView("question");
     }
-  }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, getNextQuestion, currentQuestion, isStealing]);
+  }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, getNextQuestion, currentQuestion]);
 
 
   // Effect for game timeout
@@ -761,30 +745,9 @@ export default function GamePage() {
         ];
 
         if (isCorrect) {
-          if (currentGame.sessionType === 'land-rush') {
-            updatedTeams[teamIndex].score += 100;
-          }
           playerToUpdate.coloringCredits += 1;
         } else {
-           if (currentGame.sessionType === "land-rush") {
-              updatedTeams[teamIndex].score -= 25;
-              const playerOwnedTiles = currentGame.grid.filter(sq => sq.coloredBy === playerToUpdate.id && !sq.specialType);
-              if (playerOwnedTiles.length > 0) {
-                const tileToLose = playerOwnedTiles[Math.floor(Math.random() * playerOwnedTiles.length)];
-                const tileIndexInGrid = currentGame.grid.findIndex(t => t.id === tileToLose.id);
-                if (tileIndexInGrid !== -1) {
-                  currentGame.grid[tileIndexInGrid].coloredBy = null;
-                   transaction.update(gameRef, { grid: currentGame.grid });
-                   // Also update local state to avoid race conditions on UI
-                   setGame(prevGame => {
-                     if (!prevGame) return null;
-                     const newGrid = [...prevGame.grid];
-                     newGrid[tileIndexInGrid].coloredBy = null;
-                     return {...prevGame, grid: newGrid};
-                   });
-                }
-              }
-           } else if (currentGame.sessionType === "individual" || currentGame.parentSessionId) { // Penalty applies in 1v1 too
+           if (currentGame.sessionType === "individual" || currentGame.parentSessionId) {
               const playerGridSquares = currentGame.grid
                 .map((sq, i) => ({ ...sq, originalIndex: i }))
                 .filter((sq) => sq.coloredBy === playerToUpdate.teamName);
@@ -839,50 +802,21 @@ export default function GamePage() {
         const squareIndex = currentGrid.findIndex( (s) => s.id === squareId);
         if (squareIndex === -1) throw new Error("Square not found.");
         const squareToColor = currentGrid[squareIndex];
+        const colorerIdentifier = game.sessionType === 'individual' || game.parentSessionId ? playerToUpdate.teamName : playerToUpdate.teamName;
 
-        if (squareToColor.coloredBy === currentPlayer.id || squareToColor.coloredBy !== null) return; // Already owned or not neutral
+
+        if (squareToColor.coloredBy === colorerIdentifier) return; // Already owned
+
+        if (squareToColor.coloredBy) { // Steal
+            const opponentTeamIndex = currentGame.teams.findIndex(t => t.name === squareToColor.coloredBy);
+            if (opponentTeamIndex !== -1) {
+                currentGame.teams[opponentTeamIndex].score -= 1;
+            }
+        }
 
         playerToUpdate.coloringCredits -= 1;
-        
-        let pointsToAdd = 50; 
-        
-        if (squareToColor.specialType === 'bonus') {
-            pointsToAdd *= 2;
-        }
-
-        // Adjacency Bonus for Land Rush
-        if (currentGame.sessionType === 'land-rush') {
-            const gridSize = 10;
-            const x = squareId % gridSize;
-            const y = Math.floor(squareId / gridSize);
-            const neighbors = [
-                y > 0 ? (y - 1) * gridSize + x : -1, // Up
-                y < gridSize - 1 ? (y + 1) * gridSize + x : -1, // Down
-                x > 0 ? y * gridSize + (x - 1) : -1, // Left
-                x < gridSize - 1 ? y * gridSize + (x + 1) : -1, // Right
-            ].filter(id => id !== -1);
-            
-            let hasAdjacent = false;
-            for (const neighborId of neighbors) {
-                const neighborSquare = currentGrid.find(s => s.id === neighborId);
-                if (neighborSquare && neighborSquare.coloredBy === currentPlayer.id) {
-                    hasAdjacent = true;
-                    break;
-                }
-            }
-            if (hasAdjacent) {
-                pointsToAdd += 25;
-            }
-        }
-
-
-        currentGame.teams[playerTeamIndex].score += pointsToAdd;
-        
-        squareToColor.coloredBy = currentPlayer.id;
-
-        if (squareToColor.specialType === 'steal') {
-            setIsStealing(true);
-        }
+        currentGame.teams[playerTeamIndex].score += 1;
+        squareToColor.coloredBy = colorerIdentifier;
 
         const isGridFull = currentGrid.every(
           (s) => s.coloredBy !== null
@@ -894,9 +828,7 @@ export default function GamePage() {
           status: isGridFull ? "finished" : currentGame.status,
         });
       });
-      if (game.sessionType !== 'land-rush') {
-        setView("question");
-      }
+      setView("question");
     } catch (error: any) {
       console.error("Failed to color square: ", error);
       toast({
@@ -906,39 +838,6 @@ export default function GamePage() {
       });
     }
   };
-  
-    const handleStealTile = async (tileId: number) => {
-        if (!game || !currentPlayer || !isStealing) return;
-
-        try {
-            await runTransaction(db, async (transaction) => {
-                const gameRef = doc(db, "games", gameId);
-                const gameDoc = await transaction.get(gameRef);
-                if (!gameDoc.exists()) throw new Error("Game not found.");
-                const currentGame = gameDoc.data() as Game;
-
-                const tileIndex = currentGame.grid.findIndex(t => t.id === tileId);
-                if (tileIndex === -1) throw new Error("Tile not found.");
-                
-                const tileToSteal = currentGame.grid[tileIndex];
-                if (!tileToSteal.coloredBy || tileToSteal.coloredBy === currentPlayer.id) {
-                    throw new Error("Invalid tile to steal.");
-                }
-
-                // Reassign tile
-                currentGame.grid[tileIndex].coloredBy = currentPlayer.id;
-
-                transaction.update(gameRef, { grid: currentGame.grid });
-            });
-            setIsStealing(false);
-            toast({ title: "Success!", description: "You have stolen a tile!" });
-        } catch (error: any) {
-            console.error("Error stealing tile:", error);
-            toast({ title: "Steal Failed", description: error.message, variant: "destructive" });
-            setIsStealing(false); // Reset state even on failure
-        }
-    };
-
 
   const handleSendEmoji = async (emoji: string) => {
     if (!game || !authUser) return;
@@ -981,7 +880,7 @@ export default function GamePage() {
     }
 
     if (
-      (game.sessionType === "matchmaking" || game.sessionType === 'land-rush') &&
+      (game.sessionType === "matchmaking") &&
       !currentPlayer && !game.parentSessionId
     ) {
       return (
@@ -1021,7 +920,7 @@ export default function GamePage() {
     }
 
      if (game.status === "lobby") {
-        if (game.sessionType === 'matchmaking' || game.sessionType === 'land-rush') {
+        if (game.sessionType === 'matchmaking') {
              return <MatchmakingLobby onJoinQueue={handleFindMatch} isJoining={isJoining} />;
         }
       return (
@@ -1052,7 +951,7 @@ export default function GamePage() {
         
         const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
         
-        if (view === "grid" && game.sessionType !== 'land-rush') {
+        if (view === "grid") {
           return (
             <ColorGridScreen
               grid={game.grid}
@@ -1067,7 +966,7 @@ export default function GamePage() {
           );
         }
         if (!currentQuestion) {
-           if (currentPlayer.coloringCredits > 0 && game.sessionType !== 'land-rush') {
+           if (currentPlayer.coloringCredits > 0) {
                 setView('grid');
                 return null;
             }
@@ -1095,10 +994,6 @@ export default function GamePage() {
             isIndividualMode={isIndividualMode}
             onSendEmoji={handleSendEmoji}
             emojiEvents={game.emojiEvents}
-            sessionType={game.sessionType}
-            grid={game.grid}
-            onTileClick={isStealing ? handleStealTile : handleColorSquare}
-            isStealing={isStealing}
           />
         );
       case "finished":

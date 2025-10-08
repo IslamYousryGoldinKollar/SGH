@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, Plus, Upload, Users, User, Swords, Palette, Grid } from "lucide-react";
+import { Loader2, Trash2, Plus, Upload, Users, User, Swords, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
@@ -36,7 +36,7 @@ const customThemeSchema = z.object({
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
-  sessionType: z.enum(["team", "individual", "matchmaking", "land-rush"]),
+  sessionType: z.enum(["team", "individual", "matchmaking"]),
   teams: z
     .array(
       z.object({
@@ -367,7 +367,7 @@ export default function SessionConfigPage() {
 
       let teamsUpdate;
 
-      if (data.sessionType === "team" || data.sessionType === "matchmaking" || data.sessionType === "land-rush") {
+      if (data.sessionType === "team" || data.sessionType === "matchmaking") {
         teamsUpdate = data.teams.map((t) => ({
           ...t,
           score: game?.teams.find((originalTeam) => originalTeam.name === t.name)?.score || 0,
@@ -659,11 +659,6 @@ export default function SessionConfigPage() {
                               <RadioGroupItem value="matchmaking" className="sr-only" />
                               <Swords className="mb-3 h-6 w-6" />
                               1v1 Challenge
-                            </Label>
-                             <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                              <RadioGroupItem value="land-rush" className="sr-only" />
-                              <Grid className="mb-3 h-6 w-6" />
-                              1v1 Land Rush
                             </Label>
                           </RadioGroup>
                         </FormControl>

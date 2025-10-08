@@ -33,7 +33,6 @@ export interface Player {
 export interface GridSquare {
   id: number;
   coloredBy: string | null; // Team name or Player ID in individual mode
-  specialType?: 'bonus' | 'steal';
 }
 
 export interface Team {
@@ -46,7 +45,7 @@ export interface Team {
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
-export type SessionType = "team" | "individual" | "matchmaking" | "land-rush";
+export type SessionType = "team" | "individual" | "matchmaking";
 
 export type CustomTheme = {
   background: string;

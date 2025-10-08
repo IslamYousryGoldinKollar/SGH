@@ -18,8 +18,7 @@ import { Badge } from "@/components/ui/badge";
 // A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-const TEAM_GRID_SIZE = 22; // For Team Battle
-const LAND_RUSH_GRID_SIZE = 100; // For 1v1 Land Rush
+const TEAM_GRID_SIZE = 22;
 
 export default function AdminDashboard() {
   const [user, loading, error] = useAuthState(auth);
@@ -169,22 +168,7 @@ export default function AdminDashboard() {
         pinExists = gameDoc.exists();
       }
       
-      const isLandRush = originalGameData.sessionType === 'land-rush';
-      const gridSize = isLandRush ? LAND_RUSH_GRID_SIZE : TEAM_GRID_SIZE;
-      
-      let newGrid: GridSquare[] = Array.from({ length: gridSize }, (_, i) => ({ id: i, coloredBy: null }));
-
-      if (isLandRush) {
-        const specialTileCount = Math.floor(Math.random() * 3) + 3; // 3 to 5
-        const specialTypes: Array<'bonus' | 'steal'> = ['bonus', 'steal'];
-        let indexes = Array.from(Array(gridSize).keys());
-        for (let i = 0; i < specialTileCount; i++) {
-            const randomIndex = Math.floor(Math.random() * indexes.length);
-            const tileIndex = indexes.splice(randomIndex, 1)[0];
-            const specialType = specialTypes[Math.floor(Math.random() * specialTypes.length)];
-            newGrid[tileIndex].specialType = specialType;
-        }
-      }
+      const newGrid: GridSquare[] = Array.from({ length: TEAM_GRID_SIZE }, (_, i) => ({ id: i, coloredBy: null }));
 
       const duplicatedGame: Omit<Game, 'id'> = {
         ...originalGameData,

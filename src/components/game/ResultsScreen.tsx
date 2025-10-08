@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import LandRushBoard from "./LandRushBoard";
 
 
 type ResultsScreenProps = {
@@ -22,26 +21,15 @@ type ResultsScreenProps = {
 };
 
 export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPlayerId }: ResultsScreenProps) {
-  const { teams, sessionType, parentSessionId, id: gameId, grid } = game;
+  const { teams, sessionType, parentSessionId, id: gameId } = game;
   const router = useRouter();
   
   useEffect(() => {
-    // If it's a finished 1v1 game, clean it up and redirect.
+    // If it's a finished 1v1 game, redirect to parent lobby
     if (parentSessionId && gameId) {
-        const cleanupAndRedirect = async () => {
-          try {
-            const gameRef = doc(db, "games", gameId);
-            await deleteDoc(gameRef);
-          } catch (error) {
-            console.error("Error cleaning up game:", error);
-          } finally {
-            router.push(`/game/${parentSessionId}`);
-          }
-        };
-
         const timer = setTimeout(() => {
-           cleanupAndRedirect();
-        }, 15000); // 15-second delay before cleaning up and redirecting
+           router.push(`/game/${parentSessionId}`);
+        }, 15000); // 15-second delay before redirecting
 
         return () => clearTimeout(timer);
     }
@@ -61,37 +49,20 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
     if (!teams || teams.length === 0) {
       return { winningTeams: [], isTie: false, winReason: "" };
     }
-    
     const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
     const topScore = sortedTeams[0].score;
-
-    if (sessionType === 'land-rush' && sortedTeams.length === 2 && sortedTeams[0].score === sortedTeams[1].score) {
-      // Tie-breaker logic for Land Rush
-      const p1Id = sortedTeams[0].players[0].id;
-      const p2Id = sortedTeams[1].players[0].id;
-      const p1Tiles = grid.filter(g => g.coloredBy === p1Id).length;
-      const p2Tiles = grid.filter(g => g.coloredBy === p2Id).length;
-
-      if (p1Tiles > p2Tiles) {
-        return { winningTeams: [sortedTeams[0]], isTie: false, winReason: "by land claimed (tie-breaker)" };
-      } else if (p2Tiles > p1Tiles) {
-        return { winningTeams: [sortedTeams[1]], isTie: false, winReason: "by land claimed (tie-breaker)" };
-      } else {
-        return { winningTeams: sortedTeams.slice(0, 2), isTie: true, winReason: "by score and land claimed" };
-      }
-    }
 
     const winners = sortedTeams.filter(t => t.score === topScore && topScore > 0);
     return { winningTeams: winners, isTie: winners.length > 1, winReason: "by score" };
 
-  }, [teams, sessionType, grid]);
+  }, [teams, sessionType]);
 
 
   if (individualPlayerId) {
     const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
     if (!player) return <div className="text-center">Could not load your results.</div>;
     
-    const finalScore = teams[0].score;
+    const finalScore = teams.reduce((acc, team) => acc + team.score, 0);
 
     return (
        <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
@@ -136,42 +107,6 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
     }
   }, [winningTeams]);
 
-  if (sessionType === 'land-rush') {
-    return (
-      <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500 w-full">
-         <Trophy className="h-24 w-24 text-yellow-400 drop-shadow-lg" />
-         <h1 className="text-5xl font-bold mt-4 font-display">
-            {isTie ? "It's a Tie!" : `${winningTeams.length > 0 ? (winningTeams[0].players[0].name + ' Wins!') : 'Game Over!'}`}
-         </h1>
-         <p className="text-muted-foreground">{winReason && `Win condition: ${winReason}`}</p>
-         
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl my-8 items-center">
-            {sortedTeamsByScore.map((team, index) => (
-                <div key={team.name} className={cn("order-2", index === 0 && !isTie && "md:order-1", index === 1 && !isTie && "md:order-3")}>
-                    <Card className="shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-display" style={{color: team.color}}>{team.players[0].name}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-5xl font-bold" style={{color: team.color}}>{team.score}</p>
-                            <p className="text-muted-foreground">total points</p>
-                        </CardContent>
-                    </Card>
-                </div>
-            ))}
-             <div className="w-full h-auto aspect-square max-w-sm mx-auto md:order-2">
-                <LandRushBoard grid={grid} teams={teams} onTileClick={() => {}} credits={0} currentPlayerId="" isStealing={false} />
-            </div>
-         </div>
-         
-         <div className="flex gap-4">
-             <Button size="lg" onClick={() => router.push('/')}>
-                 <X className="mr-2"/> Exit to Menu
-             </Button>
-         </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
