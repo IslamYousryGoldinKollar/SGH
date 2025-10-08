@@ -52,8 +52,8 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
     const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
     if (!player) return <div className="text-center">Could not load your results.</div>;
     
-    // In individual mode, score is the number of hexes.
-    const finalScore = teams[0].players[0].score;
+    // In individual mode, score is the number of hexes, which is stored on the "team".
+    const finalScore = teams[0].score;
 
     return (
        <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
