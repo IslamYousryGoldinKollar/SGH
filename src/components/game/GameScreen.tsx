@@ -23,6 +23,7 @@ type GameScreenProps = {
   sessionType?: SessionType;
   grid: any[];
   onTileClick: (tileId: number) => void;
+  isStealing: boolean;
 };
 
 export default function GameScreen({
@@ -40,6 +41,7 @@ export default function GameScreen({
   sessionType,
   grid,
   onTileClick,
+  isStealing,
 }: GameScreenProps) {
 
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
@@ -77,6 +79,7 @@ export default function GameScreen({
                 onTileClick={onTileClick}
                 credits={currentPlayer.coloringCredits}
                 currentPlayerId={currentPlayer.id}
+                isStealing={isStealing}
              />
              <div className="mt-auto">
                 <EmojiBar onSendEmoji={onSendEmoji} />

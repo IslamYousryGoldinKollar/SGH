@@ -248,6 +248,7 @@ export default function GamePage() {
     useState<Question | null>(null);
   const [view, setView] = useState<"question" | "grid">("question");
   const [isJoining, setIsJoining] = useState(false);
+  const [isStealing, setIsStealing] = useState(false);
 
   useEffect(() => {
     if (game?.theme) {
@@ -302,9 +303,7 @@ export default function GamePage() {
             ?.flatMap((t) => t.players)
             .find((p) => p.id === authUser.uid) || null;
             
-        if (JSON.stringify(player) !== JSON.stringify(currentPlayer)) {
-           setCurrentPlayer(player);
-        }
+        setCurrentPlayer(player);
         
         if (gameData.status === 'playing' && !player && gameData.parentSessionId) {
              toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
@@ -312,8 +311,7 @@ export default function GamePage() {
              return;
         }
 
-        // Automatic transition from 'starting' to 'playing'
-        if (gameData.status === 'starting' && gameData.gameStartedAt && gameData.gameStartedAt.toMillis() < Date.now()) {
+        if (gameData.status === 'starting' && gameData.gameStartedAt && (gameData.gameStartedAt.toMillis() < Date.now())) {
             updateDoc(gameRef, { status: "playing" });
         }
 
@@ -329,7 +327,7 @@ export default function GamePage() {
     });
 
     return () => unsubGame();
-  }, [gameId, authUser, toast, router, currentPlayer]);
+  }, [gameId, authUser, toast, router]);
 
   const handleTimeout = useCallback(async () => {
     if (!game) return;
@@ -353,7 +351,6 @@ export default function GamePage() {
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
 
-  // Effect to set the next question
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
 
@@ -361,6 +358,7 @@ export default function GamePage() {
       setView("grid");
       return;
     }
+     if (isStealing) return;
 
     const nextQ = getNextQuestion();
     if (nextQ) {
@@ -376,22 +374,21 @@ export default function GamePage() {
         setView("question");
       }
     }
-  }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, getNextQuestion, currentQuestion]);
+  }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, getNextQuestion, currentQuestion, isStealing]);
 
 
   // Effect for game timeout
   useEffect(() => {
-    if (game?.status === 'playing') {
-      const gameStartTime = game.gameStartedAt?.toMillis();
-      if (gameStartTime && game.timer) {
-        const endTime = gameStartTime + game.timer * 1000;
-        const now = Date.now();
-        if (now >= endTime) {
-          handleTimeout();
-        } else {
-          const timeoutId = setTimeout(handleTimeout, endTime - now);
-          return () => clearTimeout(timeoutId);
-        }
+    if (game?.status === 'playing' && game.gameStartedAt && game.timer) {
+      const gameStartTime = game.gameStartedAt.toMillis();
+      const endTime = gameStartTime + game.timer * 1000;
+      const now = Date.now();
+      
+      if (now >= endTime) {
+        handleTimeout();
+      } else {
+        const timeoutId = setTimeout(handleTimeout, endTime - now);
+        return () => clearTimeout(timeoutId);
       }
     }
   }, [game?.status, game?.gameStartedAt, game?.timer, handleTimeout]);
@@ -759,7 +756,15 @@ export default function GamePage() {
           playerToUpdate.coloringCredits += 1;
         } else {
            if (currentGame.sessionType === "land-rush") {
-              updatedTeams[teamIndex].score = Math.max(0, updatedTeams[teamIndex].score - 25);
+              const playerOwnedTiles = currentGame.grid.filter(sq => sq.coloredBy === playerToUpdate.id && !sq.specialType);
+              if (playerOwnedTiles.length > 0) {
+                const tileToLose = playerOwnedTiles[Math.floor(Math.random() * playerOwnedTiles.length)];
+                const tileIndexInGrid = currentGame.grid.findIndex(t => t.id === tileToLose.id);
+                if (tileIndexInGrid !== -1) {
+                  currentGame.grid[tileIndexInGrid].coloredBy = null;
+                   transaction.update(gameRef, { grid: currentGame.grid });
+                }
+              }
            } else if (currentGame.sessionType === "individual" || currentGame.parentSessionId) { // Penalty applies in 1v1 too
               const playerGridSquares = currentGame.grid
                 .map((sq, i) => ({ ...sq, originalIndex: i }))
@@ -826,33 +831,39 @@ export default function GamePage() {
             pointsToAdd *= 2;
         }
 
-        // Check for adjacency bonus
-        const gridSize = 10;
-        const x = squareId % gridSize;
-        const y = Math.floor(squareId / gridSize);
-        const neighbors = [
-            y > 0 ? (y - 1) * gridSize + x : -1, // Up
-            y < gridSize - 1 ? (y + 1) * gridSize + x : -1, // Down
-            x > 0 ? y * gridSize + (x - 1) : -1, // Left
-            x < gridSize - 1 ? y * gridSize + (x + 1) : -1, // Right
-        ].filter(id => id !== -1);
-        
-        let hasAdjacent = false;
-        for (const neighborId of neighbors) {
-            const neighborSquare = currentGrid.find(s => s.id === neighborId);
-            if (neighborSquare && neighborSquare.coloredBy === currentPlayer.id) {
-                hasAdjacent = true;
-                break;
+        // Adjacency Bonus for Land Rush
+        if (currentGame.sessionType === 'land-rush') {
+            const gridSize = 10;
+            const x = squareId % gridSize;
+            const y = Math.floor(squareId / gridSize);
+            const neighbors = [
+                y > 0 ? y * gridSize + x - gridSize : -1, // Up
+                y < gridSize - 1 ? y * gridSize + x + gridSize : -1, // Down
+                x > 0 ? y * gridSize + x - 1 : -1, // Left
+                x < gridSize - 1 ? y * gridSize + x + 1 : -1, // Right
+            ].filter(id => id !== -1);
+            
+            let hasAdjacent = false;
+            for (const neighborId of neighbors) {
+                const neighborSquare = currentGrid.find(s => s.id === neighborId);
+                if (neighborSquare && neighborSquare.coloredBy === currentPlayer.id) {
+                    hasAdjacent = true;
+                    break;
+                }
+            }
+            if (hasAdjacent) {
+                pointsToAdd += 25;
             }
         }
-        
-        if (hasAdjacent) {
-            pointsToAdd += 25; // Adjacency Bonus
-        }
+
 
         currentGame.teams[playerTeamIndex].score += pointsToAdd;
         
         squareToColor.coloredBy = currentPlayer.id;
+
+        if (squareToColor.specialType === 'steal') {
+            setIsStealing(true);
+        }
 
         const isGridFull = currentGrid.every(
           (s) => s.coloredBy !== null
@@ -876,6 +887,39 @@ export default function GamePage() {
       });
     }
   };
+  
+    const handleStealTile = async (tileId: number) => {
+        if (!game || !currentPlayer || !isStealing) return;
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const gameRef = doc(db, "games", gameId);
+                const gameDoc = await transaction.get(gameRef);
+                if (!gameDoc.exists()) throw new Error("Game not found.");
+                const currentGame = gameDoc.data() as Game;
+
+                const tileIndex = currentGame.grid.findIndex(t => t.id === tileId);
+                if (tileIndex === -1) throw new Error("Tile not found.");
+                
+                const tileToSteal = currentGame.grid[tileIndex];
+                if (!tileToSteal.coloredBy || tileToSteal.coloredBy === currentPlayer.id) {
+                    throw new Error("Invalid tile to steal.");
+                }
+
+                // Reassign tile
+                currentGame.grid[tileIndex].coloredBy = currentPlayer.id;
+
+                transaction.update(gameRef, { grid: currentGame.grid });
+            });
+            setIsStealing(false);
+            toast({ title: "Success!", description: "You have stolen a tile!" });
+        } catch (error: any) {
+            console.error("Error stealing tile:", error);
+            toast({ title: "Steal Failed", description: error.message, variant: "destructive" });
+            setIsStealing(false); // Reset state even on failure
+        }
+    };
+
 
   const handleSendEmoji = async (emoji: string) => {
     if (!game || !authUser) return;
@@ -957,22 +1001,10 @@ export default function GamePage() {
       )
     }
 
-     if (game.status === "lobby" || (['playing', 'finished'].includes(game.status) && !currentPlayer && !game.parentSessionId)) {
+     if (game.status === "lobby") {
         if (game.sessionType === 'matchmaking' || game.sessionType === 'land-rush') {
              return <MatchmakingLobby onJoinQueue={handleFindMatch} isJoining={isJoining} />;
         }
-        if (['playing', 'finished'].includes(game.status) && !currentPlayer && !game.parentSessionId) {
-         return (
-          <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <h1 className="text-4xl font-bold font-display">
-              Game in Progress
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              A game is currently being played. You can join the next round.
-            </p>
-          </div>
-        );
-      }
       return (
         <Lobby
           game={game}
@@ -985,18 +1017,7 @@ export default function GamePage() {
     }
     
     if (game.status === "starting") {
-        const gameStartTime = game.gameStartedAt?.toMillis();
-        const countdownActive = gameStartTime && gameStartTime > Date.now();
-        if (game.parentSessionId && currentPlayer && countdownActive) {
-            return <PreGameCountdown gameStartedAt={game.gameStartedAt} />;
-        }
-        return (
-            <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
-            <p className="text-muted-foreground mt-2">Get ready for battle!</p>
-            </div>
-        )
+        return <PreGameCountdown gameStartedAt={game.gameStartedAt} />;
     }
 
     switch (game.status) {
@@ -1057,7 +1078,8 @@ export default function GamePage() {
             emojiEvents={game.emojiEvents}
             sessionType={game.sessionType}
             grid={game.grid}
-            onTileClick={handleColorSquare}
+            onTileClick={isStealing ? handleStealTile : handleColorSquare}
+            isStealing={isStealing}
           />
         );
       case "finished":
