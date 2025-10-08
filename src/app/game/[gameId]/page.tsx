@@ -334,38 +334,9 @@ export default function GamePage() {
   }, [game, currentPlayer]);
 
   useEffect(() => {
-    if (!game || !currentPlayer) return;
-
-    const isSoloMode = game.sessionType === "individual" || !!game.parentSessionId;
-    const canProceed = isSoloMode
-      ? ["lobby", "starting", "playing"].includes(game.status)
-      : game.status === "playing";
-
-    if (!canProceed) return;
+    if (!game || !currentPlayer || game.status !== 'playing') return;
 
     const nextQ = getNextQuestion();
-    if (isSoloMode) {
-      // For individual and 1v1 games, the timer is based on the gameStartedAt field.
-      const gameStartTime = game.gameStartedAt?.toMillis();
-      const isTimeUp =
-        gameStartTime && game.timer
-          ? Date.now() > gameStartTime + game.timer * 1000
-          : false;
-
-      const allQuestionsAnswered =
-        !nextQ && game.questions.length > 0;
-
-      if (
-        isTimeUp ||
-        (allQuestionsAnswered && currentPlayer.coloringCredits === 0)
-      ) {
-        setCurrentQuestion(null);
-        setView("question");
-        return;
-      }
-    } else if (game.status !== "playing") {
-      return;
-    }
 
     if (currentPlayer.coloringCredits > 0) {
       setView("grid");
@@ -373,15 +344,19 @@ export default function GamePage() {
     }
 
     if (nextQ) {
-      setCurrentQuestion((prev) =>
-        prev?.question === nextQ.question ? prev : nextQ
-      );
+      if (currentQuestion?.question !== nextQ.question) {
+        setCurrentQuestion(nextQ);
+      }
       setView("question");
     } else {
+      // No more questions and no credits
       setCurrentQuestion(null);
       setView("question");
+      if (game.status === 'playing') {
+        handleTimeout(); // End the game
+      }
     }
-  }, [game, currentPlayer, getNextQuestion]);
+  }, [game, currentPlayer, getNextQuestion, currentQuestion]);
 
   const handleFindMatch = async (playerName: string, playerId: string) => {
     if (!game || !authUser) return;
@@ -844,10 +819,6 @@ export default function GamePage() {
   const handleTimeout = async () => {
     if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
       await updateDoc(doc(db, "games", gameId), { status: "finished" });
-      toast({
-        title: "Time's Up!",
-        description: `The game timer has expired.`,
-      });
     }
   };
 
@@ -971,10 +942,9 @@ export default function GamePage() {
         
         const gameStartTime = game.gameStartedAt?.toMillis();
         const isTimeUp = gameStartTime && game.timer ? Date.now() > gameStartTime + game.timer * 1000 : false;
-        const allQuestionsAnswered = !getNextQuestion() && game.questions.length > 0;
 
-        if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
-            if(game.status === 'playing') handleTimeout(); // Mark game as finished
+        if (isTimeUp) {
+            if(game.status === 'playing') handleTimeout();
             return <ResultsScreen teams={game.teams} onPlayAgain={() => {}} isAdmin={isAdmin} individualPlayerId={game.sessionType === 'individual' ? currentPlayer.id : undefined} parentSessionId={game.parentSessionId} gameId={game.id} />
         }
 
