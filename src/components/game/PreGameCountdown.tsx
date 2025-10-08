@@ -7,10 +7,9 @@ import type { Timestamp } from 'firebase/firestore';
 
 interface PreGameCountdownProps {
   gameStartedAt: Timestamp | null | undefined;
-  onFinish: () => void;
 }
 
-export default function PreGameCountdown({ gameStartedAt, onFinish }: PreGameCountdownProps) {
+export default function PreGameCountdown({ gameStartedAt }: PreGameCountdownProps) {
   const [count, setCount] = useState(5);
 
   const calculateRemaining = useCallback(() => {
@@ -25,18 +24,13 @@ export default function PreGameCountdown({ gameStartedAt, onFinish }: PreGameCou
     const updateCountdown = () => {
       const remainingSeconds = calculateRemaining();
       setCount(remainingSeconds);
-
-      if (remainingSeconds <= 0) {
-        onFinish();
-        if (intervalId) clearInterval(intervalId);
-      }
     };
     
     const intervalId = setInterval(updateCountdown, 500);
     updateCountdown(); // Initial call
 
     return () => clearInterval(intervalId);
-  }, [calculateRemaining, onFinish]);
+  }, [calculateRemaining]);
 
   return (
     <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center text-center z-50 animate-in fade-in">

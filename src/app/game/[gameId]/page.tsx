@@ -249,16 +249,6 @@ export default function GamePage() {
   const [view, setView] = useState<"question" | "grid">("question");
   const [isJoining, setIsJoining] = useState(false);
 
-  // When a 1v1 countdown finishes, update status to 'playing'
-  const handleCountdownFinish = useCallback(async () => {
-    if (game?.status === 'starting') {
-      // The game status is now derived from the server, so we just
-      // need to ensure the local state reflects the correct view.
-      // The main useEffect handles setting the view.
-    }
-  }, [game?.status]);
-
-
   useEffect(() => {
     if (game?.theme) {
        if (typeof game.theme === 'object') {
@@ -311,7 +301,6 @@ export default function GamePage() {
             ?.flatMap((t) => t.players)
             .find((p) => p.id === authUser.uid) || null;
             
-        // Only update player state if it has meaningfully changed
         if (JSON.stringify(player) !== JSON.stringify(currentPlayer)) {
            setCurrentPlayer(player);
         }
@@ -320,6 +309,10 @@ export default function GamePage() {
              toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
              router.replace(`/game/${gameData.parentSessionId}`);
              return;
+        }
+
+        if (gameData.status === 'starting' && gameData.gameStartedAt && gameData.gameStartedAt.toMillis() < Date.now()) {
+            updateDoc(gameRef, { status: "playing" });
         }
 
         setLoading(false);
@@ -356,7 +349,6 @@ export default function GamePage() {
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
 
-  // Effect to determine the view (question or grid)
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
 
@@ -374,9 +366,7 @@ export default function GamePage() {
     } else {
       setCurrentQuestion(null);
       setView("question");
-      // If no credits and no questions, the game might be over for this player
     }
-  // This effect should ONLY run when the player's direct state changes.
   }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, getNextQuestion, currentQuestion]);
 
 
@@ -403,7 +393,6 @@ export default function GamePage() {
     setIsJoining(true);
 
     try {
-        // 1. Find an open lobby
         const q = query(
             collection(db, "games"),
             where("parentSessionId", "==", game.id),
@@ -414,7 +403,6 @@ export default function GamePage() {
         const openLobbies = await getDocs(q);
 
         if (openLobbies.docs.length > 0) {
-            // 2a. Found a lobby, join it
             const lobbyDoc = openLobbies.docs[0];
             const lobbyGameRef = lobbyDoc.ref;
 
@@ -443,7 +431,7 @@ export default function GamePage() {
                         score: 0, 
                         players: [newPlayer], 
                         capacity: 1,
-                        color: "#4682B4", // Team Bravo color
+                        color: "#4682B4",
                         icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd",
                     }
                 ];
@@ -461,7 +449,6 @@ export default function GamePage() {
             router.push(`/game/${lobbyDoc.id}`);
 
         } else {
-            // 2b. No lobby found, create one
             const newGameId = `${game.id}-${generatePin()}`;
             const newGameRef = doc(db, "games", newGameId);
             const templateGame = game;
@@ -488,7 +475,7 @@ export default function GamePage() {
                         score: 0, 
                         players: [newPlayer], 
                         capacity: 1, 
-                        color: "#FF6347", // Team Alpha color
+                        color: "#FF6347",
                         icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258"
                     }
                 ],
@@ -967,7 +954,7 @@ export default function GamePage() {
         const gameStartTime = game.gameStartedAt?.toMillis();
         const countdownActive = gameStartTime && gameStartTime > Date.now();
         if (game.parentSessionId && currentPlayer && countdownActive) {
-            return <PreGameCountdown gameStartedAt={game.gameStartedAt} onFinish={handleCountdownFinish} />;
+            return <PreGameCountdown gameStartedAt={game.gameStartedAt} />;
         }
         return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
