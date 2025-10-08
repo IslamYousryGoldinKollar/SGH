@@ -292,7 +292,7 @@ export default function GamePage() {
   useEffect(() => {
     if (!gameId || !authUser) return;
     setLoading(true);
-    const gameRef = doc(db, "games", gameId);
+    const gameRef = doc(db, "games", gameId.toUpperCase());
 
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -863,7 +863,7 @@ export default function GamePage() {
       id: uuidv4(),
       senderId: authUser.uid,
       emoji,
-      timestamp: serverTimestamp() as Timestamp,
+      timestamp: Timestamp.now(),
     };
     await updateDoc(gameRef, {
       emojiEvents: arrayUnion(newEmojiEvent),
@@ -1062,5 +1062,6 @@ export default function GamePage() {
     </div>
   );
 }
+
 
     
