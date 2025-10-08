@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type {
   Player,
@@ -329,7 +329,7 @@ export default function GamePage() {
     });
 
     return () => unsubGame();
-  }, [gameId, authUser, toast, router]);
+  }, [gameId, authUser, toast, router, currentPlayer]);
 
   const handleTimeout = useCallback(async () => {
     if (!game) return;
@@ -814,14 +814,17 @@ export default function GamePage() {
 
         const squareIndex = currentGrid.findIndex( (s) => s.id === squareId);
         if (squareIndex === -1) throw new Error("Square not found.");
+        const squareToColor = currentGrid[squareIndex];
 
-        const coloredByName = playerToUpdate.id; // Land Rush is always player ID
-
-        if (currentGrid[squareIndex].coloredBy === coloredByName || currentGrid[squareIndex].coloredBy !== null) return; // Already owned or not neutral
+        if (squareToColor.coloredBy === currentPlayer.id || squareToColor.coloredBy !== null) return; // Already owned or not neutral
 
         playerToUpdate.coloringCredits -= 1;
         
-        let pointsToAdd = 50; // Base points for claiming a tile
+        let pointsToAdd = 50; 
+        
+        if (squareToColor.specialType === 'bonus') {
+            pointsToAdd *= 2;
+        }
 
         // Check for adjacency bonus
         const gridSize = 10;
@@ -837,7 +840,7 @@ export default function GamePage() {
         let hasAdjacent = false;
         for (const neighborId of neighbors) {
             const neighborSquare = currentGrid.find(s => s.id === neighborId);
-            if (neighborSquare && neighborSquare.coloredBy === coloredByName) {
+            if (neighborSquare && neighborSquare.coloredBy === currentPlayer.id) {
                 hasAdjacent = true;
                 break;
             }
@@ -849,7 +852,7 @@ export default function GamePage() {
 
         currentGame.teams[playerTeamIndex].score += pointsToAdd;
         
-        currentGrid[squareIndex].coloredBy = coloredByName;
+        squareToColor.coloredBy = currentPlayer.id;
 
         const isGridFull = currentGrid.every(
           (s) => s.coloredBy !== null
@@ -955,6 +958,9 @@ export default function GamePage() {
     }
 
      if (game.status === "lobby" || (['playing', 'finished'].includes(game.status) && !currentPlayer && !game.parentSessionId)) {
+        if (game.sessionType === 'matchmaking' || game.sessionType === 'land-rush') {
+             return <MatchmakingLobby onJoinQueue={handleFindMatch} isJoining={isJoining} />;
+        }
         if (['playing', 'finished'].includes(game.status) && !currentPlayer && !game.parentSessionId) {
          return (
           <div className="flex flex-col items-center justify-center flex-1 text-center">

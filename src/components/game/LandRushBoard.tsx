@@ -3,6 +3,7 @@
 
 import type { GridSquare, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Sparkles } from "lucide-react";
 
 type LandRushBoardProps = {
     grid: GridSquare[];
@@ -46,17 +47,24 @@ export default function LandRushBoard({ grid, teams, onTileClick, credits, curre
                 {grid.map((tile) => {
                     const color = getTileColor(tile.coloredBy);
                     const canClaim = credits > 0 && !tile.coloredBy;
+                    const isSpecial = !tile.coloredBy && tile.specialType;
+
                     return (
                         <div
                             key={tile.id}
                             onClick={() => handleTileClick(tile)}
                             className={cn(
-                                "aspect-square rounded-sm transition-all duration-200",
+                                "aspect-square rounded-sm transition-all duration-200 relative",
                                 canClaim && "cursor-pointer hover:scale-110 bg-muted/30 hover:bg-primary/50",
-                                !canClaim && !tile.coloredBy && "bg-muted/30 cursor-not-allowed"
+                                !canClaim && !tile.coloredBy && "bg-muted/30 cursor-not-allowed",
+                                isSpecial && "bg-yellow-400/20"
                             )}
                              style={{ backgroundColor: tile.coloredBy ? color : undefined }}
-                        />
+                        >
+                          {isSpecial && (
+                            <Sparkles className="absolute inset-0 m-auto h-4 w-4 text-yellow-300 animate-pulse" />
+                          )}
+                        </div>
                     );
                 })}
             </div>

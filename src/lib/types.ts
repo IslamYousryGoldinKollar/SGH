@@ -33,6 +33,7 @@ export interface Player {
 export interface GridSquare {
   id: number;
   coloredBy: string | null; // Team name or Player ID in individual mode
+  specialType?: 'bonus' | 'steal';
 }
 
 export interface Team {

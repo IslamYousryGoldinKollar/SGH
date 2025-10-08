@@ -169,14 +169,29 @@ export default function AdminDashboard() {
         pinExists = gameDoc.exists();
       }
       
-      const gridSize = originalGameData.sessionType === 'land-rush' ? LAND_RUSH_GRID_SIZE : TEAM_GRID_SIZE;
+      const isLandRush = originalGameData.sessionType === 'land-rush';
+      const gridSize = isLandRush ? LAND_RUSH_GRID_SIZE : TEAM_GRID_SIZE;
       
+      let newGrid: GridSquare[] = Array.from({ length: gridSize }, (_, i) => ({ id: i, coloredBy: null }));
+
+      if (isLandRush) {
+        const specialTileCount = Math.floor(Math.random() * 3) + 3; // 3 to 5
+        const specialTypes: Array<'bonus' | 'steal'> = ['bonus', 'steal'];
+        let indexes = Array.from(Array(gridSize).keys());
+        for (let i = 0; i < specialTileCount; i++) {
+            const randomIndex = Math.floor(Math.random() * indexes.length);
+            const tileIndex = indexes.splice(randomIndex, 1)[0];
+            const specialType = specialTypes[Math.floor(Math.random() * specialTypes.length)];
+            newGrid[tileIndex].specialType = specialType;
+        }
+      }
+
       const duplicatedGame: Omit<Game, 'id'> = {
         ...originalGameData,
         status: "lobby",
         adminId: user.uid, // Belongs to the user who duplicates it
         teams: originalGameData.teams.map((team: any) => ({ ...team, score: 0, players: [] })),
-        grid: Array.from({ length: gridSize }, (_, i) => ({ id: i, coloredBy: null })),
+        grid: newGrid,
         createdAt: serverTimestamp() as any,
         gameStartedAt: null,
       };
