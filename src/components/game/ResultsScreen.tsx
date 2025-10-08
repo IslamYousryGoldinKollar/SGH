@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { Team, Player } from "@/lib/types";
+import type { Team, Player, Game } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Trophy, Sparkles } from "lucide-react";
@@ -14,15 +14,14 @@ import { db } from "@/lib/firebase";
 
 
 type ResultsScreenProps = {
-  teams: Team[];
+  game: Game;
   onPlayAgain: () => void;
   isAdmin: boolean;
   individualPlayerId?: string;
-  parentSessionId?: string | null;
-  gameId?: string;
 };
 
-export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualPlayerId, parentSessionId, gameId }: ResultsScreenProps) {
+export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPlayerId }: ResultsScreenProps) {
+  const { teams, sessionType, parentSessionId, id: gameId } = game;
   const router = useRouter();
   
   useEffect(() => {

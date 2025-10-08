@@ -16,6 +16,7 @@ export default function LandRushBoard({ grid, teams, onTileClick, credits, curre
     
     const getTileColor = (coloredBy: string | null): string => {
         if (!coloredBy) return "bg-muted/30 hover:bg-muted/70";
+        // In land-rush, coloredBy is a player ID
         const team = teams.find(t => t.players.some(p => p.id === coloredBy));
         if (team) {
             return team.color;
@@ -32,7 +33,9 @@ export default function LandRushBoard({ grid, teams, onTileClick, credits, curre
     return (
         <div className="flex-1 flex flex-col bg-card/80 backdrop-blur-sm p-4 rounded-lg shadow-inner">
             <div className="text-center mb-2">
-                <h3 className="font-display text-lg">Land Grid</h3>
+                <h3 className={cn("font-display text-lg", credits > 0 && "text-primary")}>
+                    Land Grid
+                </h3>
                 {credits > 0 && (
                      <p className="text-sm text-primary animate-pulse font-semibold">
                         Claim Your Land! ({credits} available)
@@ -49,16 +52,10 @@ export default function LandRushBoard({ grid, teams, onTileClick, credits, curre
                             onClick={() => handleTileClick(tile)}
                             className={cn(
                                 "aspect-square rounded-sm transition-all duration-200",
-                                canClaim && "cursor-pointer animate-pulse hover:scale-110",
-                                !canClaim && "cursor-not-allowed"
+                                canClaim && "cursor-pointer hover:scale-110 bg-muted/30 hover:bg-primary/50",
+                                !canClaim && !tile.coloredBy && "bg-muted/30 cursor-not-allowed"
                             )}
                              style={{ backgroundColor: tile.coloredBy ? color : undefined }}
-                             className={cn(
-                                "aspect-square rounded-sm transition-all duration-200",
-                                canClaim && "cursor-pointer hover:scale-110 bg-muted/30 hover:bg-primary/50",
-                                !canClaim && !tile.coloredBy && "bg-muted/30 cursor-not-allowed",
-                                tile.coloredBy && `bg-[${color}]`
-                            )}
                         />
                     );
                 })}

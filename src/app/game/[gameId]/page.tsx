@@ -279,6 +279,7 @@ export default function GamePage() {
     return () => unsubAuth();
   }, [toast]);
 
+  // Main game state listener
   useEffect(() => {
     if (!gameId || !authUser) return;
     setLoading(true);
@@ -311,6 +312,7 @@ export default function GamePage() {
              return;
         }
 
+        // Automatic transition from 'starting' to 'playing'
         if (gameData.status === 'starting' && gameData.gameStartedAt && gameData.gameStartedAt.toMillis() < Date.now()) {
             updateDoc(gameRef, { status: "playing" });
         }
@@ -327,15 +329,17 @@ export default function GamePage() {
     });
 
     return () => unsubGame();
-  }, [gameId, authUser, toast, router, currentPlayer]);
+  }, [gameId, authUser, toast, router]);
 
   const handleTimeout = useCallback(async () => {
-    if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
+    if (!game) return;
+    const is1v1 = !!game.parentSessionId;
+    if (game.status === "playing" && (isAdmin || game.sessionType === 'individual' || is1v1)) {
       const gameRef = doc(db, "games", gameId);
       await updateDoc(gameRef, { status: "finished" });
     }
   }, [game, isAdmin, gameId]);
-
+  
   const getNextQuestion = useCallback(() => {
     if (!game || !currentPlayer) return null;
     const answered = currentPlayer.answeredQuestions || [];
@@ -349,10 +353,11 @@ export default function GamePage() {
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
 
+  // Effect to set the next question
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
 
-    if (currentPlayer.coloringCredits > 0) {
+    if (game.sessionType !== 'land-rush' && currentPlayer.coloringCredits > 0) {
       setView("grid");
       return;
     }
@@ -362,10 +367,14 @@ export default function GamePage() {
       if (currentQuestion?.question !== nextQ.question) {
         setCurrentQuestion(nextQ);
       }
-      setView("question");
+       if (game.sessionType !== 'land-rush') {
+         setView("question");
+       }
     } else {
       setCurrentQuestion(null);
-      setView("question");
+      if (game.sessionType !== 'land-rush') {
+        setView("question");
+      }
     }
   }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, getNextQuestion, currentQuestion]);
 
@@ -413,6 +422,7 @@ export default function GamePage() {
                 if (lobbyGame.teams[0].players.length !== 1) throw new Error("Lobby is no longer available.");
 
                 const opponent = lobbyGame.teams[0].players[0];
+                const opponentTeamName = lobbyGame.teams[0].name;
 
                 const newPlayer: Player = {
                     id: authUser.uid,
@@ -425,7 +435,7 @@ export default function GamePage() {
                 };
                 
                 const updatedTeams: Team[] = [
-                    { ...lobbyGame.teams[0], name: `Team ${opponent.name}` },
+                    { ...lobbyGame.teams[0], name: opponentTeamName },
                     { 
                         name: `Team ${newPlayer.name}`,
                         score: 0, 
@@ -468,7 +478,7 @@ export default function GamePage() {
                 title: `1v1 Lobby - Waiting...`,
                 status: "lobby",
                 parentSessionId: game.id,
-                sessionType: 'team',
+                sessionType: game.sessionType, // Carry over session type
                 teams: [
                     { 
                         name: `Team ${newPlayer.name}`, 
@@ -743,21 +753,28 @@ export default function GamePage() {
         ];
 
         if (isCorrect) {
-          playerToUpdate.coloringCredits += 1;
-        } else if (currentGame.sessionType === "individual" || currentGame.parentSessionId) { // Penalty applies in 1v1 too
-          const playerGridSquares = currentGame.grid
-            .map((sq, i) => ({ ...sq, originalIndex: i }))
-            .filter((sq) => sq.coloredBy === playerToUpdate.teamName);
-
-          if (playerGridSquares.length > 0) {
-            const randomIndex = Math.floor(
-              Math.random() * playerGridSquares.length
-            );
-            const hexToClear = playerGridSquares[randomIndex];
-            currentGame.grid[hexToClear.originalIndex].coloredBy =
-              null;
-            transaction.update(gameRef, { grid: currentGame.grid });
+          if (currentGame.sessionType === 'land-rush') {
+            updatedTeams[teamIndex].score += 100;
           }
+          playerToUpdate.coloringCredits += 1;
+        } else {
+           if (currentGame.sessionType === "land-rush") {
+              updatedTeams[teamIndex].score = Math.max(0, updatedTeams[teamIndex].score - 25);
+           } else if (currentGame.sessionType === "individual" || currentGame.parentSessionId) { // Penalty applies in 1v1 too
+              const playerGridSquares = currentGame.grid
+                .map((sq, i) => ({ ...sq, originalIndex: i }))
+                .filter((sq) => sq.coloredBy === playerToUpdate.teamName);
+
+              if (playerGridSquares.length > 0) {
+                const randomIndex = Math.floor(
+                  Math.random() * playerGridSquares.length
+                );
+                const hexToClear = playerGridSquares[randomIndex];
+                currentGame.grid[hexToClear.originalIndex].coloredBy =
+                  null;
+                transaction.update(gameRef, { grid: currentGame.grid });
+              }
+           }
         }
         transaction.update(gameRef, { teams: updatedTeams });
       });
@@ -803,14 +820,15 @@ export default function GamePage() {
         if (squareIndex === -1)
           throw new Error("Square not found.");
 
-        const coloredByName = playerToUpdate.teamName;
+        const coloredByName = currentGame.sessionType === 'land-rush' ? playerToUpdate.id : playerToUpdate.teamName;
 
         if (currentGrid[squareIndex].coloredBy === coloredByName)
           return;
 
         playerToUpdate.coloringCredits -= 1;
         
-        if (currentGrid[squareIndex].coloredBy) {
+        // Handle takeover for non-land-rush games
+        if (currentGame.sessionType !== 'land-rush' && currentGrid[squareIndex].coloredBy) {
           const originalOwnerTeamIndex = currentGame.teams.findIndex(
             (t) => t.name === currentGrid[squareIndex].coloredBy
           );
@@ -822,7 +840,12 @@ export default function GamePage() {
           }
         }
         
-        currentGame.teams[playerTeamIndex].score += 1;
+        if (currentGame.sessionType === 'land-rush') {
+           currentGame.teams[playerTeamIndex].score += 50;
+        } else {
+           currentGame.teams[playerTeamIndex].score += 1;
+        }
+        
         currentGrid[squareIndex].coloredBy = coloredByName;
 
         const isGridFull = currentGrid.every(
@@ -835,7 +858,9 @@ export default function GamePage() {
           status: isGridFull ? "finished" : currentGame.status,
         });
       });
-      setView("question");
+      if (game.sessionType !== 'land-rush') {
+        setView("question");
+      }
     } catch (error: any) {
       console.error("Failed to color square: ", error);
       toast({
@@ -887,7 +912,7 @@ export default function GamePage() {
     }
 
     if (
-      game.sessionType === "matchmaking" &&
+      (game.sessionType === "matchmaking" || game.sessionType === 'land-rush') &&
       !currentPlayer && !game.parentSessionId
     ) {
       return (
@@ -978,7 +1003,7 @@ export default function GamePage() {
         
         const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
         
-        if (view === "grid") {
+        if (view === "grid" && game.sessionType !== 'land-rush') {
           return (
             <ColorGridScreen
               grid={game.grid}
@@ -993,7 +1018,7 @@ export default function GamePage() {
           );
         }
         if (!currentQuestion) {
-           if (currentPlayer.coloringCredits > 0) {
+           if (currentPlayer.coloringCredits > 0 && game.sessionType !== 'land-rush') {
                 setView('grid');
                 return null;
             }
@@ -1021,17 +1046,18 @@ export default function GamePage() {
             isIndividualMode={isIndividualMode}
             onSendEmoji={handleSendEmoji}
             emojiEvents={game.emojiEvents}
+            sessionType={game.sessionType}
+            grid={game.grid}
+            onTileClick={handleColorSquare}
           />
         );
       case "finished":
         return (
           <ResultsScreen
-            teams={game.teams}
+            game={game}
             onPlayAgain={() => {}}
             isAdmin={isAdmin}
             individualPlayerId={game.sessionType === 'individual' ? currentPlayer?.id : undefined}
-            parentSessionId={game.parentSessionId}
-            gameId={game.id}
           />
         );
       default:
