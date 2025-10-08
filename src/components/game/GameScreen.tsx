@@ -54,10 +54,10 @@ export default function GameScreen({
         <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
         
         {is1v1 ? (
-          <>
+          <div className="flex flex-1 lg:flex-col gap-4">
             <Scoreboard team={playerTeam} />
             {opponentTeam && <Scoreboard team={opponentTeam} />}
-          </>
+          </div>
         ) : (
            !isIndividualMode && <Scoreboard team={playerTeam} />
         )}

@@ -59,7 +59,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
     </Card>
   );
 
-  if (status === 'starting') {
+  if (status === 'starting' && !game.parentSessionId) {
      return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />

@@ -41,6 +41,7 @@ import Lobby from "@/components/game/Lobby";
 import GameScreen from "@/components/game/GameScreen";
 import ColorGridScreen from "@/components/game/ColorGridScreen";
 import ResultsScreen from "@/components/game/ResultsScreen";
+import PreGameCountdown from "@/components/game/PreGameCountdown";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -178,7 +179,7 @@ const MatchmakingLobby = ({
     <div className="flex flex-col items-center justify-center flex-1">
       <div className="text-center">
         <Swords className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-5xl font-bold font-display">1v1 Matchmaking</h1>
+        <h1 className="text-5xl font-bold font-display">1v1 Challenge</h1>
         <p className="text-muted-foreground mt-2 max-w-xl">
           Enter your name and ID to find a worthy opponent. The battle
           begins soon!
@@ -246,13 +247,22 @@ export default function GamePage() {
   const [view, setView] = useState<"question" | "grid">("question");
   const [isJoining, setIsJoining] = useState(false);
 
+  // When a 1v1 countdown finishes, update status to 'playing'
+  const handleCountdownFinish = useCallback(async () => {
+    if (game?.status === 'starting' && game.parentSessionId) {
+      const gameRef = doc(db, 'games', game.id);
+      await updateDoc(gameRef, { status: 'playing' });
+    }
+  }, [game]);
+
 
   useEffect(() => {
     if (game?.theme) {
-      document.documentElement.setAttribute(
-        "data-theme",
-        game.theme
-      );
+       if (typeof game.theme === 'object') {
+        document.documentElement.removeAttribute("data-theme");
+      } else {
+        document.documentElement.setAttribute("data-theme", game.theme);
+      }
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
@@ -292,7 +302,7 @@ export default function GamePage() {
         // If the game has started and the user isn't in it, they can't join.
         // This check is especially for matchmaking sub-games.
         const isPlayerInGame = gameData.teams?.flatMap(t => t.players).some(p => p.id === authUser.uid);
-        if (gameData.status === 'playing' && !isPlayerInGame && gameData.parentSessionId) {
+        if ((gameData.status === 'playing' || gameData.status === 'starting') && !isPlayerInGame && gameData.parentSessionId) {
              toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
              router.replace(`/game/${gameData.parentSessionId}`);
              return;
@@ -322,7 +332,8 @@ export default function GamePage() {
 
   const handleTimeout = useCallback(async () => {
     if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
-    await updateDoc(doc(db, "games", gameId), { status: "finished" });
+      const gameRef = doc(db, "games", gameId);
+      await updateDoc(gameRef, { status: "finished" });
     }
   }, [game, isAdmin, gameId]);
 
@@ -362,7 +373,7 @@ export default function GamePage() {
         handleTimeout(); // End the game
       }
     }
-  }, [game, currentPlayer, getNextQuestion, handleTimeout]);
+  }, [game, currentPlayer, getNextQuestion, handleTimeout, currentQuestion]);
 
   const handleFindMatch = async (playerName: string, playerId: string) => {
     if (!game || !authUser) return;
@@ -417,7 +428,7 @@ export default function GamePage() {
                 transaction.update(lobbyGameRef, {
                     teams: updatedTeams,
                     title: `1v1: ${opponent.name} vs ${newPlayer.name}`,
-                    status: "playing",
+                    status: "starting", // Set to 'starting' to trigger countdown
                     gameStartedAt: serverTimestamp()
                 });
             });
@@ -905,7 +916,6 @@ export default function GamePage() {
 
      if (
       game.status === "lobby" ||
-      game.status === "starting" ||
       ((game.status === "playing" || game.status === "finished") &&
         !currentPlayer)
     ) {
@@ -938,6 +948,19 @@ export default function GamePage() {
           isAdmin={isAdmin}
         />
       );
+    }
+    
+    if (game.status === "starting") {
+      if (game.parentSessionId && currentPlayer) {
+        return <PreGameCountdown onFinish={handleCountdownFinish} />;
+      }
+      return (
+        <div className="flex flex-col items-center justify-center flex-1 text-center">
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
+          <p className="text-muted-foreground mt-2">Get ready for battle!</p>
+        </div>
+      )
     }
 
     switch (game.status) {

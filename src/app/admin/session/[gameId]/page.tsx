@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -7,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
-import type { Game, CustomTheme, CustomPlayerField } from "@/lib/types";
+import type { Game, CustomTheme, CustomPlayerField, GameTheme } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +30,7 @@ const customThemeSchema = z.object({
   card: hexColor,
   accent: hexColor,
   foreground: hexColor,
+  cardForeground: hexColor,
 });
 
 const sessionSchema = z.object({
@@ -162,6 +164,7 @@ const defaultTheme: CustomTheme = {
   card: "#FFFFFF",
   accent: "#FF4500",
   foreground: "#0A0A0A",
+  cardForeground: "#0A0A0A",
 };
 
 export default function SessionConfigPage() {
@@ -237,8 +240,9 @@ export default function SessionConfigPage() {
           setIsAuthorized(true);
           setGame(gameData);
           if (!form.formState.isDirty) {
-             const currentTheme = gameData.theme || "default";
-            setIsCustomTheme(typeof currentTheme === "object");
+            const currentTheme: GameTheme = gameData.theme || 'default';
+            const themeIsObject = typeof currentTheme === 'object';
+            setIsCustomTheme(themeIsObject);
             
             form.reset({
               title: gameData.title || "Trivia Titans",
@@ -253,7 +257,7 @@ export default function SessionConfigPage() {
               requiredPlayerFields: gameData.requiredPlayerFields || [],
               questions: gameData.questions.map((q) => ({ ...q, options: q.options || [] })),
               topic: gameData.topic,
-              theme: currentTheme,
+              theme: themeIsObject ? { ...defaultTheme, ...currentTheme } : currentTheme,
             });
           }
         } else {
@@ -384,7 +388,7 @@ export default function SessionConfigPage() {
         ];
       }
       
-      const themeToSave = isCustomTheme ? data.theme : "default";
+      const themeToSave = data.theme;
 
       await updateDoc(gameRef, {
         title: data.title,
@@ -519,7 +523,7 @@ export default function SessionConfigPage() {
                               onValueChange={(value) => {
                                 if (value === "custom") {
                                   setIsCustomTheme(true);
-                                  field.onChange(defaultTheme);
+                                  field.onChange(form.getValues("theme") || defaultTheme);
                                 } else {
                                   setIsCustomTheme(false);
                                   field.onChange(value);
@@ -551,7 +555,7 @@ export default function SessionConfigPage() {
                       )}
                     />
                     {isCustomTheme && typeof form.getValues("theme") === "object" && (
-                        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-lg animate-in fade-in">
+                        <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 p-4 border rounded-lg animate-in fade-in">
                            <FormField
                               control={form.control}
                               name="theme.background"
@@ -559,7 +563,7 @@ export default function SessionConfigPage() {
                                 <FormItem>
                                     <FormLabel>Background</FormLabel>
                                     <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" />
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
                                     </FormControl>
                                 </FormItem>
                               )}
@@ -571,7 +575,7 @@ export default function SessionConfigPage() {
                                 <FormItem>
                                     <FormLabel>Card</FormLabel>
                                     <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" />
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
                                     </FormControl>
                                 </FormItem>
                               )}
@@ -583,7 +587,7 @@ export default function SessionConfigPage() {
                                 <FormItem>
                                     <FormLabel>Accent</FormLabel>
                                     <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" />
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
                                     </FormControl>
                                 </FormItem>
                               )}
@@ -593,9 +597,21 @@ export default function SessionConfigPage() {
                               name="theme.foreground"
                               render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Font</FormLabel>
+                                    <FormLabel>Bg Font</FormLabel>
                                     <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" />
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
+                                    </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                             <FormField
+                              control={form.control}
+                              name="theme.cardForeground"
+                              render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Card Font</FormLabel>
+                                    <FormControl>
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
                                     </FormControl>
                                 </FormItem>
                               )}
@@ -642,7 +658,7 @@ export default function SessionConfigPage() {
                             <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                               <RadioGroupItem value="matchmaking" className="sr-only" />
                               <Swords className="mb-3 h-6 w-6" />
-                              1v1 Matchmaking
+                              1v1 Challenge
                             </Label>
                           </RadioGroup>
                         </FormControl>
@@ -820,7 +836,7 @@ export default function SessionConfigPage() {
               ) : (
                 <Card>
                   <CardHeader>
-                    <CardTitle>1v1 Matchmaking</CardTitle>
+                    <CardTitle>1v1 Challenge</CardTitle>
                     <CardDescription>
                       Players who join this session will be automatically matched for 1v1 games. No further
                       configuration is needed here.
