@@ -251,9 +251,11 @@ export default function GamePage() {
 
   // When a 1v1 countdown finishes, update status to 'playing'
   const handleCountdownFinish = useCallback(async () => {
-    if (game?.status === 'starting' && game.parentSessionId) {
-      const gameRef = doc(db, 'games', game.id);
-      await updateDoc(gameRef, { status: 'playing' });
+    if (game?.status === 'starting') {
+        const gameRef = doc(db, 'games', game.id);
+        // The status update is now handled by the side effect in the main useEffect
+        // This function just updates the local state to change the view.
+        setGame(prev => prev ? ({ ...prev, status: 'playing' }) : null);
     }
   }, [game]);
 
@@ -299,7 +301,7 @@ export default function GamePage() {
           id: docSnap.id,
           ...docSnap.data(),
         } as Game;
-        setGame(gameData);
+        
 
         // If the game has started and the user isn't in it, they can't join.
         // This check is especially for matchmaking sub-games.
@@ -318,6 +320,13 @@ export default function GamePage() {
             ?.flatMap((t) => t.players)
             .find((p) => p.id === authUser.uid) || null;
         setCurrentPlayer(player);
+        
+        // This is a client-side check to transition from 'starting' to 'playing'
+        // for countdowns.
+        if (gameData.status === 'starting' && gameData.gameStartedAt && gameData.gameStartedAt.toMillis() < Date.now()) {
+            gameData.status = 'playing';
+        }
+        setGame(gameData);
         setLoading(false);
       } else {
         setGame(null);
@@ -375,7 +384,7 @@ export default function GamePage() {
         handleTimeout(); // End the game
       }
     }
-  }, [game, currentPlayer, getNextQuestion, handleTimeout]);
+  }, [game, currentPlayer, getNextQuestion, handleTimeout, currentQuestion]);
 
   const handleFindMatch = async (playerName: string, playerId: string) => {
     if (!game || !authUser) return;
@@ -426,12 +435,15 @@ export default function GamePage() {
                         icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd",
                     }
                 ];
+                
+                // Set game to start 5 seconds in the future
+                const startTime = new Date(Date.now() + 5000);
 
                 transaction.update(lobbyGameRef, {
                     teams: updatedTeams,
                     title: `1v1: ${opponent.name} vs ${newPlayer.name}`,
                     status: "starting", // Set to 'starting' to trigger countdown
-                    gameStartedAt: serverTimestamp()
+                    gameStartedAt: Timestamp.fromDate(startTime)
                 });
             });
 
@@ -674,8 +686,7 @@ export default function GamePage() {
     }
 
     const gameRef = doc(db, "games", gameId);
-    await updateDoc(gameRef, { status: "starting" });
-
+    
     try {
       let questionsToUse: Question[] = game.questions || [];
       if (questionsToUse.length === 0) {
@@ -966,7 +977,7 @@ export default function GamePage() {
     
     if (game.status === "starting") {
       if (game.parentSessionId && currentPlayer) {
-        return <PreGameCountdown onFinish={handleCountdownFinish} />;
+        return <PreGameCountdown gameStartedAt={game.gameStartedAt} onFinish={handleCountdownFinish} />;
       }
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
