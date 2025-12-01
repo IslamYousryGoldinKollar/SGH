@@ -152,7 +152,7 @@ export default function DisplayPage() {
                 </div>
             </div>
 
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-48 h-48">
+            <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-48 h-48">
                  {team.icon ? 
                     <Image src={team.icon} alt={`${team.name} icon`} layout="fill" className="object-contain" /> 
                     : <Trophy className="w-16 h-16" style={{color: team.color}} />
