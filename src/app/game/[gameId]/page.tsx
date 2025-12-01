@@ -104,8 +104,8 @@ const IndividualLobby = ({
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 w-full max-w-md mx-auto">
-      <div className="text-center text-white drop-shadow-lg mb-8">
-        <h1 className="text-5xl font-bold font-display">{game.title}</h1>
+      <div className="text-center mb-8">
+        <h1 className="text-5xl font-bold font-display text-white drop-shadow-lg">{game.title}</h1>
         <CardDescription className="mt-2 max-w-xl text-lg text-slate-200">
           You have {Math.floor(game.timer / 60)} minutes to prove your knowledge.
         </CardDescription>
@@ -587,6 +587,7 @@ export default function GamePage() {
 
         if (isCorrect) {
           updatedTeams[teamIndex].score += 1;
+          playerToUpdate.coloringCredits += 1;
         }
         transaction.update(gameRef, { teams: updatedTeams });
       });
@@ -729,3 +730,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
