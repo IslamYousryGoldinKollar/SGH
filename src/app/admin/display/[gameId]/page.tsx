@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -128,10 +129,10 @@ export default function DisplayPage() {
 
     const TeamDisplayCard = ({ team }: { team: Team }) => (
         <div 
-            className="relative w-full h-full bg-card/80 text-card-foreground shadow-xl backdrop-blur-sm flex flex-col"
+            className="relative w-full h-full bg-gradient-to-b from-slate-50 to-slate-200 text-card-foreground shadow-xl flex flex-col"
             style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}
         >
-            <div className="absolute top-0 left-0 h-[5px] w-full bg-gradient-to-r from-primary to-accent" />
+            <div className="absolute top-0 left-0 h-[10px] w-full shadow-inner" style={{backgroundColor: team.color}} />
             
             <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
                 <h2 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h2>
@@ -151,7 +152,7 @@ export default function DisplayPage() {
                 </div>
             </div>
 
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-48 h-48">
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-48 h-48">
                  {team.icon ? 
                     <Image src={team.icon} alt={`${team.name} icon`} layout="fill" className="object-contain" /> 
                     : <Trophy className="w-16 h-16" style={{color: team.color}} />
@@ -373,3 +374,5 @@ export default function DisplayPage() {
     );
 
     }
+
+    
