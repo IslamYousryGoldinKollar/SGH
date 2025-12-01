@@ -105,7 +105,9 @@ export default function LoginForm() {
     } catch (error: any) {
       console.error("Admin login error:", error);
       let description = "Invalid credentials or unauthorized access.";
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      if (error.code === 'auth/invalid-credential') {
+        description = "The email or password you entered is incorrect. Please try again.";
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         description = "The email or password you entered is incorrect. Please try again.";
       } else if (error.message) {
         description = error.message;
