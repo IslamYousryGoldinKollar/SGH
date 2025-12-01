@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -211,7 +210,7 @@ export default function DisplayPage() {
         const teamRight = game.teams.length > 1 ? game.teams[1] : null;
 
         return (
-            <div className="flex-1 w-full max-w-full flex items-start justify-around gap-8 p-8 pt-[5vh]">
+            <div className="flex-1 w-full max-w-full flex items-start justify-around gap-8 p-8 pt-[10vh]">
                 {/* Left Team */}
                 <div className="w-1/4 h-[70vh] flex">
                     {teamLeft && <TeamDisplayCard team={teamLeft} />}
@@ -365,7 +364,7 @@ export default function DisplayPage() {
 
         return (
             <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20 animate-in fade-in">
-                <Card className="max-w-4xl w-full text-center p-8 bg-slate-900/90">
+                <Card className="max-w-4xl w-full text-center p-8 bg-slate-900/90 border-0 rounded-xl">
                     <CardHeader>
                         <div className="flex justify-center items-center">
                             <Trophy className="h-16 w-16 text-yellow-400 drop-shadow-lg mr-4" />
@@ -382,12 +381,12 @@ export default function DisplayPage() {
                     <CardContent className="flex flex-col items-center">
                          <div className="flex flex-wrap justify-center items-start gap-6 mt-4 w-full">
                             {winningTeams.map(team => (
-                                <div key={team.name} className="p-4 bg-card rounded-lg shadow-lg border-2 flex-1 min-w-[300px]" style={{borderColor: team.color}}>
+                                <div key={team.name} className="p-4 bg-card/10 rounded-lg shadow-lg border-2 flex-1 min-w-[300px]" style={{borderColor: team.color}}>
                                     <p className="text-4xl font-bold font-display" style={{color: team.color}}>{team.name}</p>
                                      <ul className="mt-4 space-y-2 text-left">
                                         {team.players.map(player => (
-                                            <li key={player.id} className="text-lg bg-secondary/30 p-2 rounded-md">
-                                                <span className="font-semibold">{player.name}</span>
+                                            <li key={player.id} className="text-lg bg-secondary/10 p-2 rounded-md">
+                                                <span className="font-semibold text-slate-100">{player.name}</span>
                                                 <span className="text-xs text-muted-foreground ml-2">(ID: {player.playerId})</span>
                                             </li>
                                         ))}
@@ -459,4 +458,6 @@ export default function DisplayPage() {
 
     }
     
+    
+
     

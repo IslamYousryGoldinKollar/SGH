@@ -10,14 +10,11 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "relative rounded-t-2xl rounded-b-none bg-card/80 text-card-foreground shadow-xl backdrop-blur-sm overflow-hidden",
+      "relative rounded-lg bg-card text-card-foreground shadow-xl",
       className
     )}
     {...props}
-  >
-    {props.children}
-    <div className="absolute bottom-0 left-0 h-[5px] w-full bg-gradient-to-r from-primary to-accent" />
-  </div>
+  />
 ))
 Card.displayName = "Card"
 
@@ -81,3 +78,5 @@ const CardFooter = React.forwardRef<
 CardFooter.displayName = "CardFooter"
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+
+    
