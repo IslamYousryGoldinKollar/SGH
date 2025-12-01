@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import type { Timestamp } from "firebase/firestore";
 
@@ -45,23 +44,13 @@ export default function Timer({ duration, onTimeout, gameStartedAt }: TimerProps
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  const timeColor = timeLeft <= 10 ? "text-red-500" : timeLeft <= 30 ? "text-yellow-400" : "text-primary";
+  const timeColor = timeLeft <= 10 ? "text-red-500" : timeLeft <= 30 ? "text-yellow-400" : "text-white";
 
   return (
-    <Card className="text-center backdrop-blur-sm shadow-lg h-full flex flex-col justify-center">
-      <CardHeader className="p-2">
-        <CardTitle className="flex items-center justify-center gap-2 font-display text-xs">
-          <Clock className="h-4 w-4" />
-          Time
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-2 pt-0">
-        <p className={`text-3xl font-bold font-mono transition-colors duration-500 ${timeColor}`}>
-          {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-        </p>
-      </CardContent>
-    </Card>
+    <div className="text-center backdrop-blur-sm p-2">
+      <p className={`text-6xl font-bold font-display transition-colors duration-500 drop-shadow-2xl ${timeColor}`}>
+        {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+      </p>
+    </div>
   );
 }
-
-    
