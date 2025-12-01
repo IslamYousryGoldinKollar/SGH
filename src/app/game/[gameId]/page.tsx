@@ -51,6 +51,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { v4 as uuidv4 } from "uuid";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import ColorGridScreen from "@/components/game/ColorGridScreen";
 
 const generatePin = () =>
   Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -163,6 +164,7 @@ export default function GamePage() {
   const [currentQuestion, setCurrentQuestion] =
     useState<Question | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [showColorGrid, setShowColorGrid] = useState(false);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
@@ -213,7 +215,6 @@ export default function GamePage() {
              return;
         }
         
-        // This is the fix for the game not starting after countdown
         if (gameData.status === 'starting' && gameData.gameStartedAt && (gameData.gameStartedAt.toMillis() < Date.now())) {
             if (isUserAdmin || gameData.sessionType === 'individual' || gameData.parentSessionId) {
                  updateDoc(gameRef, { status: "playing" }).catch((serverError) => {
@@ -273,9 +274,10 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
+    if(showColorGrid) return; // Don't fetch a new question if we are showing the grid
     const nextQ = getNextQuestion();
     setCurrentQuestion(nextQ);
-  }, [currentPlayer?.answeredQuestions, game, getNextQuestion, game?.status]);
+  }, [currentPlayer?.answeredQuestions, game, getNextQuestion, game?.status, showColorGrid]);
 
 
   // Effect for game timeout
@@ -591,6 +593,11 @@ export default function GamePage() {
         }
         transaction.update(gameRef, { teams: updatedTeams });
       });
+
+      if (isCorrect) {
+          setShowColorGrid(true);
+      }
+
     } catch (error) {
       console.error("Error handling answer:", error);
       const gameRef = doc(db, "games", gameId);
@@ -603,8 +610,55 @@ export default function GamePage() {
     }
   };
 
-  const handleNextQuestion = () =>
+  const handleColorSquare = async (squareId: number) => {
+    if (!game || !currentPlayer) return;
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const gameRef = doc(db, 'games', gameId);
+            const gameDoc = await transaction.get(gameRef);
+
+            if (!gameDoc.exists()) throw new Error("Game does not exist!");
+            const currentGame = gameDoc.data() as Game;
+            
+            const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
+            if (teamIndex === -1) return;
+            const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
+            if (playerIndex === -1) return;
+            
+            const updatedTeams = [...currentGame.teams];
+            const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
+
+            if (playerToUpdate.coloringCredits <= 0) return;
+
+            const gridIndex = currentGame.grid.findIndex(s => s.id === squareId);
+            if (gridIndex === -1) return;
+            
+            const updatedGrid = [...currentGame.grid];
+            if (updatedGrid[gridIndex].coloredBy) {
+                // If it's already colored, don't use a credit
+            } else {
+                updatedGrid[gridIndex].coloredBy = game.sessionType === 'individual' || game.parentSessionId ? playerToUpdate.id : playerToUpdate.teamName;
+                playerToUpdate.coloringCredits -= 1;
+            }
+            
+            transaction.update(gameRef, { teams: updatedTeams, grid: updatedGrid });
+        });
+    } catch (error) {
+        console.error("Error coloring square:", error);
+         const gameRef = doc(db, "games", gameId);
+          const permissionError = new FirestorePermissionError({
+            path: gameRef.path,
+            operation: 'update',
+          });
+          errorEmitter.emit('permission-error', permissionError);
+    }
+  };
+
+  const handleNextQuestion = () => {
+    setShowColorGrid(false);
     setCurrentQuestion(getNextQuestion());
+  }
 
   const renderContent = () => {
     if (loading) {
@@ -685,6 +739,21 @@ export default function GamePage() {
         
         const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
         
+        if (showColorGrid && playerTeam && currentPlayer.coloringCredits > 0) {
+            return (
+                <ColorGridScreen 
+                    grid={game.grid}
+                    teams={game.teams}
+                    onColorSquare={handleColorSquare}
+                    teamColoring={playerTeam.color}
+                    credits={currentPlayer.coloringCredits}
+                    onSkip={handleNextQuestion}
+                    sessionType={game.sessionType}
+                    playerId={isIndividualMode ? currentPlayer.id : currentPlayer.teamName}
+                />
+            )
+        }
+
         if (!currentQuestion) {
           return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
@@ -730,5 +799,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    

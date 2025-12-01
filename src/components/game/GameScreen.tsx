@@ -4,6 +4,7 @@ import type { Timestamp } from "firebase/firestore";
 import Scoreboard from "./Scoreboard";
 import Timer from "./Timer";
 import QuestionCard from "./QuestionCard";
+import { cn } from "@/lib/utils";
 
 type GameScreenProps = {
   teams: Team[];
@@ -37,7 +38,7 @@ export default function GameScreen({
   
 
   return (
-    <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative">
+    <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative", isIndividualMode && "mobile-grid-background")}>
       <div className="lg:col-span-3 order-2 lg:order-1">
         {question ? (
           <QuestionCard 
