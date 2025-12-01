@@ -48,8 +48,6 @@ export interface Team {
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
 export type SessionType = "team" | "individual" | "matchmaking";
 
-export type GameTheme = "default" | "team-alpha" | "team-bravo";
-
 export type EmojiEvent = {
   id: string; // unique id for the event
   senderId: string;
@@ -69,7 +67,6 @@ export interface Game {
     gameStartedAt?: Timestamp | null;
     timer: number;
     topic: string;
-    theme?: GameTheme;
     adminId: string; // UID of the user who created the game
     sessionType: SessionType;
     requiredPlayerFields: CustomPlayerField[];

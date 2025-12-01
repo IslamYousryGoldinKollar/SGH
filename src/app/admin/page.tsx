@@ -105,7 +105,6 @@ export default function AdminDashboard() {
                 gameStartedAt: null,
                 timer: 300, // 5 minutes default
                 topic: "General Knowledge",
-                theme: "team-alpha",
                 sessionType: 'team',
                 requiredPlayerFields: [],
                 parentSessionId: null,

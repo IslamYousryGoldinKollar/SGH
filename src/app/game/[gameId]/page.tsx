@@ -250,18 +250,6 @@ export default function GamePage() {
   const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
-    if (game?.theme) {
-       if (typeof game.theme === 'object') {
-        document.documentElement.removeAttribute("data-theme");
-      } else {
-        document.documentElement.setAttribute("data-theme", game.theme);
-      }
-    } else {
-      document.documentElement.removeAttribute("data-theme");
-    }
-  }, [game?.theme]);
-
-  useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setAuthUser(user);
@@ -312,7 +300,7 @@ export default function GamePage() {
         
         // This is the fix for the game not starting after countdown
         if (gameData.status === 'starting' && gameData.gameStartedAt && (gameData.gameStartedAt.toMillis() < Date.now())) {
-            if (isUserAdmin) {
+            if (isUserAdmin || gameData.sessionType === 'individual' || gameData.parentSessionId) {
                  updateDoc(gameRef, { status: "playing" }).catch((serverError) => {
                     const permissionError = new FirestorePermissionError({
                         path: gameRef.path,

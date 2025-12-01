@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
-import type { Game, CustomPlayerField, GameTheme } from "@/lib/types";
+import type { Game, CustomPlayerField } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,7 +63,6 @@ const sessionSchema = z.object({
       }
     ),
   topic: z.string(),
-  theme: z.enum(["default", "team-alpha", "team-bravo"]),
 });
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
@@ -171,7 +170,6 @@ export default function SessionConfigPage() {
       requiredPlayerFields: [],
       questions: [],
       topic: "General Knowledge",
-      theme: "default",
     },
   });
 
@@ -229,7 +227,6 @@ export default function SessionConfigPage() {
               requiredPlayerFields: gameData.requiredPlayerFields || [],
               questions: gameData.questions.map((q) => ({ ...q, options: q.options || [] })),
               topic: gameData.topic,
-              theme: gameData.theme || "default",
             });
           }
         } else {
@@ -368,7 +365,6 @@ export default function SessionConfigPage() {
         requiredPlayerFields: data.requiredPlayerFields,
         questions: data.questions,
         topic: data.topic,
-        theme: data.theme,
       });
 
       toast({
@@ -476,49 +472,6 @@ export default function SessionConfigPage() {
                   />
                 </CardContent>
               </Card>
-              
-               <Card>
-                <CardHeader>
-                  <CardTitle>Theme & Appearance</CardTitle>
-                   <CardDescription>Customize the look and feel of the game.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <FormField
-                      control={form.control}
-                      name="theme"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              className="grid grid-cols-2 md:grid-cols-4 gap-4"
-                            >
-                              <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'default' && 'border-primary')}>
-                                <RadioGroupItem value="default" className="sr-only" />
-                                Default
-                              </Label>
-                               <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'team-alpha' && 'border-primary')}>
-                                <RadioGroupItem value="team-alpha" className="sr-only" />
-                                Team Alpha
-                              </Label>
-                               <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'team-bravo' && 'border-primary')}>
-                                <RadioGroupItem value="team-bravo" className="sr-only" />
-                                Team Bravo
-                              </Label>
-                              <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-not-allowed opacity-50")}>
-                                <RadioGroupItem value="custom" className="sr-only" disabled />
-                                <Palette className="mb-2 h-5 w-5" />
-                                Custom
-                              </Label>
-                            </RadioGroup>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                </CardContent>
-              </Card>
-
 
               <Card>
                 <CardHeader>
