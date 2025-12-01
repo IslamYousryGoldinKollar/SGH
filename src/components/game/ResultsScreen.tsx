@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Team, Player, Game, GridSquare } from "@/lib/types";
@@ -51,8 +50,8 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
     const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
     if (!player) return <div className="text-center">Could not load your results.</div>;
     
-    // For individual mode, the score is on the single "team" object.
-    const finalScore = game.teams[0]?.score || 0;
+    // For individual mode, the player's score is what matters.
+    const finalScore = player.score || 0;
 
     return (
        <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">

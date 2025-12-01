@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -35,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { v4 as uuidv4 } from "uuid";
+import ColorGridScreen from "@/components/game/ColorGridScreen";
 
 const generatePin = () =>
   Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -248,17 +248,17 @@ export default function GamePage() {
           throw new Error("Game has already started");
         }
 
-        const team = currentGame.teams.find((t) => t.name === teamName);
-        if (!team) throw new Error("Team not found");
-        if (team.players.length >= team.capacity)
-          throw new Error("Team is full");
-
         const existingPlayer = currentGame.teams
           .flatMap((t) => t.players)
           .find((p) => p.id === authUser.uid);
         if (existingPlayer) {
           throw new Error("You have already joined a team.");
         }
+
+        const team = currentGame.teams.find((t) => t.name === teamName);
+        if (!team) throw new Error("Team not found");
+        if (team.players.length >= team.capacity)
+          throw new Error("Team is full");
 
         const newPlayer: Player = {
           id: authUser.uid,
@@ -412,7 +412,7 @@ export default function GamePage() {
     }
   };
   
-  const handleNextQuestion = () => {
+  const handleNextQuestion = useCallback(() => {
       if (!game || !currentPlayer) return;
 
       const answeredCount = (currentPlayer.answeredQuestions || []).length;
@@ -422,7 +422,7 @@ export default function GamePage() {
           setCurrentQuestion(null); // No more questions
       }
       setShowColorGrid(false);
-  };
+  }, [game, currentPlayer]);
 
   const handleAnswer = async (question: Question, answer: string) => {
     if (!game || !currentPlayer) return;
@@ -436,6 +436,7 @@ export default function GamePage() {
         if (!gameDoc.exists()) throw new Error("Game not found");
 
         const currentGame = gameDoc.data() as Game;
+        const isIndividual = !!currentGame.parentSessionId || currentGame.sessionType === 'individual';
 
         const teamIndex = currentGame.teams.findIndex(
           (t) => t.name === currentPlayer.teamName
@@ -460,9 +461,11 @@ export default function GamePage() {
         let scoreChange = 0;
         if (isCorrect) {
           scoreChange = 1;
-          playerToUpdate.coloringCredits = (playerToUpdate.coloringCredits || 0) + 1;
+          if (!isIndividual) {
+            playerToUpdate.coloringCredits = (playerToUpdate.coloringCredits || 0) + 1;
+          }
         } else {
-           scoreChange = -1;
+           scoreChange = isIndividual ? -1 : 0;
         }
         
         updatedTeams[teamIndex].score += scoreChange;
@@ -474,7 +477,11 @@ export default function GamePage() {
       });
 
       if (isCorrect) {
-          setShowColorGrid(true);
+          if(game.sessionType !== 'individual' && !game.parentSessionId) {
+             setShowColorGrid(true);
+          } else {
+              setTimeout(handleNextQuestion, 1500);
+          }
       } else {
           setTimeout(handleNextQuestion, 1500);
       }
@@ -490,7 +497,10 @@ export default function GamePage() {
   };
 
   const handleColorSquare = (squareId: number) => {
-     if (!game || !currentPlayer || currentPlayer.coloringCredits <= 0) return;
+     if (!game || !currentPlayer || currentPlayer.coloringCredits <= 0 || squareId < 0) {
+        handleNextQuestion();
+        return;
+     }
       const gameRef = doc(db, "games", gameId);
       runTransaction(db, async (transaction) => {
         const gameDoc = await transaction.get(gameRef);
@@ -603,7 +613,7 @@ export default function GamePage() {
 
         const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
 
-        if (showColorGrid && playerToUpdate.coloringCredits > 0 && !isIndividualMode) {
+        if (showColorGrid && playerTeam.players.find(p => p.id === currentPlayer.id)!.coloringCredits > 0 && !isIndividualMode) {
             return (
                 <ColorGridScreen 
                     grid={game.grid}

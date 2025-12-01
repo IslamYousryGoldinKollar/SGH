@@ -1,4 +1,3 @@
-
 import type { Team, Player, Question, GridSquare } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
 import { useState } from 'react';
@@ -44,19 +43,20 @@ export default function GameScreen({
   const handleAnswer = (q: Question, a: string) => {
     const isCorrect = q.answer === a;
     onAnswer(q, a);
-    if (isCorrect && !isIndividualMode) {
+    if (isCorrect) {
       setShowColorGrid(true);
     }
   }
 
-  const handleNextQuestion = () => {
-    setShowColorGrid(false);
-  };
-
   const handleColorSquareAndProceed = (squareId: number) => {
     onColorSquare(squareId);
-    // The logic to proceed to the next question is now handled in the page itself
-    // after the coloring action completes.
+    setShowColorGrid(false);
+  }
+  
+  const handleSkipColoring = () => {
+      setShowColorGrid(false);
+      // The parent component should handle moving to the next question
+      onColorSquare(-1); // Use a sentinel value to indicate a skip
   }
 
   if (showColorGrid && currentPlayer.coloringCredits > 0) {
@@ -67,13 +67,13 @@ export default function GameScreen({
             onColorSquare={handleColorSquareAndProceed}
             teamColoring={playerTeam.color}
             credits={currentPlayer.coloringCredits}
-            onSkip={handleNextQuestion}
+            onSkip={handleSkipColoring}
         />
     )
   }
 
   return (
-    <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative game-screen", isIndividualMode && "mobile-grid-background")}>
+    <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative", isIndividualMode ? "mobile-grid-background game-screen" : "game-screen")}>
       <div className="lg:col-span-3 order-2 lg:order-1">
         {question ? (
           <QuestionCard 
