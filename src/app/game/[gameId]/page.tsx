@@ -295,11 +295,12 @@ export default function GamePage() {
     if (!game || !authUser) return;
     setIsJoining(true);
 
-    const newGameRef = doc(db, "games", `${gameId}-${authUser.uid.slice(0, 5)}-${generatePin()}`);
+    const newGameId = `${gameId}-${authUser.uid.slice(0, 5)}-${generatePin()}`;
+    const newGameRef = doc(db, "games", newGameId);
     const templateGameRef = doc(db, "games", gameId);
 
     try {
-      let templateGameData = game;
+      let templateGameData = { ...game };
 
       if (!templateGameData.questions || templateGameData.questions.length === 0) {
         const result = await generateQuestionsAction({
@@ -342,6 +343,7 @@ export default function GamePage() {
 
       const newGame: Omit<Game, "id"> = {
         ...templateGameData,
+        id: newGameId,
         title: `${templateGameData.title} - ${playerName}`,
         status: "playing",
         parentSessionId: gameId,
@@ -360,7 +362,7 @@ export default function GamePage() {
       };
 
       await setDoc(newGameRef, newGame);
-      router.push(`/game/${newGameRef.id}`);
+      router.push(`/game/${newGameId}`);
 
     } catch (error: any) {
       console.error("Error joining individual challenge: ", error);
