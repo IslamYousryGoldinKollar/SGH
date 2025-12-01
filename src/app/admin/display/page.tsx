@@ -180,7 +180,15 @@ export default function DisplayPage() {
                         className="object-contain -z-10 opacity-50"
                      />
                     <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
-                        <h2 className="text-4xl font-display text-primary mb-4">Care Clans</h2>
+                        <div className="mb-6">
+                            <Image 
+                                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsaudi-german-health-logo.png?alt=media&token=99b8f553-6132-4753-941f-0e428574c878"
+                                alt="Saudi German Health Logo"
+                                width={300}
+                                height={100}
+                                className="object-contain"
+                            />
+                        </div>
                          <div className="bg-white p-4 rounded-lg inline-block">
                             <QRCodeSVG value={joinUrl} size={256} />
                         </div>
@@ -225,17 +233,15 @@ export default function DisplayPage() {
                 <div className="absolute left-8 top-8 z-10 w-48 h-24">
                     <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
-                <div className="absolute left-8 top-40 z-10">
+                <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} />}
                 </div>
-
                 <div className="w-auto h-full flex items-center justify-center">
                     <div className="w-auto h-full aspect-[1065/666] relative">
                         <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}} />
                     </div>
                 </div>
-
-                <div className="absolute right-8 top-40 z-10">
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
                     {teamRight && <TeamScorePod team={teamRight} />}
                 </div>
              </div>
@@ -286,7 +292,7 @@ export default function DisplayPage() {
                         </div>
                          {winningTeams.length > 0 && (
                             <CardDescription className="text-2xl pt-4 text-slate-200">
-                                Congratulations to the winning team!
+                                Congratulations to the Trivia Titans!
                             </CardDescription>
                         )}
                     </CardHeader>
