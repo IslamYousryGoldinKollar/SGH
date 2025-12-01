@@ -27,13 +27,11 @@ export interface Player {
   coloringCredits: number;
   score: number; // For teams, points. For individuals, number of hexes.
   customData?: Record<string, string>; // For individual mode custom fields
-  gameStartedAt?: Timestamp; // For individual mode start time
 }
 
 export interface GridSquare {
   id: number;
   coloredBy: string | null; // Team name or Player ID in individual mode
-  specialType?: 'bonus' | 'steal';
 }
 
 export interface Team {
@@ -47,13 +45,6 @@ export interface Team {
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
 export type SessionType = "team" | "individual";
-
-export type EmojiEvent = {
-  id: string; // unique id for the event
-  senderId: string;
-  emoji: string;
-  timestamp: Timestamp;
-};
 
 export interface Game {
     id: string; // The game PIN
@@ -70,7 +61,7 @@ export interface Game {
     adminId: string; // UID of the user who created the game
     sessionType: SessionType;
     requiredPlayerFields: CustomPlayerField[];
-    parentSessionId?: string | null;
+    parentSessionId: string | null;
 }
 
 // Represents a tenant/admin user in the system

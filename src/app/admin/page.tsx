@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc, query, where, runTransaction } from "firebase/firestore";
+import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc, query, where } from "firebase/firestore";
 import { Loader2, Plus, Eye, Edit, Trash2, Copy, Users, BarChart, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -13,9 +13,6 @@ import type { Game, GridSquare } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import ShareSessionModal from "@/components/admin/ShareSessionModal";
 import { Badge } from "@/components/ui/badge";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
-
 
 // A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -39,7 +36,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (user) {
       const q = query(collection(db, "games"), where("adminId", "==", user.uid), where("parentSessionId", "==", null));
-      
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const sessionsData: Game[] = [];
         querySnapshot.forEach((doc) => {
@@ -48,11 +44,7 @@ export default function AdminDashboard() {
         setSessions(sessionsData.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0)));
         setIsLoadingSessions(false);
       }, (error) => {
-          const permissionError = new FirestorePermissionError({
-            path: collection(db, "games").path,
-            operation: 'list',
-          });
-          errorEmitter.emit('permission-error', permissionError);
+          console.error("Error fetching sessions: ", error);
           setIsLoadingSessions(false);
       });
 
@@ -62,79 +54,43 @@ export default function AdminDashboard() {
 
   const createNewSession = async () => {
     if (!user) return;
-    
-    let newPin: string | undefined;
+    const newPin = generatePin();
+    const gameRef = doc(db, "games", newPin);
+
+    const initialGrid: GridSquare[] = Array.from({ length: TEAM_GRID_SIZE }, (_, i) => ({
+        id: i,
+        coloredBy: null,
+    }));
+
+    const newGame: Omit<Game, 'id'> = {
+        title: "Care Clans",
+        description: "A live trivia game for the whole team. Join in on the fun!",
+        status: "lobby",
+        adminId: user.uid,
+        teams: [
+          { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#22c55e", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fgreen%20tower%20copy.png?alt=media&token=fab0d082-5590-4fd7-9d69-a63c101471de" },
+          { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#0ea5e9", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue%20tower%20copy2.png?alt=media&token=81f82f6a-2644-4159-9c08-2d0f3a037f9e" },
+        ],
+        questions: [],
+        grid: initialGrid,
+        createdAt: serverTimestamp() as any,
+        gameStartedAt: null,
+        timer: 300, // 5 minutes default
+        topic: "General Knowledge",
+        sessionType: 'team',
+        requiredPlayerFields: [],
+        parentSessionId: null,
+    };
+
     try {
-        await runTransaction(db, async (transaction) => {
-            let gameRef;
-            let pinExists = true;
-            let attempts = 0;
-            const maxAttempts = 5;
-
-            // Loop to ensure the PIN is unique
-            while (pinExists && attempts < maxAttempts) {
-                newPin = generatePin();
-                gameRef = doc(db, "games", newPin);
-                const gameDoc = await transaction.get(gameRef);
-                pinExists = gameDoc.exists();
-                attempts++;
-            }
-
-            if (pinExists || !gameRef) {
-                 throw new Error("Failed to generate a unique session PIN after several attempts.");
-            }
-
-            const initialGrid: GridSquare[] = Array.from({ length: TEAM_GRID_SIZE }, (_, i) => ({
-                id: i,
-                coloredBy: null,
-            }));
-
-            const newGame: Omit<Game, 'id'> = {
-                title: "Care Clans",
-                description: "A live trivia game for the whole team. Join in on the fun!",
-                status: "lobby",
-                adminId: user.uid,
-                teams: [
-                  { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#22c55e", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fgreen%20tower%20copy.png?alt=media&token=fab0d082-5590-4fd7-9d69-a63c101471de" },
-                  { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#0ea5e9", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue%20tower%20copy2.png?alt=media&token=81f82f6a-2644-4159-9c08-2d0f3a037f9e" },
-                ],
-                questions: [],
-                grid: initialGrid,
-                createdAt: serverTimestamp() as any,
-                gameStartedAt: null,
-                timer: 300, // 5 minutes default
-                topic: "General Knowledge",
-                sessionType: 'team',
-                requiredPlayerFields: [],
-                parentSessionId: null,
-            };
-
-            transaction.set(gameRef, newGame);
-        });
-
-        if (newPin) {
-            router.push(`/admin/session/${newPin}`);
-        }
-
+      await setDoc(gameRef, newGame);
+      router.push(`/admin/session/${newPin}`);
     } catch (e: any) {
-        console.error("Transaction failed: ", e);
-        const gameRef = doc(db, "games", newPin || 'unknown_pin');
-        
-        if (e instanceof FirestorePermissionError) {
-             errorEmitter.emit('permission-error', e);
-        } else {
-            const permissionError = new FirestorePermissionError({
-              path: gameRef.path,
-              operation: 'create',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        }
-       
-        toast({
-            title: "Failed to Create Session",
-            description: e.message || "Could not create a new game session due to a database error.",
-            variant: "destructive",
-        });
+      toast({
+        title: "Failed to Create Session",
+        description: e.message || "Could not create a new game session.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -147,15 +103,10 @@ export default function AdminDashboard() {
                 title: "Session Deleted",
                 description: `Session ${gameId} has been successfully deleted.`,
             });
-        } catch (serverError: any) {
-             const permissionError = new FirestorePermissionError({
-                path: gameRef.path,
-                operation: 'delete',
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        } catch (err: any) {
             toast({
                 title: "Delete Failed",
-                description: "You do not have permission to delete this session.",
+                description: err.message || "Could not delete the session.",
                 variant: "destructive",
             });
         }
@@ -165,8 +116,8 @@ export default function AdminDashboard() {
   const duplicateSession = async (gameId: string) => {
     if (!user) return;
     const originalGameRef = doc(db, "games", gameId);
-    let newGameRef;
-    let newPin;
+    const newPin = generatePin();
+    const newGameRef = doc(db, "games", newPin);
     try {
       const originalGameSnap = await getDoc(originalGameRef);
 
@@ -176,20 +127,6 @@ export default function AdminDashboard() {
       }
 
       const originalGameData = originalGameSnap.data() as Omit<Game, 'id'>;
-      
-      let pinExists = true;
-      let attempts = 0;
-      while(pinExists && attempts < 5) {
-        newPin = generatePin();
-        newGameRef = doc(db, "games", newPin);
-        const gameDoc = await getDoc(newGameRef);
-        pinExists = gameDoc.exists();
-        attempts++;
-      }
-
-       if (pinExists || !newGameRef) {
-          throw new Error("Failed to generate a unique session PIN for duplication.");
-       }
       
       const newGrid: GridSquare[] = Array.from({ length: TEAM_GRID_SIZE }, (_, i) => ({ id: i, coloredBy: null }));
 
@@ -208,17 +145,9 @@ export default function AdminDashboard() {
 
     } catch (err: any) {
       console.error("Failed to duplicate session:", err);
-      if (newGameRef) {
-        const permissionError = new FirestorePermissionError({
-            path: newGameRef.path,
-            operation: 'create',
-            requestResourceData: 'Duplicated Data'
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      }
       toast({
         title: "Duplication Failed",
-        description: err.message || "Could not duplicate the session due to a database error.",
+        description: err.message || "Could not duplicate the session.",
         variant: "destructive"
       });
     }

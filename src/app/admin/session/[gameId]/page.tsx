@@ -15,13 +15,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, Plus, Upload, Users, User, Swords, Palette } from "lucide-react";
+import { Loader2, Trash2, Plus, Upload, Users, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { v4 as uuidv4 } from "uuid";
-import { cn } from "@/lib/utils";
 
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),

@@ -1,9 +1,11 @@
 
-import type { Team, Player, Question, SessionType } from "@/lib/types";
+import type { Team, Player, Question, GridSquare } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
+import { useState } from 'react';
 import Scoreboard from "./Scoreboard";
 import Timer from "./Timer";
 import QuestionCard from "./QuestionCard";
+import ColorGridScreen from "./ColorGridScreen";
 import { cn } from "@/lib/utils";
 
 type GameScreenProps = {
@@ -11,6 +13,8 @@ type GameScreenProps = {
   currentPlayer: Player;
   question: Question;
   onAnswer: (question: Question, answer: string) => void;
+  onColorSquare: (squareId: number) => void;
+  grid: GridSquare[];
   duration: number;
   onTimeout: () => void;
   gameStartedAt: Timestamp | null | undefined;
@@ -22,11 +26,14 @@ export default function GameScreen({
   currentPlayer,
   question,
   onAnswer,
+  onColorSquare,
+  grid,
   duration,
   onTimeout,
   gameStartedAt,
   isIndividualMode,
 }: GameScreenProps) {
+  const [showColorGrid, setShowColorGrid] = useState(false);
 
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
   if (!playerTeam) return null;
@@ -34,6 +41,35 @@ export default function GameScreen({
   const is1v1 = isIndividualMode && teams.length === 2;
   const opponentTeam = is1v1 ? teams.find(t => t.name !== currentPlayer.teamName) : null;
   
+  const handleAnswer = (q: Question, a: string) => {
+    const isCorrect = q.answer === a;
+    onAnswer(q, a);
+    if (isCorrect) {
+      setShowColorGrid(true);
+    }
+  }
+
+  const handleNextQuestion = () => {
+    setShowColorGrid(false);
+  };
+
+  const handleColorSquareAndProceed = (squareId: number) => {
+    onColorSquare(squareId);
+    setShowColorGrid(false);
+  }
+
+  if (showColorGrid && currentPlayer.coloringCredits > 0) {
+    return (
+        <ColorGridScreen 
+            grid={grid}
+            teams={teams}
+            onColorSquare={handleColorSquareAndProceed}
+            teamColoring={playerTeam.color}
+            credits={currentPlayer.coloringCredits}
+            onSkip={handleNextQuestion}
+        />
+    )
+  }
 
   return (
     <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative", isIndividualMode && "mobile-grid-background")}>
@@ -42,7 +78,7 @@ export default function GameScreen({
           <QuestionCard 
             key={question.question} 
             question={question} 
-            onAnswer={onAnswer} 
+            onAnswer={handleAnswer} 
           />
         ) : (
           <div className="flex items-center justify-center h-full">
