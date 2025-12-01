@@ -318,12 +318,12 @@ export default function DisplayPage() {
                 </div>
 
                 {teamLeft?.icon && (
-                    <div className="absolute bottom-0 left-0 w-[480px] h-[480px] pointer-events-none -mb-16 -ml-16">
+                    <div className="absolute bottom-0 left-0 w-[480px] h-[480px] pointer-events-none -mb-16 -ml-48">
                          <Image src={teamLeft.icon} alt={`${teamLeft.name} icon`} layout="fill" objectFit="contain" />
                     </div>
                 )}
                  {teamRight?.icon && (
-                    <div className="absolute bottom-0 right-0 w-[480px] h-[480px] pointer-events-none -mb-16 -mr-16">
+                    <div className="absolute bottom-0 right-0 w-[480px] h-[480px] pointer-events-none -mb-16 -mr-48">
                          <Image src={teamRight.icon} alt={`${teamRight.name} icon`} layout="fill" objectFit="contain" />
                     </div>
                 )}
