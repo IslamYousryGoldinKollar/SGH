@@ -54,9 +54,9 @@ export default function LandingPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-1 flex-col items-center justify-center">
-      <div className="text-center mb-12">
+      <div className="text-center mb-12 text-white drop-shadow-lg">
         <h1 className="text-5xl font-bold font-display text-primary">Care Clans</h1>
-        <p className="text-muted-foreground mt-2 text-xl">The ultimate team trivia challenge</p>
+        <p className="text-xl mt-2">The ultimate team trivia challenge</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">

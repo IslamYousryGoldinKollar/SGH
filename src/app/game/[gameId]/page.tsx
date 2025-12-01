@@ -106,9 +106,9 @@ const IndividualLobby = ({
 
   return (
     <div className="flex flex-col items-center justify-center flex-1">
-      <div className="text-center">
+      <div className="text-center text-white drop-shadow-lg">
         <h1 className="text-5xl font-bold font-display">{game.title}</h1>
-        <p className="text-muted-foreground mt-2 max-w-xl">
+        <p className="mt-2 max-w-xl">
           Enter your details to start the challenge. You will have{" "}
           {Math.floor(game.timer / 60)} minutes to answer questions
           and capture territory.
@@ -619,7 +619,7 @@ export default function GamePage() {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
-          <h1 className="mt-4 text-4xl font-bold font-display">
+          <h1 className="mt-4 text-4xl font-bold font-display text-white drop-shadow-lg">
             Loading Session...
           </h1>
         </div>

@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
     }, [parentGameId, router]);
     
     if (loading) {
-        return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-16 w-16 animate-spin" /></div>;
+        return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-white" /></div>;
     }
 
     if (!parentGame) {
@@ -98,10 +98,10 @@ export default function LeaderboardPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Dashboard
             </Button>
-            <div className="text-center mb-12">
+            <div className="text-center mb-12 text-white drop-shadow-lg">
                 <Trophy className="h-16 w-16 text-yellow-400 drop-shadow-lg mx-auto" />
                 <h1 className="text-5xl font-bold font-display mt-4">{parentGame.title}</h1>
-                <p className="text-muted-foreground mt-2 text-xl">Leaderboard</p>
+                <p className="mt-2 text-xl">Leaderboard</p>
             </div>
 
             <Card>

@@ -224,7 +224,7 @@ export default function AdminDashboard() {
 
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold font-display">Admin Dashboard</h1>
+        <h1 className="text-4xl font-bold font-display text-white drop-shadow-lg">Admin Dashboard</h1>
         <Button onClick={() => auth.signOut().then(() => router.push('/'))}>Sign Out</Button>
       </div>
 
@@ -242,9 +242,9 @@ export default function AdminDashboard() {
       </Card>
       
       <div className="mt-12">
-        <h2 className="text-3xl font-bold font-display mb-4">Your Sessions</h2>
+        <h2 className="text-3xl font-bold font-display mb-4 text-white drop-shadow-lg">Your Sessions</h2>
         {isLoadingSessions ? (
-            <Loader2 className="animate-spin"/>
+            <Loader2 className="animate-spin text-white"/>
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => {
@@ -304,7 +304,7 @@ export default function AdminDashboard() {
                 })}
             </div>
         ) : (
-            <p>No active sessions. Create one to get started!</p>
+            <p className="text-white drop-shadow-md">No active sessions. Create one to get started!</p>
         )}
       </div>
     </div>
