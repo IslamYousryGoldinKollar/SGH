@@ -43,7 +43,7 @@ export default function GameScreen({
   const handleAnswer = (q: Question, a: string) => {
     const isCorrect = q.answer === a;
     onAnswer(q, a);
-    if (isCorrect) {
+    if (isCorrect && !isIndividualMode) { // Only show color grid for team mode
       setShowColorGrid(true);
     }
   }
@@ -59,7 +59,7 @@ export default function GameScreen({
       onColorSquare(-1); // Use a sentinel value to indicate a skip
   }
 
-  if (showColorGrid && currentPlayer.coloringCredits > 0) {
+  if (showColorGrid && currentPlayer.coloringCredits > 0 && !isIndividualMode) {
     return (
         <ColorGridScreen 
             grid={grid}
@@ -73,7 +73,7 @@ export default function GameScreen({
   }
 
   return (
-    <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative", isIndividualMode ? "mobile-grid-background game-screen" : "game-screen")}>
+    <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative", isIndividualMode ? "mobile-grid-background" : "game-screen")}>
       <div className="lg:col-span-3 order-2 lg:order-1">
         {question ? (
           <QuestionCard 

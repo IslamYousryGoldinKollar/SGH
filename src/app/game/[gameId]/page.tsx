@@ -461,9 +461,7 @@ export default function GamePage() {
         let scoreChange = 0;
         if (isCorrect) {
           scoreChange = 1;
-          if (!isIndividual) {
-            playerToUpdate.coloringCredits = (playerToUpdate.coloringCredits || 0) + 1;
-          }
+          playerToUpdate.coloringCredits = (playerToUpdate.coloringCredits || 0) + 1;
         } else {
            scoreChange = isIndividual ? -1 : 0;
         }
