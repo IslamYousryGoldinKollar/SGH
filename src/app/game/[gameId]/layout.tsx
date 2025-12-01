@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import "../../dynamic-theme.css";
 
 function hexToHsl(hex: string): string {
+    if (!hex) return "0 0% 0%";
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) return "0 0% 0%";
     
@@ -60,19 +61,24 @@ export default function GameLayout({
   }, [gameId]);
 
   useEffect(() => {
-        if (typeof theme === 'object') {
+        if (typeof theme === 'object' && theme?.background) {
             setDynamicStyle({
                 '--dynamic-background-hsl': hexToHsl(theme.background),
                 '--dynamic-card-hsl': hexToHsl(theme.card),
                 '--dynamic-accent-hsl': hexToHsl(theme.accent),
                 '--dynamic-foreground-hsl': hexToHsl(theme.foreground),
+                '--dynamic-card-foreground-hsl': hexToHsl(theme.cardForeground),
             } as React.CSSProperties);
             setThemeClass('dynamic-theme');
             document.documentElement.removeAttribute('data-theme');
-        } else {
+        } else if (typeof theme === 'string') {
             setDynamicStyle({});
             setThemeClass('');
             document.documentElement.setAttribute('data-theme', theme);
+        } else {
+            setDynamicStyle({});
+            setThemeClass('');
+            document.documentElement.removeAttribute('data-theme');
         }
     }, [theme]);
 
@@ -88,3 +94,5 @@ export default function GameLayout({
     </div>
   );
 }
+
+    

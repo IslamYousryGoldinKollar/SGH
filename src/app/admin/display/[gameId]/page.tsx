@@ -174,7 +174,7 @@ export default function DisplayPage() {
                 {/* Center Content */}
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground relative">
                      <Image 
-                        src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb"
+                        src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20landtt.png?alt=media&token=023703ec-e56c-41f8-a34a-d8dd3b3bf527"
                         alt="Game map background"
                         fill
                         className="object-contain -z-10 opacity-50"
@@ -401,5 +401,7 @@ export default function DisplayPage() {
     );
 
     }
+
+    
 
     

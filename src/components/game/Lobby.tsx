@@ -105,7 +105,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
                 <Image src={teams[0].icon} alt={teams[0].name} width={128} height={128} className="drop-shadow-lg"/>
             )}
             {teams[1]?.icon && (
-                <Image src={teams[1].icon} alt={teams[1].name} width={128} height={128} className="drop-shadow-lg" style={{transform: 'scaleX(-1)'}}/>
+                <Image src={teams[1].icon} alt={teams[1].name} width={128} height={128} className="drop-shadow-lg" />
             )}
         </div>
         <div className="text-center">
@@ -148,3 +148,5 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
     </div>
   );
 }
+
+    
