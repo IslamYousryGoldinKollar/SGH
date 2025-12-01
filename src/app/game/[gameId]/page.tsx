@@ -596,6 +596,8 @@ export default function GamePage() {
 
       if (isCorrect) {
           setShowColorGrid(true);
+      } else {
+          handleNextQuestion();
       }
 
     } catch (error) {
