@@ -27,9 +27,14 @@ export default function DisplayLayout({
     const gameId = params.gameId as string;
 
   return (
-    <div className="bg-background text-foreground h-screen w-screen overflow-hidden">
-        <Particles className="absolute inset-0 -z-10" quantity={250} />
-        {children}
+    <div className="bg-background text-foreground h-screen w-screen overflow-hidden relative">
+        <div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground.png?alt=media&token=11c26d82-783e-40d0-aa51-5cbc533d5788')"}} />
+        <Particles className="absolute inset-0" quantity={250} />
+        <div className="relative z-10 h-full w-full">
+            {children}
+        </div>
     </div>
   );
 }
+
+    

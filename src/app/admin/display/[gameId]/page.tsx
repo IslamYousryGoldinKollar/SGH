@@ -136,7 +136,7 @@ export default function DisplayPage() {
                     </div>
                 </div>
             </div>
-            <Card className="w-full h-full flex flex-col bg-background/80 backdrop-blur-sm" style={{ borderColor: team.color }}>
+            <Card className="w-full h-full flex flex-col" style={{ borderColor: team.color }}>
                 <CardHeader className="text-center flex-shrink-0 p-4 pt-20">
                      <CardTitle className="text-4xl font-display" style={{ color: team.color }}>{team.name}</CardTitle>
                      <div className="flex items-center justify-center text-foreground pt-2">
@@ -172,29 +172,27 @@ export default function DisplayPage() {
                 </div>
 
                 {/* Center Content */}
-                <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground relative">
-                     <Image 
-                        src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20landtt.png?alt=media&token=023703ec-e56c-41f8-a34a-d8dd3b3bf527"
-                        alt="Game map background"
-                        fill
-                        className="object-contain -z-10 opacity-50"
-                     />
-                    <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
-                        <div className="mb-6 flex justify-center">
-                            <Image 
-                                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsgh.png?alt=media&token=b5eaf98c-f82f-4428-8c60-078a0509dcf2"
-                                alt="Saudi German Health Logo"
-                                width={300}
-                                height={100}
-                                className="object-contain"
-                            />
-                        </div>
-                         <div className="bg-white p-4 rounded-lg inline-block">
-                            <QRCodeSVG value={joinUrl} size={256} />
-                        </div>
-                        <p className="text-xl text-muted-foreground mt-6">Session PIN</p>
-                        <h1 className="text-3xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
-                    </div>
+                <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
+                    <Card>
+                        <CardHeader>
+                            <div className="mb-6 flex justify-center">
+                                <Image 
+                                    src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsgh.png?alt=media&token=b5eaf98c-f82f-4428-8c60-078a0509dcf2"
+                                    alt="Saudi German Health Logo"
+                                    width={300}
+                                    height={100}
+                                    className="object-contain"
+                                />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center">
+                             <div className="bg-white p-4 rounded-lg inline-block">
+                                <QRCodeSVG value={joinUrl} size={256} />
+                            </div>
+                            <p className="text-xl text-muted-foreground mt-6">Session PIN</p>
+                            <h1 className="text-3xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Right Team */}
@@ -370,3 +368,5 @@ export default function DisplayPage() {
     );
 
     }
+
+    
