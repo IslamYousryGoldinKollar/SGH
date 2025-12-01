@@ -33,16 +33,18 @@ export default function DisplayLayout({
             loop
             muted
             playsInline
-            className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+            className="absolute top-0 left-0 w-full h-full object-cover z-0"
+        >
+          <source 
             src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Floop-1.mp4?alt=media&token=5fc4b71c-bf5b-4c47-ba8e-ee6647cfab5a"
-        />
-        <div className="absolute inset-0 bg-black/30" />
-        <Particles className="absolute inset-0" quantity={250} />
-        <div className="relative z-10 h-full w-full">
+            type="video/mp4"
+          />
+        </video>
+        <div className="absolute inset-0 bg-black/30 z-10" />
+        <Particles className="absolute inset-0 z-20" quantity={250} />
+        <div className="relative z-30 h-full w-full">
             {children}
         </div>
     </div>
   );
 }
-
-    
