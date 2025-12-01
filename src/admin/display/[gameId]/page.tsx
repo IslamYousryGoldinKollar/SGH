@@ -174,7 +174,7 @@ export default function DisplayPage() {
                 {/* Center Content */}
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground relative">
                      <Image 
-                        src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb"
+                        src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20landtt.png?alt=media&token=023703ec-e56c-41f8-a34a-d8dd3b3bf527"
                         alt="Game map background"
                         fill
                         className="object-contain -z-10 opacity-50"
@@ -204,7 +204,7 @@ export default function DisplayPage() {
             )} 
             style={{ borderColor: team.color }}>
             <div className="flex items-center justify-center gap-4">
-                {team.icon && <Image src={team.icon} alt={`${team.name} icon`} width={40} height={40} />}
+                {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={40} height={40} /> : <div className="h-10 w-10"/>}
                 <h3 className="text-3xl font-display" style={{ color: team.color }}>{team.name}</h3>
             </div>
              <div className="flex items-center justify-center text-muted-foreground text-xl my-2">
@@ -222,18 +222,20 @@ export default function DisplayPage() {
 
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
-                <div className="absolute left-4 top-4 z-10 w-48 h-24">
+                <div className="absolute left-8 top-8 z-10 w-48 h-24">
                     <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
-                <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
+                <div className="absolute left-8 top-40 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} />}
                 </div>
+
                 <div className="w-auto h-full flex items-center justify-center">
                     <div className="w-auto h-full aspect-[1065/666] relative">
                         <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}} />
                     </div>
                 </div>
-                <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
+
+                <div className="absolute right-8 top-40 z-10">
                     {teamRight && <TeamScorePod team={teamRight} />}
                 </div>
              </div>
@@ -269,6 +271,8 @@ export default function DisplayPage() {
               }, 250);
             }
         }, [winningTeams]);
+        
+        const winnerNames = winningTeams.map(t => t.name).join(' & ');
 
         return (
             <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20 animate-in fade-in">
@@ -277,12 +281,12 @@ export default function DisplayPage() {
                         <div className="flex justify-center items-center">
                             <Trophy className="h-16 w-16 text-yellow-400 drop-shadow-lg mr-4" />
                             <CardTitle className="text-7xl font-display text-yellow-400">
-                                {winningTeams.length > 0 ? (isTie ? "It's a Tie!" : "Team Wins!") : "Game Over"}
+                                {winningTeams.length > 0 ? (isTie ? "It's a Tie!" : `${winnerNames} Wins!`) : "Game Over"}
                             </CardTitle>
                         </div>
                          {winningTeams.length > 0 && (
                             <CardDescription className="text-2xl pt-4 text-slate-200">
-                                Congratulations to the winners!
+                                Congratulations to the Trivia Titans!
                             </CardDescription>
                         )}
                     </CardHeader>
@@ -360,3 +364,4 @@ export default function DisplayPage() {
     }
 
     
+
