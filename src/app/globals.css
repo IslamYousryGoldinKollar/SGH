@@ -64,7 +64,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground.png?alt=media&token=11c26d82-783e-40d0-aa51-5cbc533d5788');
+    background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -74,16 +74,8 @@
 
 @layer utilities {
     .mobile-grid-background {
-        @media (max-width: 768px) {
-            background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
-            background-size: cover;
-            background-position: center;
-        }
+        background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
+        background-size: cover;
+        background-position: center;
     }
-}
-
-@media (max-width: 768px) {
-  body {
-    background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
-  }
 }

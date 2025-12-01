@@ -100,7 +100,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
 
   return (
     <div className="flex flex-col items-center justify-center flex-1">
-        <div className="md:hidden flex justify-center items-center -space-x-8 mb-8">
+        <div className="flex justify-center items-center -space-x-8 mb-8">
             {teams[0]?.icon && (
                 <Image src={teams[0].icon} alt={teams[0].name} width={128} height={128} className="drop-shadow-lg"/>
             )}

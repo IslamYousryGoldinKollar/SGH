@@ -73,5 +73,3 @@ export default function ColorGridScreen({ grid, teams, onColorSquare, teamColori
     </div>
   );
 }
-
-    

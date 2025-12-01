@@ -47,7 +47,7 @@ import { Loader2, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { v4 as uuidv4 } from "uuid";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -108,11 +108,11 @@ const IndividualLobby = ({
     <div className="flex flex-col items-center justify-center flex-1">
       <div className="text-center text-white drop-shadow-lg">
         <h1 className="text-5xl font-bold font-display">{game.title}</h1>
-        <p className="mt-2 max-w-xl">
+        <CardDescription className="mt-2 max-w-xl text-lg text-slate-200">
           Enter your details to start the challenge. You will have{" "}
           {Math.floor(game.timer / 60)} minutes to answer questions
           and capture territory.
-        </p>
+        </CardDescription>
       </div>
 
       <Card className="my-8 w-full max-w-md">
