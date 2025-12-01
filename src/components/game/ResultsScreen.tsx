@@ -62,7 +62,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
             </CardDescription>
             <Card className="my-12 shadow-lg w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-display text-primary">Your Score</CardTitle>
+                    <CardTitle className="text-2xl font-display text-primary">Your Final Score</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-6xl font-bold text-primary">{finalScore}</p>

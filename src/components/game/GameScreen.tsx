@@ -37,14 +37,15 @@ export default function GameScreen({
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
   if (!playerTeam) return null;
   
-  const is1v1 = isIndividualMode && teams.length === 2;
-  const opponentTeam = is1v1 ? teams.find(t => t.name !== currentPlayer.teamName) : null;
-  
   const handleAnswer = (q: Question, a: string) => {
     const isCorrect = q.answer === a;
     onAnswer(q, a);
-    if (isCorrect && !isIndividualMode) { // Only show color grid for team mode
-      setShowColorGrid(true);
+    if (isCorrect) {
+      // Only show color grid if the player has credits.
+      const playerState = teams.flatMap(t => t.players).find(p => p.id === currentPlayer.id);
+      if (playerState && playerState.coloringCredits > 0) {
+        setShowColorGrid(true);
+      }
     }
   }
 
@@ -54,12 +55,12 @@ export default function GameScreen({
   }
   
   const handleSkipColoring = () => {
-      setShowColorGrid(false);
       // The parent component should handle moving to the next question
       onColorSquare(-1); // Use a sentinel value to indicate a skip
+      setShowColorGrid(false);
   }
 
-  if (showColorGrid && currentPlayer.coloringCredits > 0 && !isIndividualMode) {
+  if (showColorGrid) {
     return (
         <ColorGridScreen 
             grid={grid}
@@ -89,16 +90,7 @@ export default function GameScreen({
       </div>
       <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-row lg:flex-col gap-4 items-stretch">
         <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
-        
-        {is1v1 ? (
-          <div className="flex flex-1 lg:flex-col gap-4">
-            <Scoreboard team={playerTeam} />
-            {opponentTeam && <Scoreboard team={opponentTeam} />}
-          </div>
-        ) : (
-           !isIndividualMode && <Scoreboard team={playerTeam} />
-        )}
-        
+        {!isIndividualMode && <Scoreboard team={playerTeam} />}
       </aside>
     </div>
   );
