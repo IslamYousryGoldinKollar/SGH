@@ -711,7 +711,7 @@ export default function GamePage() {
             questionPhase={questionPhase}
             lastAnswerCorrect={lastAnswerCorrect}
             onAnswer={handleAnswer}
-            squares={game.grid}
+            grid={game.grid}
             duration={game.timer || 300}
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}
