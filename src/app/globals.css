@@ -74,7 +74,8 @@
   /* New Global Card Styling */
   .card {
     @apply border-0 relative overflow-hidden;
-    background-color: hsla(var(--card), 0.9);
+    background-color: hsl(var(--card));
+    opacity: 0.9;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
