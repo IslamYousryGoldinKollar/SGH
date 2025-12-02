@@ -56,10 +56,10 @@ export default function QuestionCard({
 
   return (
     <Card className={cn("h-full relative overflow-hidden flex flex-col", className)}>
-      <CardHeader>
-        <CardTitle className="text-xl md:text-2xl font-display">{question.question}</CardTitle>
+      <CardHeader className="flex-shrink-0">
+        <CardTitle className="text-xl md:text-2xl font-display leading-tight">{question.question}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col justify-center">
+      <CardContent className="flex-1 flex flex-col justify-center min-h-0">
         <div className="grid grid-cols-1 gap-3">
           {question.options.map((option, index) => (
             <Button

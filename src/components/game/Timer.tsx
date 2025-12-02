@@ -1,13 +1,13 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import type { Timestamp } from "firebase/firestore";
 
 interface TimerProps {
-  duration?: number;
-  onTimeout?: any;
-  gameStartedAt?: any;
-  initialTime?: number;
+  initialTime: number; // Total duration in seconds
+  gameStartedAt: Timestamp | null | undefined;
   onTimeUp?: () => void;
   isRunning?: boolean;
   className?: string;
@@ -15,36 +15,38 @@ interface TimerProps {
 
 export function Timer({ 
   initialTime, 
+  gameStartedAt,
   onTimeUp, 
   isRunning = true,
   className 
 }: TimerProps) {
-  const [timeLeft, setTimeLeft] = useState(initialTime || 0);
+  const [timeLeft, setTimeLeft] = useState(initialTime);
 
   useEffect(() => {
-    setTimeLeft(initialTime || 0);
-  }, [initialTime]);
-
-  useEffect(() => {
-    if (!isRunning || (timeLeft || 0) <= 0) {
-      if ((timeLeft || 0) <= 0 && onTimeUp) {
-        onTimeUp();
-      }
+    if (!isRunning || !gameStartedAt) {
       return;
     }
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const startTime = gameStartedAt.toMillis();
+    const endTime = startTime + initialTime * 1000;
 
-    return () => clearInterval(timer);
-  }, [isRunning, timeLeft, onTimeUp]);
+    const updateTimer = () => {
+      const now = Date.now();
+      const remaining = Math.max(0, endTime - now);
+      const remainingSeconds = Math.ceil(remaining / 1000);
+      setTimeLeft(remainingSeconds);
+
+      if (remainingSeconds <= 0 && onTimeUp) {
+        onTimeUp();
+      }
+    };
+    
+    updateTimer(); // Initial call to set the time immediately
+
+    const timerInterval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(timerInterval);
+  }, [isRunning, gameStartedAt, initialTime, onTimeUp]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

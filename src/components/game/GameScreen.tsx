@@ -46,9 +46,14 @@ export default function GameScreen({
   const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
+    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto h-full">
       <div className="w-full">
-        <Timer initialTime={duration} onTimeUp={onTimeout} isRunning={true} className="mb-4" />
+        <Timer 
+          initialTime={duration} 
+          onTimeUp={onTimeout} 
+          gameStartedAt={gameStartedAt}
+          isRunning={true} 
+          className="mb-4" />
         
         {!isIndividualMode ? (
           <Scoreboard team={playerTeam} />
@@ -83,13 +88,13 @@ export default function GameScreen({
         )}
       </div>
 
-      <div className="w-full flex-1 flex flex-col mt-4">
+      <div className="w-full flex-1 flex flex-col mt-4 min-h-0">
         <QuestionCard
           question={question}
           questionPhase={questionPhase}
           lastAnswerCorrect={lastAnswerCorrect}
           onAnswer={onAnswer}
-          className="question-card flex-1 min-h-[300px]"
+          className="question-card flex-1"
           isIndividualMode={isIndividualMode}
         />
       </div>

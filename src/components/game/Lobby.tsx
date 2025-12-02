@@ -66,13 +66,13 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
                 style={{backgroundColor: team.color}} 
             />
             
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                <h2 className="text-4xl font-display" style={{ color: team.color }}>
+            <div className="flex-1 flex flex-col items-center justify-start text-center p-4 pt-8">
+                <h2 className="text-3xl md:text-4xl font-display" style={{ color: team.color }}>
                     {team.name}
                 </h2>
                 <div className="flex items-center justify-center text-foreground pt-2">
                     <Users className="mr-2 h-5 w-5" /> 
-                    <span className="text-2xl font-semibold drop-shadow-sm">
+                    <span className="text-xl md:text-2xl font-semibold drop-shadow-sm">
                         {team.players.length} / {team.capacity}
                     </span>
                 </div>
@@ -97,17 +97,16 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
                 </div>
             </div>
 
-            <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-32 h-32 md:w-48 md:h-48">
-                {team.icon ? 
+            {team.icon && 
+                <div className="relative h-24 md:h-32 mt-4">
                     <Image 
                         src={team.icon} 
                         alt={`${team.name} icon`} 
                         fill 
                         className="object-contain" 
                     /> 
-                    : null
-                }
-            </div>
+                </div>
+            }
         </div>
     );
 
@@ -123,7 +122,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
 
   if (currentPlayer) {
     return (
-      <div className="flex flex-col items-center justify-center text-center flex-1 w-full">
+      <div className="flex flex-col items-center justify-center text-center flex-1 w-full h-full">
         <h1 className="text-4xl font-bold font-display">Welcome, {currentPlayer.name}!</h1>
         <p className="text-muted-foreground mt-2">You are on <span className="font-bold" style={{color: teams.find(t=>t.name === currentPlayer.teamName)?.color}}>{currentPlayer.teamName}</span>.</p>
         
@@ -136,7 +135,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
             }
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-8 h-[60vh]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 w-full max-w-4xl my-8 flex-1 min-h-0">
             {teams.map((team) => <TeamCard key={team.name} team={team} />)}
         </div>
 
@@ -151,7 +150,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
   }
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1">
+    <div className="flex flex-col items-center justify-start flex-1 h-full">
         <div className="flex justify-center items-center -space-x-8 mb-8">
             {teams[0]?.icon && (
                 <Image src={teams[0].icon} alt={teams[0].name} width={128} height={128} className="drop-shadow-lg"/>
@@ -195,7 +194,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
          {!teams || teams.length === 0 && <p className="text-destructive mt-4">No teams have been configured for this game.</p>}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl h-[60vh]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 w-full max-w-4xl flex-1 min-h-0">
         {teams.map(team => <TeamCard key={team.name} team={team} />)}
       </div>
     </div>
