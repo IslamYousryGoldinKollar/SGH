@@ -681,12 +681,9 @@ export default function GamePage() {
         if (questionPhase === 'coloring' && freshPlayer && freshPlayer.coloringCredits > 0 && !isIndividualMode) {
             return (
                 <ColorGridScreen 
-                    squares={game.grid}
-                    teams={game.teams}
-                    onColorSquare={handleColorSquare}
-                    teamColoring={playerTeam.color}
-                    credits={freshPlayer.coloringCredits}
-                    onSkip={() => handleColorSquare(-1)}
+                    gridSize={8}
+                    timeLimit={30}
+                    onComplete={() => handleColorSquare(-1)}
                 />
             )
         }
