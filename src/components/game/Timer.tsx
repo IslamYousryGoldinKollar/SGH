@@ -19,9 +19,6 @@ export function Timer({
   isRunning = true,
   className 
 }: TimerProps) {
-  duration?: number;
-  onTimeout?: any;
-  gameStartedAt?: any;
   const [timeLeft, setTimeLeft] = useState(initialTime);
 
   useEffect(() => {
