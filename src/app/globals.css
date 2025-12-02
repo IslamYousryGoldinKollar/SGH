@@ -127,21 +127,6 @@
         min-height: calc(100vh - 8rem);
         padding: 1rem;
     }
-
-    /* Enhances the question card legibility */
-    .game-screen .question-card {
-        backdrop-filter: blur(12px);
-        background-color: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    }
-
-    /* Specific style for the new Individual Stats Card */
-    .game-screen .individual-stats-card {
-        backdrop-filter: blur(12px);
-        background-color: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-    }
     
     /* Water Background Fallback */
     .water-bg-static {
