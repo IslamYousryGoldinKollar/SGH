@@ -149,15 +149,18 @@ export default function GamePage() {
   const [isJoining, setIsJoining] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
+  // NEW STATE MACHINE FOR FLOW CONTROL
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
   const [pendingColorCredits, setPendingColorCredits] = useState(0);
 
+  // Refs for timeout management to prevent race conditions
   const phaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const isAdmin = game?.adminId === authUser?.uid;
   const isIndividualMode = game?.sessionType === 'individual' || !!game?.parentSessionId;
 
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (phaseTimeoutRef.current) clearTimeout(phaseTimeoutRef.current);
@@ -200,12 +203,14 @@ export default function GamePage() {
         }
     };
     
+    // Check both games and individual_games collections
     const gamesRef = doc(db, "games", gameId.toUpperCase());
     const individualGamesRef = doc(db, "individual_games", gameId.toUpperCase());
 
     const unsubscribeGames = onSnapshot(gamesRef, handleDocSnapshot);
     const unsubscribeIndividualGames = onSnapshot(individualGamesRef, handleDocSnapshot);
     
+    // If neither collection has the game, show error after a short delay
     const timeout = setTimeout(() => {
         if (!foundGame) {
             setGame(null);
@@ -217,7 +222,7 @@ export default function GamePage() {
             router.push("/");
             setLoading(false);
         }
-    }, 10000);
+    }, 2000);
   
     return () => {
       unsubscribeGames();
@@ -227,6 +232,7 @@ export default function GamePage() {
   }, [gameId, authUser, router, toast]);
 
     
+  // Effect to manage game state transitions and redirects
   useEffect(() => {
     if (!game || !authUser) return;
 
@@ -380,7 +386,7 @@ export default function GamePage() {
         customData: newCustomData,
       };
 
-      const newGame: Omit<Game, "id"> = {
+      const newGame: Game = {
         ...templateGameData,
         id: newGameId,
         title: `${templateGameData.title} - ${playerName}`,
@@ -453,6 +459,7 @@ export default function GamePage() {
     }
   };
   
+    // 3. CENTRALIZED NEXT QUESTION LOGIC
   const moveToNextQuestion = useCallback(() => {
     if (!game) return;
 
@@ -467,16 +474,20 @@ export default function GamePage() {
       setCurrentQuestion(null);
     }
 
+    // Reset phase state for the new question
     setQuestionPhase('answering');
     setLastAnswerCorrect(null);
     setPendingColorCredits(0);
   }, [game, currentQuestionIndex]);
 
+  // 4. HANDLE ANSWER WITH PHASE TRANSITIONS
   const handleAnswer = async (question: Question, answer: string) => {
+    // Prevent double clicking or answering during wrong phase
     if (!game || !currentPlayer || questionPhase !== 'answering') return;
     
     const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
 
+    // A. Immediate Feedback (Optimistic UI)
     setQuestionPhase('feedback');
     setLastAnswerCorrect(isCorrect);
     
@@ -510,7 +521,7 @@ export default function GamePage() {
           newColorCredits += 1;
           playerToUpdate.coloringCredits = newColorCredits;
         } else if (isIndividualMode) {
-          scoreChange = -1;
+          scoreChange = -1; // Penalty for individual mode
         }
 
         updatedTeams[teamIndex].score += scoreChange;
@@ -519,30 +530,37 @@ export default function GamePage() {
         
         transaction.update(gameRef, { teams: updatedTeams });
 
+        // Store credits locally to decide next phase
         if (isCorrect) {
           setPendingColorCredits(newColorCredits);
         }
       });
 
+      // B. Schedule Next Phase
       phaseTimeoutRef.current = setTimeout(() => {
+        // If correct AND Team Mode -> Go to Coloring
         if (isCorrect && !isIndividualMode) {
            setQuestionPhase('coloring');
         } else {
+           // If Wrong OR Individual Mode -> Skip coloring, go to next
            setQuestionPhase('transitioning');
            phaseTimeoutRef.current = setTimeout(() => {
              moveToNextQuestion();
            }, 500);
         }
-      }, 2000);
+      }, 2000); // Show feedback for 2 seconds
 
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Could not submit answer.", variant: "destructive" });
+      // On error, force move next after delay
       setTimeout(moveToNextQuestion, 2000);
     }
   };
 
+  // 5. HANDLE COLORING SELECTION
   const handleColorSquare = async (squareId: number) => {
+    // If skipping (squareId -1) or error
     if (!game || !currentPlayer || squareId < 0) {
       moveToNextQuestion();
       return;
@@ -570,6 +588,7 @@ export default function GamePage() {
         if (gridIndex === -1) return;
 
         if (updatedGrid[gridIndex].coloredBy) {
+            // Already colored
         } else {
             updatedGrid[gridIndex].coloredBy = currentPlayer.teamName;
             playerToUpdate.coloringCredits -= 1;
@@ -581,6 +600,7 @@ export default function GamePage() {
     } catch (error) {
       console.error(error);
     }
+    // Always move next after attempt
     moveToNextQuestion();
   };
 
@@ -620,6 +640,7 @@ export default function GamePage() {
         if(game.status !== 'lobby') {
             return <div className="text-center p-8">This game is already in progress. You cannot join now.</div>;
         }
+        // If it's lobby, the Lobby component will handle the join UI
     }
     
     if(game.parentSessionId && game.status === 'lobby' && currentPlayer) {
