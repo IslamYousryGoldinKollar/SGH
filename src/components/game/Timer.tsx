@@ -19,15 +19,15 @@ export function Timer({
   isRunning = true,
   className 
 }: TimerProps) {
-  const [timeLeft, setTimeLeft] = useState(initialTime);
+  const [timeLeft, setTimeLeft] = useState(initialTime || 0);
 
   useEffect(() => {
     setTimeLeft(initialTime);
   }, [initialTime]);
 
   useEffect(() => {
-    if (!isRunning || timeLeft <= 0) {
-      if (timeLeft <= 0 && onTimeUp) {
+    if (!isRunning || (timeLeft || 0) <= 0) {
+      if ((timeLeft || 0) <= 0 && onTimeUp) {
         onTimeUp();
       }
       return;
