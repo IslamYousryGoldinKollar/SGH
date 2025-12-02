@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -129,28 +128,9 @@ export default function DisplayPage() {
 
     const TeamDisplayCard = ({ team }: { team: Team }) => (
         <div 
-            className="relative w-full h-full text-card-foreground shadow-xl flex flex-col"
+            className="display-card relative w-full h-full text-card-foreground shadow-xl flex flex-col"
             style={{
                 clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)',
-                background: `
-                    linear-gradient(
-                        0deg,
-                        #ffffff 0%,
-                        #f0f2f5 8%,
-                        #ffffff 15%,
-                        #e8ecf0 23%,
-                        #ffffff 30%,
-                        #f0f2f5 38%,
-                        #ffffff 45%,
-                        #f0f2f5 52%,
-                        #e8ecf0 60%,
-                        #ffffff 68%,
-                        #f0f2f5 75%,
-                        #ffffff 83%,
-                        #f0f2f5 90%,
-                        #ffffff 100%
-                    )
-                `,
                 boxShadow: 'inset 10px -10px 40px -10px rgba(0, 0, 0, 0.1), inset 0 0 60px rgba(0,0,0,0.03), 0 10px 30px rgba(0,0,0,0.1)'
             }}
         >
@@ -251,28 +231,9 @@ export default function DisplayPage() {
 
     const TeamScorePod = ({ team }: { team: Team }) => (
         <div
-            className="relative w-56 h-[170px] text-card-foreground shadow-xl flex flex-col"
+            className="display-card relative w-56 h-[170px] text-card-foreground shadow-xl flex flex-col"
             style={{
                 clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)',
-                background: `
-                    linear-gradient(
-                        0deg,
-                        #ffffff 0%,
-                        #f0f2f5 8%,
-                        #ffffff 15%,
-                        #e8ecf0 23%,
-                        #ffffff 30%,
-                        #f0f2f5 38%,
-                        #ffffff 45%,
-                        #f0f2f5 52%,
-                        #e8ecf0 60%,
-                        #ffffff 68%,
-                        #f0f2f5 75%,
-                        #ffffff 83%,
-                        #f0f2f5 90%,
-                        #ffffff 100%
-                    )
-                `,
                 boxShadow: 'inset 10px -10px 40px -10px rgba(0, 0, 0, 0.1), inset 0 0 60px rgba(0,0,0,0.03), 0 10px 30px rgba(0,0,0,0.1)'
             }}
         >

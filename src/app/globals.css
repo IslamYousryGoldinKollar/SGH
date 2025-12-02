@@ -90,6 +90,30 @@
     height: 7px;
     background: linear-gradient(to right, hsl(var(--accent)), hsl(var(--primary)));
   }
+
+  .display-card {
+    background: 
+      linear-gradient(
+          0deg,
+          #ffffff 0%,
+          #f0f2f5 8%,
+          #ffffff 15%,
+          #e8ecf0 23%,
+          #ffffff 30%,
+          #f0f2f5 38%,
+          #ffffff 45%,
+          #f0f2f5 52%,
+          #e8ecf0 60%,
+          #ffffff 68%,
+          #f0f2f5 75%,
+          #ffffff 83%,
+          #f0f2f5 90%,
+          #ffffff 100%
+      );
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  }
 }
 
 @layer utilities {
