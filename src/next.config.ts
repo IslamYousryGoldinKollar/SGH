@@ -10,7 +10,6 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
   experimental: {
-    allowedDevOrigins: ["*"],
   },
   images: {
     minimumCacheTTL: 31536000, // 1 year
