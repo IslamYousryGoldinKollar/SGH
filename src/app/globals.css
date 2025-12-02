@@ -73,9 +73,28 @@
 }
 
 @layer utilities {
-    .mobile-grid-background {
+    .game-screen {
+        /* Ensures the background covers full screen properly */
         background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
         background-size: cover;
         background-position: center;
+        background-attachment: fixed;
+        min-height: calc(100vh - 8rem);
+        padding: 1rem;
+    }
+
+    /* Enhances the question card legibility */
+    .game-screen .question-card {
+        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Specific style for the new Individual Stats Card */
+    .game-screen .individual-stats-card {
+        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.3);
     }
 }

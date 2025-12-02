@@ -1,96 +1,101 @@
 import type { Team, Player, Question, GridSquare } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
-import { useState } from 'react';
 import Scoreboard from "./Scoreboard";
 import Timer from "./Timer";
 import QuestionCard from "./QuestionCard";
-import ColorGridScreen from "./ColorGridScreen";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Target } from "lucide-react";
+
+type QuestionPhase = 'answering' | 'feedback' | 'coloring' | 'transitioning';
 
 type GameScreenProps = {
   teams: Team[];
   currentPlayer: Player;
   question: Question;
+  questionPhase: QuestionPhase;
+  lastAnswerCorrect: boolean | null;
   onAnswer: (question: Question, answer: string) => void;
-  onColorSquare: (squareId: number) => void;
   grid: GridSquare[];
   duration: number;
   onTimeout: () => void;
   gameStartedAt: Timestamp | null | undefined;
   isIndividualMode: boolean;
+  totalQuestions: number;
+  currentQuestionIndex: number;
 };
 
 export default function GameScreen({
   teams,
   currentPlayer,
   question,
+  questionPhase,
+  lastAnswerCorrect,
   onAnswer,
-  onColorSquare,
   grid,
   duration,
   onTimeout,
   gameStartedAt,
   isIndividualMode,
+  totalQuestions,
+  currentQuestionIndex,
 }: GameScreenProps) {
-  const [showColorGrid, setShowColorGrid] = useState(false);
-
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
   if (!playerTeam) return null;
-  
-  const handleAnswer = (q: Question, a: string) => {
-    const isCorrect = q.answer === a;
-    onAnswer(q, a);
-    if (isCorrect) {
-      // Only show color grid if the player has credits.
-      const playerState = teams.flatMap(t => t.players).find(p => p.id === currentPlayer.id);
-      if (playerState && playerState.coloringCredits > 0) {
-        setShowColorGrid(true);
-      }
-    }
-  }
 
-  const handleColorSquareAndProceed = (squareId: number) => {
-    onColorSquare(squareId);
-    setShowColorGrid(false);
-  }
-  
-  const handleSkipColoring = () => {
-      // The parent component should handle moving to the next question
-      onColorSquare(-1); // Use a sentinel value to indicate a skip
-      setShowColorGrid(false);
-  }
-
-  if (showColorGrid) {
-    return (
-        <ColorGridScreen 
-            grid={grid}
-            teams={teams}
-            onColorSquare={handleColorSquareAndProceed}
-            teamColoring={playerTeam.color}
-            credits={currentPlayer.coloringCredits}
-            onSkip={handleSkipColoring}
-        />
-    )
-  }
+  const answeredCount = currentQuestionIndex;
+  // Calculate progress for bar
+  const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   return (
-    <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative", isIndividualMode ? "mobile-grid-background" : "game-screen")}>
+    <div className="game-screen flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+      {/* LEFT: Question Area */}
       <div className="lg:col-span-3 order-2 lg:order-1">
-        {question ? (
-          <QuestionCard 
-            key={question.question} 
-            question={question} 
-            onAnswer={handleAnswer} 
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p>Loading next question...</p>
-          </div>
-        )}
+        <QuestionCard
+          question={question}
+          questionPhase={questionPhase}
+          lastAnswerCorrect={lastAnswerCorrect}
+          onAnswer={onAnswer}
+          className="question-card h-full min-h-96"
+        />
       </div>
-      <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-row lg:flex-col gap-4 items-stretch">
+
+      {/* RIGHT: Sidebar */}
+      <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-col gap-4">
         <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
-        {!isIndividualMode && <Scoreboard team={playerTeam} />}
+        
+        {/* CONDITIONAL SIDEBAR */}
+        {!isIndividualMode ? (
+          <Scoreboard team={playerTeam} />
+        ) : (
+          /* FIX FOR ISSUE #3: Dedicated Individual Mode Card */
+          <Card className="individual-stats-card bg-white/90 backdrop-blur-md border-white/20 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Your Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
+                <span className="text-sm font-medium text-muted-foreground">Score</span>
+                <span className="text-3xl font-bold text-primary">{currentPlayer.score}</span>
+              </div>
+              
+              <div className="space-y-2">
+                 <div className="flex justify-between text-sm">
+                   <span>Questions</span>
+                   <span>{answeredCount} / {totalQuestions}</span>
+                 </div>
+                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                   <div 
+                     className="h-full bg-primary transition-all duration-500" 
+                     style={{ width: `${progressPercent}%` }} 
+                   />
+                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </aside>
     </div>
   );
