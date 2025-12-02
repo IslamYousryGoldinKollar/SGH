@@ -87,7 +87,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 3px;
+    height: 7px;
     background: linear-gradient(to right, hsl(var(--accent)), hsl(var(--primary)));
   }
 }
