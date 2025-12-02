@@ -70,6 +70,33 @@
     background-repeat: no-repeat;
     background-attachment: fixed;
   }
+  
+  /* New Global Card Styling */
+  .card {
+    @apply border-0 relative;
+    background-color: hsla(var(--card), 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border-radius: 0; /* Reset border-radius for clip-path */
+    clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 40px); /* Sharp corners except top-left */
+    padding-top: 2rem; /* Add padding to account for the clip-path curve */
+  }
+
+  /* Create the curved effect for the top-left corner and the gradient line */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 40px 0 0 0; /* Apply the huge curve only to the top-left */
+    z-index: -1; /* Place it behind the card's content */
+    background: 
+      linear-gradient(to right, hsl(var(--accent)), hsl(var(--primary))) left bottom no-repeat;
+    background-size: 100% 2px; /* This creates the thin gradient line at the bottom */
+  }
 }
 
 @layer utilities {
@@ -78,6 +105,7 @@
         background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
         background-size: cover;
         background-position: center;
+        background-repeat: no-repeat;
         background-attachment: fixed;
         min-height: calc(100vh - 8rem);
         padding: 1rem;
