@@ -1,16 +1,19 @@
-
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* Fix for "Server Disconnected" / Cross Origin Error */
+  /* Moved to top-level in Next.js 15+ */
+  allowedDevOrigins: ["*"],
+
+  /* Your existing config options */
   typescript: {
     ignoreBuildErrors: false,
   },
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
+  
+  /* Note: 'eslint' option removed - now configured via ESLint CLI */
+  
   images: {
-    minimumCacheTTL: 31536000, // 1 year
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       {
         protocol: 'https',
