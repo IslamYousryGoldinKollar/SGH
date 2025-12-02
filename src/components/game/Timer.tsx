@@ -22,7 +22,7 @@ export function Timer({
   const [timeLeft, setTimeLeft] = useState(initialTime || 0);
 
   useEffect(() => {
-    setTimeLeft(initialTime);
+    setTimeLeft(initialTime || 0);
   }, [initialTime]);
 
   useEffect(() => {
