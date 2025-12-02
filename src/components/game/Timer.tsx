@@ -7,7 +7,7 @@ interface TimerProps {
   duration?: number;
   onTimeout?: any;
   gameStartedAt?: any;
-  initialTime: number;
+  initialTime?: number;
   onTimeUp?: () => void;
   isRunning?: boolean;
   className?: string;
