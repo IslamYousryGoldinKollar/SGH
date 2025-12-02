@@ -11,7 +11,6 @@ type QuestionPhase = 'answering' | 'feedback' | 'coloring' | 'transitioning';
 
 type GameScreenProps = {
   squares?: any;
-  teams?: any;
   teams: Team[];
   currentPlayer: Player;
   question: Question;
