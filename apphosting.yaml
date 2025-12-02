@@ -15,7 +15,7 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     value: "studio-7831135066-b7ebf"
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: "studio-7831135066-b7ebf.firebasestorage.app"
+    value: "studio-7831135066-b7ebf.appspot.com"
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     value: "427859065555"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
