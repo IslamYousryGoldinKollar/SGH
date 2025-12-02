@@ -1,56 +1,72 @@
-
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Clock } from "lucide-react";
-import type { Timestamp } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
-type TimerProps = {
-  duration: number;
-  onTimeout: () => void;
-  gameStartedAt: Timestamp | null | undefined;
-};
+interface TimerProps {
+  initialTime: number;
+  onTimeUp?: () => void;
+  isRunning?: boolean;
+  className?: string;
+}
 
-export default function Timer({ duration, onTimeout, gameStartedAt }: TimerProps) {
-  const [timeLeft, setTimeLeft] = useState(duration);
+export function Timer({ 
+  initialTime, 
+  onTimeUp, 
+  isRunning = true,
+  className 
+}: TimerProps) {
+  const [timeLeft, setTimeLeft] = useState(initialTime);
 
   useEffect(() => {
-    if (!gameStartedAt) {
-        setTimeLeft(duration);
-        return;
-    };
+    setTimeLeft(initialTime);
+  }, [initialTime]);
 
-    const startTime = gameStartedAt.toMillis();
-    const endTime = startTime + duration * 1000;
-
-    const updateTimer = () => {
-        const now = Date.now();
-        const remaining = Math.max(0, endTime - now);
-        const remainingSeconds = Math.ceil(remaining / 1000);
-        
-        setTimeLeft(remainingSeconds);
-
-        if (remainingSeconds <= 0) {
-            onTimeout();
-        }
+  useEffect(() => {
+    if (!isRunning || timeLeft <= 0) {
+      if (timeLeft <= 0 && onTimeUp) {
+        onTimeUp();
+      }
+      return;
     }
 
-    const intervalId = setInterval(updateTimer, 1000);
-    updateTimer(); // Initial call
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(intervalId);
-  }, [duration, onTimeout, gameStartedAt]);
+    return () => clearInterval(timer);
+  }, [isRunning, timeLeft, onTimeUp]);
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
-  const timeColor = timeLeft <= 10 ? "text-red-500" : timeLeft <= 30 ? "text-yellow-400" : "text-white";
+  const isLowTime = timeLeft <= 60;
+  const isCriticalTime = timeLeft <= 30;
 
   return (
-    <div className="text-center backdrop-blur-sm p-1 md:p-2">
-      <p className={`text-4xl md:text-6xl font-bold font-display transition-colors duration-500 drop-shadow-2xl ${timeColor}`}>
-        {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-      </p>
+    <div className={cn(
+      "text-center",
+      className
+    )}>
+      <span className={cn(
+        "text-5xl md:text-6xl font-bold tracking-tight drop-shadow-lg transition-colors duration-300",
+        isCriticalTime ? "text-red-500 animate-pulse" : 
+        isLowTime ? "text-orange-400" : 
+        "text-white"
+      )}>
+        {formatTime(timeLeft)}
+      </span>
     </div>
   );
 }
+
+export default Timer;

@@ -1,42 +1,39 @@
-
 "use client";
 
-import type { Team } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Shield, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-type ScoreboardProps = {
-  team: Team;
-};
+interface ScoreboardProps {
+  score: number;
+  totalQuestions?: number;
+  currentQuestion?: number;
+  className?: string;
+}
 
-export default function Scoreboard({ team }: ScoreboardProps) {
-  const isSinglePlayerTeam = team.players.length === 1 && team.name === 'Team';
-
+export function Scoreboard({ 
+  score, 
+  totalQuestions, 
+  currentQuestion,
+  className 
+}: ScoreboardProps) {
   return (
-    <Card className="backdrop-blur-sm shadow-lg flex-1" style={{ borderColor: team.color }}>
-      <CardHeader className="p-2 md:p-6">
-        <CardTitle className="flex items-center justify-between font-display text-xs">
-          <span className="flex items-center gap-2 truncate">
-            {isSinglePlayerTeam ? <User className="h-4 w-4" /> : <Shield className="h-4 w-4" />} 
-            <span className="hidden md:inline">{isSinglePlayerTeam ? team.players[0].name : team.name}</span>
-          </span>
-          <span className="text-xl md:text-2xl font-bold" style={{ color: team.color }}>{team.score} PTS</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-3 md:p-6 pt-0 hidden sm:block">
-          {isSinglePlayerTeam ? (
-             <p className="text-xs text-muted-foreground">ID: {team.players[0].playerId}</p>
-          ) : (
-            <>
-              <h3 className="font-semibold mb-2 flex items-center gap-2 text-muted-foreground text-xs"><Users className="h-4 w-4" /> Players</h3>
-              <ul className="space-y-1 text-xs">
-                {team.players.map((player) => (
-                  <li key={player.id} className="truncate">{player.name}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </CardContent>
-    </Card>
+    <div className={cn(
+      "bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-4",
+      className
+    )}>
+      <div className="flex items-center justify-between">
+        {currentQuestion !== undefined && totalQuestions !== undefined && (
+          <div className="text-gray-500 text-sm">
+            Question {currentQuestion + 1} / {totalQuestions}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-600 text-sm">Score:</span>
+          <span className="text-2xl font-bold text-cyan-600">{score}</span>
+          <span className="text-cyan-600 font-semibold">PTS</span>
+        </div>
+      </div>
+    </div>
   );
 }
+
+export default Scoreboard;
