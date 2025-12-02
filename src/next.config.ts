@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  experimental: {
+    allowedDevOrigins: ["*"],
+  },
   images: {
     minimumCacheTTL: 31536000, // 1 year
     remotePatterns: [

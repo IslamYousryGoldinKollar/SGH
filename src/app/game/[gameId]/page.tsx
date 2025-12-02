@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -14,7 +15,6 @@ import { db, auth } from "@/lib/firebase";
 import {
   doc,
   updateDoc,
-  arrayUnion,
   serverTimestamp,
   runTransaction,
   Timestamp,
@@ -388,6 +388,7 @@ export default function GamePage() {
 
       const newGame: Game = {
         ...templateGameData,
+        id: newGameId,
         title: `${templateGameData.title} - ${playerName}`,
         status: "playing",
         parentSessionId: gameId,
@@ -680,9 +681,12 @@ export default function GamePage() {
         if (questionPhase === 'coloring' && freshPlayer && freshPlayer.coloringCredits > 0 && !isIndividualMode) {
             return (
                 <ColorGridScreen 
-                    gridSize={8}
-                    timeLimit={30}
-                    onComplete={() => handleColorSquare(-1)}
+                    squares={game.grid}
+                    teams={game.teams}
+                    onColorSquare={handleColorSquare}
+                    teamColoring={playerTeam.color}
+                    credits={freshPlayer.coloringCredits}
+                    onSkip={() => handleColorSquare(-1)}
                 />
             )
         }
@@ -707,7 +711,7 @@ export default function GamePage() {
             questionPhase={questionPhase}
             lastAnswerCorrect={lastAnswerCorrect}
             onAnswer={handleAnswer}
-            grid={game.grid}
+            squares={game.grid}
             duration={game.timer || 300}
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}

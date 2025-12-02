@@ -1,9 +1,9 @@
 
 import type { Team, Player, Question, GridSquare } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
-import { Scoreboard } from "./Scoreboard";
-import Timer from "./Timer";
-import QuestionCard from "./QuestionCard";
+import Scoreboard from "@/components/game/Scoreboard";
+import Timer from "@/components/game/Timer";
+import QuestionCard from "@/components/game/QuestionCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, HelpCircle, Palette } from "lucide-react";
 
@@ -63,11 +63,11 @@ export default function GameScreen({
 
       {/* RIGHT: Sidebar */}
       <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-col gap-4">
-        <Timer initialTime={duration} onTimeUp={onTimeout} isRunning={true} />
+        <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
         
         {/* CONDITIONAL SIDEBAR */}
         {!isIndividualMode ? (
-          <Scoreboard score={currentPlayer.score} totalQuestions={totalQuestions} currentQuestion={currentQuestionIndex} />
+          <Scoreboard team={playerTeam} />
         ) : (
           /* FIX FOR ISSUE #3: Dedicated Individual Mode Card */
           <Card className="individual-stats-card bg-white/90 backdrop-blur-md border-white/20 shadow-lg">
