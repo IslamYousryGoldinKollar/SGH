@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type {
   Player,
@@ -14,7 +15,6 @@ import { db, auth } from "@/lib/firebase";
 import {
   doc,
   updateDoc,
-  arrayUnion,
   serverTimestamp,
   runTransaction,
   Timestamp,
@@ -36,6 +36,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { v4 as uuidv4 } from "uuid";
 import ColorGridScreen from "@/components/game/ColorGridScreen";
+
+type QuestionPhase = 'answering' | 'feedback' | 'coloring' | 'transitioning';
 
 const generatePin = () =>
   Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -145,22 +147,37 @@ export default function GamePage() {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const { toast } = useToast();
   const [isJoining, setIsJoining] = useState(false);
-  const [showColorGrid, setShowColorGrid] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
+  const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
+  const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
+  const [pendingColorCredits, setPendingColorCredits] = useState(0);
+
+  const phaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const isAdmin = game?.adminId === authUser?.uid;
+  const isIndividualMode = game?.sessionType === 'individual' || !!game?.parentSessionId;
+
+  useEffect(() => {
+    return () => {
+      if (phaseTimeoutRef.current) clearTimeout(phaseTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!gameId) return;
 
-    const gameRef = doc(db, "games", gameId.toUpperCase());
-    const individualGameRef = doc(db, "individual_games", gameId.toUpperCase());
     let foundGame = false;
-
+  
     const handleDocSnapshot = (doc: any) => {
         if (doc.exists()) {
             foundGame = true;
             const gameData = { id: doc.id, ...doc.data() } as Game;
             setGame(gameData);
+
+            if(gameData.questions && gameData.questions.length > 0){
+              setCurrentQuestion(gameData.questions[0]);
+            }
 
             if (authUser) {
                 const player =
@@ -171,6 +188,7 @@ export default function GamePage() {
 
                 if (player && gameData.status === "playing") {
                     const answeredCount = player.answeredQuestions?.length || 0;
+                    setCurrentQuestionIndex(answeredCount);
                     if (answeredCount < gameData.questions.length) {
                         setCurrentQuestion(gameData.questions[answeredCount]);
                     } else {
@@ -182,9 +200,12 @@ export default function GamePage() {
         }
     };
     
-    const unsubscribeGames = onSnapshot(gameRef, handleDocSnapshot);
-    const unsubscribeIndividualGames = onSnapshot(individualGameRef, handleDocSnapshot);
+    const gamesRef = doc(db, "games", gameId.toUpperCase());
+    const individualGamesRef = doc(db, "individual_games", gameId.toUpperCase());
 
+    const unsubscribeGames = onSnapshot(gamesRef, handleDocSnapshot);
+    const unsubscribeIndividualGames = onSnapshot(individualGamesRef, handleDocSnapshot);
+    
     const timeout = setTimeout(() => {
         if (!foundGame) {
             setGame(null);
@@ -196,16 +217,16 @@ export default function GamePage() {
             router.push("/");
             setLoading(false);
         }
-    }, 2000);
-
+    }, 10000);
+  
     return () => {
-        unsubscribeGames();
-        unsubscribeIndividualGames();
-        clearTimeout(timeout);
+      unsubscribeGames();
+      unsubscribeIndividualGames();
+      clearTimeout(timeout);
     };
   }, [gameId, authUser, router, toast]);
-  
-  // Effect to manage game state transitions and redirects
+
+    
   useEffect(() => {
     if (!game || !authUser) return;
 
@@ -432,103 +453,111 @@ export default function GamePage() {
     }
   };
   
-  const handleNextQuestion = useCallback(() => {
-      if (!game || !currentPlayer) return;
+  const moveToNextQuestion = useCallback(() => {
+    if (!game) return;
 
-      const answeredCount = (currentPlayer.answeredQuestions || []).length;
-      if (answeredCount < game.questions.length) {
-          setCurrentQuestion(game.questions[answeredCount]);
-      } else {
-          setCurrentQuestion(null); // No more questions
-      }
-      setShowColorGrid(false);
-  }, [game, currentPlayer]);
+    if (phaseTimeoutRef.current) clearTimeout(phaseTimeoutRef.current);
+    
+    const nextIndex = currentQuestionIndex + 1;
+    setCurrentQuestionIndex(nextIndex);
+
+    if (nextIndex < game.questions.length) {
+      setCurrentQuestion(game.questions[nextIndex]);
+    } else {
+      setCurrentQuestion(null);
+    }
+
+    setQuestionPhase('answering');
+    setLastAnswerCorrect(null);
+    setPendingColorCredits(0);
+  }, [game, currentQuestionIndex]);
 
   const handleAnswer = async (question: Question, answer: string) => {
-    if (!game || !currentPlayer) return;
+    if (!game || !currentPlayer || questionPhase !== 'answering') return;
+    
+    const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
 
+    setQuestionPhase('feedback');
+    setLastAnswerCorrect(isCorrect);
+    
     const gameRef = doc(db, "games", gameId);
-    const isCorrect = question.answer === answer;
-    let showGrid = false;
 
-    runTransaction(db, async (transaction) => {
+    try {
+      await runTransaction(db, async (transaction) => {
         const gameDoc = await transaction.get(gameRef);
         if (!gameDoc.exists()) throw new Error("Game not found");
-
+        
         const currentGame = gameDoc.data() as Game;
-        const isIndividual = !!currentGame.parentSessionId || currentGame.sessionType === 'individual';
-
-        const teamIndex = currentGame.teams.findIndex(
-          (t) => t.name === currentPlayer.teamName
-        );
+        const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
         if (teamIndex === -1) throw new Error("Team not found");
-
-        const playerIndex = currentGame.teams[teamIndex].players.findIndex(
-          (p) => p.id === currentPlayer.id
-        );
+        
+        const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
         if (playerIndex === -1) throw new Error("Player not found");
-
+        
         const updatedTeams = [...currentGame.teams];
-        const playerToUpdate = {
-          ...updatedTeams[teamIndex].players[playerIndex],
-        };
+        const playerToUpdate = { ...updatedTeams[teamIndex].players[playerIndex] };
 
         playerToUpdate.answeredQuestions = [
           ...(playerToUpdate.answeredQuestions || []),
           question.question,
         ];
-        
+
         let scoreChange = 0;
+        let newColorCredits = playerToUpdate.coloringCredits || 0;
+
         if (isCorrect) {
           scoreChange = 1;
-          playerToUpdate.coloringCredits = (playerToUpdate.coloringCredits || 0) + 1;
-          if (game.sessionType !== 'individual' && !game.parentSessionId) {
-            showGrid = true;
-          }
-        } else {
-           scoreChange = isIndividual ? -1 : 0;
+          newColorCredits += 1;
+          playerToUpdate.coloringCredits = newColorCredits;
+        } else if (isIndividualMode) {
+          scoreChange = -1;
         }
-        
+
         updatedTeams[teamIndex].score += scoreChange;
         playerToUpdate.score += scoreChange;
-
-
         updatedTeams[teamIndex].players[playerIndex] = playerToUpdate;
+        
         transaction.update(gameRef, { teams: updatedTeams });
-      })
-      .then(() => {
-        // UI updates after successful transaction
-        if (showGrid) {
-          setShowColorGrid(true);
-        } else {
-          setTimeout(handleNextQuestion, 1500);
+
+        if (isCorrect) {
+          setPendingColorCredits(newColorCredits);
         }
-      })
-      .catch((error) => {
-        console.error(error);
-        toast({
-          title: "Error",
-          description: "Could not submit answer.",
-          variant: "destructive",
-        });
-        // If error, force next question after delay to avoid getting stuck
-        setTimeout(handleNextQuestion, 1500);
       });
+
+      phaseTimeoutRef.current = setTimeout(() => {
+        if (isCorrect && !isIndividualMode) {
+           setQuestionPhase('coloring');
+        } else {
+           setQuestionPhase('transitioning');
+           phaseTimeoutRef.current = setTimeout(() => {
+             moveToNextQuestion();
+           }, 500);
+        }
+      }, 2000);
+
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Error", description: "Could not submit answer.", variant: "destructive" });
+      setTimeout(moveToNextQuestion, 2000);
+    }
   };
 
-  const handleColorSquare = (squareId: number) => {
-     if (!game || !currentPlayer || currentPlayer.coloringCredits <= 0 || squareId < 0) {
-        handleNextQuestion();
-        return;
-     }
-      const gameRef = doc(db, "games", gameId);
-      runTransaction(db, async (transaction) => {
+  const handleColorSquare = async (squareId: number) => {
+    if (!game || !currentPlayer || squareId < 0) {
+      moveToNextQuestion();
+      return;
+    }
+
+    const gameRef = doc(db, "games", gameId);
+    try {
+      await runTransaction(db, async (transaction) => {
         const gameDoc = await transaction.get(gameRef);
         if (!gameDoc.exists()) throw new Error("Game not found");
-
+        
         const currentGame = gameDoc.data() as Game;
         const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
         if (teamIndex === -1) return;
+
         const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
         if (playerIndex === -1) return;
 
@@ -541,18 +570,18 @@ export default function GamePage() {
         if (gridIndex === -1) return;
 
         if (updatedGrid[gridIndex].coloredBy) {
-            // Already colored
         } else {
             updatedGrid[gridIndex].coloredBy = currentPlayer.teamName;
             playerToUpdate.coloringCredits -= 1;
         }
         
         updatedTeams[teamIndex].players[playerIndex] = playerToUpdate;
-
         transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
-      }).then(() => {
-          handleNextQuestion();
-      })
+      });
+    } catch (error) {
+      console.error(error);
+    }
+    moveToNextQuestion();
   };
 
   const renderContent = () => {
@@ -591,7 +620,6 @@ export default function GamePage() {
         if(game.status !== 'lobby') {
             return <div className="text-center p-8">This game is already in progress. You cannot join now.</div>;
         }
-        // If it's lobby, the Lobby component will handle the join UI
     }
     
     if(game.parentSessionId && game.status === 'lobby' && currentPlayer) {
@@ -623,25 +651,21 @@ export default function GamePage() {
         return <PreGameCountdown gameStartedAt={game.gameStartedAt} />;
       case "playing":
         if (!currentPlayer) return <p>Joining game...</p>;
-        const playerTeam = game.teams.find(
-          (t) => t.name === currentPlayer?.teamName
-        );
-        if (!playerTeam)
-          return (
-            <p>Error: Your team or player data could not be found.</p>
-          );
+        
+        const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
+        if (!playerTeam) return (<p>Error: Your team or player data could not be found.</p>);
 
-        const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
+        const freshPlayer = playerTeam.players.find(p => p.id === currentPlayer.id);
 
-        if (showColorGrid && playerTeam.players.find(p => p.id === currentPlayer.id)!.coloringCredits > 0 && !isIndividualMode) {
+        if (questionPhase === 'coloring' && freshPlayer && freshPlayer.coloringCredits > 0 && !isIndividualMode) {
             return (
                 <ColorGridScreen 
                     grid={game.grid}
                     teams={game.teams}
                     onColorSquare={handleColorSquare}
                     teamColoring={playerTeam.color}
-                    credits={currentPlayer.coloringCredits}
-                    onSkip={handleNextQuestion}
+                    credits={freshPlayer.coloringCredits}
+                    onSkip={() => handleColorSquare(-1)}
                 />
             )
         }
@@ -661,15 +685,18 @@ export default function GamePage() {
         return (
           <GameScreen
             teams={game.teams}
-            currentPlayer={currentPlayer}
+            currentPlayer={freshPlayer || currentPlayer}
             question={currentQuestion}
+            questionPhase={questionPhase}
+            lastAnswerCorrect={lastAnswerCorrect}
             onAnswer={handleAnswer}
-            onColorSquare={handleColorSquare}
             grid={game.grid}
             duration={game.timer || 300}
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}
             isIndividualMode={isIndividualMode}
+            totalQuestions={game.questions.length}
+            currentQuestionIndex={currentQuestionIndex}
           />
         );
       case "finished":
