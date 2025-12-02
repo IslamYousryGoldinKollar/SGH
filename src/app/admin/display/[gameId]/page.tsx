@@ -260,7 +260,7 @@ export default function DisplayPage() {
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
                  <div className="absolute left-1/2 -translate-x-1/2 top-0 z-10">
-                    <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
+                    <Timer initialTime={game.timer} onTimeUp={handleEndGame} isRunning={game.status === 'playing'}/>
                 </div>
 
                 <div className="absolute top-8 left-8 z-10">

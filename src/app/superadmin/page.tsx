@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, query, getDocs, where, doc, updateDoc, Timestamp, add } from "firebase/firestore";
+import { collection, onSnapshot, query, getDocs, where, doc, updateDoc, Timestamp, addDoc } from "firebase/firestore";
 import { Loader2, ShieldAlert, CheckCircle, XCircle, Clock, Ban } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";

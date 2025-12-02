@@ -1,7 +1,7 @@
 
 import type { Team, Player, Question, GridSquare } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
-import Scoreboard from "./Scoreboard";
+import { Scoreboard } from "./Scoreboard";
 import Timer from "./Timer";
 import QuestionCard from "./QuestionCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,11 +63,11 @@ export default function GameScreen({
 
       {/* RIGHT: Sidebar */}
       <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-col gap-4">
-        <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
+        <Timer initialTime={duration} onTimeUp={onTimeout} isRunning={true} />
         
         {/* CONDITIONAL SIDEBAR */}
         {!isIndividualMode ? (
-          <Scoreboard team={playerTeam} />
+          <Scoreboard score={currentPlayer.score} totalQuestions={totalQuestions} currentQuestion={currentQuestionIndex} />
         ) : (
           /* FIX FOR ISSUE #3: Dedicated Individual Mode Card */
           <Card className="individual-stats-card bg-white/90 backdrop-blur-md border-white/20 shadow-lg">

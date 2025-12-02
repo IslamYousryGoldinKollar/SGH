@@ -34,6 +34,13 @@ export interface GridSquare {
   coloredBy: string | null; // Team name or Player ID in individual mode
 }
 
+export interface EmojiEvent {
+  id: string;
+  senderId: string;
+  emoji: string;
+  timestamp: Timestamp;
+}
+
 export interface Team {
   name:string;
   score: number;

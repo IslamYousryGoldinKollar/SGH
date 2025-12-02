@@ -386,9 +386,8 @@ export default function GamePage() {
         customData: newCustomData,
       };
 
-      const newGame: Omit<Game, "id"> = {
+      const newGame: Game = {
         ...templateGameData,
-        id: newGameId,
         title: `${templateGameData.title} - ${playerName}`,
         status: "playing",
         parentSessionId: gameId,
@@ -681,12 +680,9 @@ export default function GamePage() {
         if (questionPhase === 'coloring' && freshPlayer && freshPlayer.coloringCredits > 0 && !isIndividualMode) {
             return (
                 <ColorGridScreen 
-                    grid={game.grid}
-                    teams={game.teams}
-                    onColorSquare={handleColorSquare}
-                    teamColoring={playerTeam.color}
-                    credits={freshPlayer.coloringCredits}
-                    onSkip={() => handleColorSquare(-1)}
+                    gridSize={8}
+                    timeLimit={30}
+                    onComplete={() => handleColorSquare(-1)}
                 />
             )
         }

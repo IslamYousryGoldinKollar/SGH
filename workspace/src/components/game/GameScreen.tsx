@@ -63,12 +63,9 @@ export default function GameScreen({
   if (showColorGrid) {
     return (
         <ColorGridScreen 
-            grid={grid}
-            teams={teams}
-            onColorSquare={handleColorSquareAndProceed}
-            teamColoring={playerTeam.color}
-            credits={currentPlayer.coloringCredits}
-            onSkip={handleSkipColoring}
+            gridSize={8}
+            timeLimit={30}
+            onComplete={handleSkipColoring}
         />
     )
   }
@@ -90,8 +87,8 @@ export default function GameScreen({
         )}
       </div>
       <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-row lg:flex-col gap-4 items-stretch">
-        <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
-        {!isIndividualMode && <Scoreboard team={playerTeam} />}
+        <Timer initialTime={duration} onTimeUp={onTimeout} isRunning={true} />
+        {!isIndividualMode && <Scoreboard score={playerTeam.score} />}
          {isIndividualMode && (
           <div className="individual-game-sidebar">
             <h3 className="font-bold text-lg mb-4">Your Progress</h3>
@@ -102,7 +99,7 @@ export default function GameScreen({
                 </div>
                 <div>
                   <p className="text-sm font-medium">Questions Answered</p>
-                  <p className="text-lg font-semibold">{currentPlayer.answeredQuestions.length} / {teams[0].players.length > 0 ? (teams[0].players[0].answeredQuestions.length + (teams[0].players[0].unansweredQuestions || 0)) : 'N/A'}</p>
+                  <p className="text-lg font-semibold">{currentPlayer.answeredQuestions.length}</p>
                 </div>
                 <div>
                     <p className="text-sm font-medium">Land Credits</p>
