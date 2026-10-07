@@ -56,5 +56,57 @@ service cloud.firestore {
       allow delete: if request.auth != null 
         && request.auth.uid in ['eEPycxZHbrbUaomlMmppQiHJETs2'];
     }
+
+    // ============================================================================
+    // CULTURE CAPSULE (ice-breaker QR game)
+    // Crew leaders' phones are NOT signed in, so crews are create-only with strict
+    // validation. Only the session owner (a signed-in admin) can change/delete.
+    // ============================================================================
+    function capsuleAnswerOk(a) {
+      return a is string && a.size() >= 1 && a.size() <= 400;
+    }
+
+    match /capsule_sessions/{sessionId} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && request.resource.data.adminId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.adminId == request.auth.uid
+        && request.resource.data.adminId == resource.data.adminId;
+
+      allow delete: if request.auth != null
+        && resource.data.adminId == request.auth.uid;
+
+      match /crews/{crewId} {
+        allow read: if true;
+
+        // One document per submission, only while the session is open.
+        allow create: if get(/databases/$(database)/documents/capsule_sessions/$(sessionId)).data.status == 'open'
+          && request.resource.data.keys().hasOnly(['leaderName', 'crewName', 'answers', 'photo', 'createdAt'])
+          && request.resource.data.keys().hasAll(['leaderName', 'crewName', 'answers', 'photo', 'createdAt'])
+          && request.resource.data.leaderName is string
+          && request.resource.data.leaderName.size() >= 1
+          && request.resource.data.leaderName.size() <= 60
+          && request.resource.data.crewName is string
+          && request.resource.data.crewName.size() <= 60
+          && request.resource.data.answers is list
+          && request.resource.data.answers.size() == 3
+          && capsuleAnswerOk(request.resource.data.answers[0])
+          && capsuleAnswerOk(request.resource.data.answers[1])
+          && capsuleAnswerOk(request.resource.data.answers[2])
+          && request.resource.data.photo is string
+          && request.resource.data.photo.size() > 0
+          && request.resource.data.photo.size() < 700000
+          && request.resource.data.createdAt == request.time;
+
+        // Submissions are immutable.
+        allow update: if false;
+
+        allow delete: if request.auth != null
+          && get(/databases/$(database)/documents/capsule_sessions/$(sessionId)).data.adminId == request.auth.uid;
+      }
+    }
   }
 }

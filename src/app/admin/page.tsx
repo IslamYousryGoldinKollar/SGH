@@ -170,6 +170,18 @@ export default function AdminDashboard() {
         <Button onClick={() => auth.signOut().then(() => router.push('/'))}>Sign Out</Button>
       </div>
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Culture Capsule</CardTitle>
+          <CardDescription>The ice-breaker QR game: crews of 8 answer three culture questions, and AI writes the letter to future managers.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="secondary" onClick={() => router.push('/admin/capsule')}>
+            Open Culture Capsule
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Create New Session</CardTitle>
