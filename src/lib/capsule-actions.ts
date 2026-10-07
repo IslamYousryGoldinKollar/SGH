@@ -2,15 +2,16 @@
 
 import {
   groupCultureThemes,
-  writeLetterToFutureManagers,
+  writeOneIslandConstitution,
   type CultureAIInput,
 } from '@/ai/flows/capsule-culture';
 import {
   LIMITS,
-  type CapsuleLetter,
+  QUESTION_COUNT,
+  type CapsuleConstitution,
   type CapsuleThemes,
   type CrewForAI,
-  type LetterLanguage,
+  type OutputLanguage,
 } from '@/lib/capsule/types';
 
 export type ActionResult<T> = {ok: true; data: T} | {ok: false; error: string};
@@ -18,14 +19,16 @@ export type ActionResult<T> = {ok: true; data: T} | {ok: false; error: string};
 interface Payload {
   questions: string[];
   crews: CrewForAI[];
-  language: LetterLanguage;
+  language: OutputLanguage;
 }
 
 const cut = (s: unknown, max: number) => String(s ?? '').trim().slice(0, max);
 
 /** Server actions are public endpoints: cap and normalise everything before it reaches the model. */
 function sanitise(p: Payload): CultureAIInput | string {
-  if (!Array.isArray(p?.questions) || p.questions.length !== 3) return 'Expected exactly 3 questions.';
+  if (!Array.isArray(p?.questions) || p.questions.length !== QUESTION_COUNT) {
+    return `Expected exactly ${QUESTION_COUNT} questions.`;
+  }
   if (!Array.isArray(p.crews) || p.crews.length === 0) return 'No crews have answered yet.';
   return {
     language: p.language === 'ar' ? 'ar' : 'en',
@@ -33,7 +36,7 @@ function sanitise(p: Payload): CultureAIInput | string {
     crews: p.crews.slice(0, LIMITS.maxCrewsForAI).map(c => ({
       crewName: cut(c?.crewName, LIMITS.crewName),
       leaderName: cut(c?.leaderName, LIMITS.leaderName),
-      answers: [0, 1, 2].map(i => cut(c?.answers?.[i], LIMITS.answer)),
+      answers: Array.from({length: QUESTION_COUNT}, (_, i) => cut(c?.answers?.[i], LIMITS.answer)),
     })),
   };
 }
@@ -60,8 +63,9 @@ export async function groupThemesAction(payload: Payload): Promise<ActionResult<
         language: input.language,
         generatedAt: Date.now(),
         crewCount: input.crews.length,
-        byQuestion: out.byQuestion.map(q =>
-          q.themes.map(t => ({
+        // Always one entry per question, even if the model returned fewer or more.
+        byQuestion: Array.from({length: QUESTION_COUNT}, (_, i) =>
+          (out.byQuestion[i]?.themes ?? []).map(t => ({
             theme: t.theme,
             crews: Math.max(1, Math.min(t.crews, input.crews.length)),
             quote: t.quote,
@@ -75,11 +79,11 @@ export async function groupThemesAction(payload: Payload): Promise<ActionResult<
   }
 }
 
-export async function writeLetterAction(payload: Payload): Promise<ActionResult<CapsuleLetter>> {
+export async function writeConstitutionAction(payload: Payload): Promise<ActionResult<CapsuleConstitution>> {
   const input = sanitise(payload);
   if (typeof input === 'string') return {ok: false, error: input};
   try {
-    const out = await writeLetterToFutureManagers(input);
+    const out = await writeOneIslandConstitution(input);
     return {
       ok: true,
       data: {
@@ -90,7 +94,7 @@ export async function writeLetterAction(payload: Payload): Promise<ActionResult<
       },
     };
   } catch (error) {
-    console.error('writeLetterAction failed:', error);
+    console.error('writeConstitutionAction failed:', error);
     return {ok: false, error: explain(error)};
   }
 }

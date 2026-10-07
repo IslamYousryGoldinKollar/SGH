@@ -1,5 +1,9 @@
 /**
- * The Culture Capsule — data model.
+ * The Culture Capsule: the crews draft The One Island Constitution (دستور الجزيرة الواحدة).
+ *
+ * Every crew of 8 answers four questions, one per article:
+ *   1. what makes the island unique   2. who can join   3. what we never do   4. what we appreciate
+ * The AI then merges every crew's answers into ONE constitution.
  *
  * Firestore layout:
  *   capsule_sessions/{sessionId}                 CapsuleSession
@@ -12,17 +16,24 @@ export const DEMO_SESSION_ID = "DEMO";
 export const CREW_SIZE = 8;
 
 export const DEFAULT_QUESTIONS: string[] = [
-  "What is the top thing you appreciate in our culture?",
-  "What differentiates us, as a culture, from other companies?",
-  "What do you wish would magically disappear from our culture?",
+  "What makes The One Island unique?",
+  "Who can join The One Island, and what must they be like?",
+  "What must we never do on The One Island?",
+  "What do we appreciate most on The One Island?",
 ];
 
-/** Short labels used on the big screen / letter for each question. */
-export const QUESTION_LABELS: string[] = [
-  "What we appreciate",
-  "What makes us different",
-  "What we'd make disappear",
-];
+/** Number of questions (= articles). The Firestore rules expect exactly this many answers. */
+export const QUESTION_COUNT = DEFAULT_QUESTIONS.length;
+
+/** Short names of the articles, shown on the phone, the wall and the themes. */
+export const ARTICLE_TITLES: string[] = ["Our identity", "Who can join", "Our red lines", "What we cherish"];
+
+const AR_ORDINALS = ["الأولى", "الثانية", "الثالثة", "الرابعة", "الخامسة", "السادسة", "السابعة", "الثامنة"];
+
+/** "Article 2" / "المادة الثانية" */
+export function articleLabel(n: number, language: OutputLanguage = "en"): string {
+  return language === "ar" ? `المادة ${AR_ORDINALS[n - 1] ?? n}` : `Article ${n}`;
+}
 
 export const LIMITS = {
   leaderName: 60,
@@ -36,7 +47,7 @@ export const LIMITS = {
   photoChars: 700_000,
 } as const;
 
-export type LetterLanguage = "en" | "ar";
+export type OutputLanguage = "en" | "ar";
 
 export interface CapsuleSession {
   id: string;
@@ -48,7 +59,7 @@ export interface CapsuleSession {
   expectedCrews: number;
   createdAt: number;
   themes?: CapsuleThemes | null;
-  letter?: CapsuleLetter | null;
+  constitution?: CapsuleConstitution | null;
 }
 
 export interface CapsuleCrew {
@@ -74,28 +85,28 @@ export interface ThemeItem {
 }
 
 export interface CapsuleThemes {
-  language: LetterLanguage;
+  language: OutputLanguage;
   generatedAt: number;
   crewCount: number;
   /** One entry per question, same order as session.questions. */
   byQuestion: ThemeItem[][];
 }
 
-export interface LetterSection {
+export interface ConstitutionArticle {
   heading: string;
-  body: string;
-  bullets?: string[];
+  /** 2-4 short clauses, built from the crews' own words. */
+  clauses: string[];
 }
 
-export interface CapsuleLetter {
-  language: LetterLanguage;
+export interface CapsuleConstitution {
+  language: OutputLanguage;
   generatedAt: number;
   crewCount: number;
   title: string;
-  salutation: string;
-  opening: string;
-  /** Exactly three: what e& is · what defines the culture · what to do to keep it unique & successful. */
-  sections: LetterSection[];
+  preamble: string;
+  /** One article per question, same order. */
+  articles: ConstitutionArticle[];
+  /** Hands the constitution to whoever leads the island next. */
   closing: string;
   signOff: string;
   /** True when this is canned sample copy (demo mode with AI unavailable). */

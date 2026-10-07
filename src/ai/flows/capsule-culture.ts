@@ -2,22 +2,26 @@
 
 /**
  * @fileOverview AI flows for The Culture Capsule (the ice-breaker QR activity).
+ * The crews draft The One Island Constitution: each crew of 8 answers four questions
+ * (what makes the island unique, who can join, what we never do, what we appreciate).
  *
  * - groupCultureThemes - clusters the crews' answers into themes, per question (shown live on the big screen).
- * - writeLetterToFutureManagers - turns every crew's answers into one letter to the future managers.
+ * - writeOneIslandConstitution - merges every crew's answers into ONE constitution.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const MAX_QUESTIONS = 8;
+
 const CrewSchema = z.object({
   crewName: z.string(),
   leaderName: z.string(),
-  answers: z.array(z.string()).length(3),
+  answers: z.array(z.string()).min(1).max(MAX_QUESTIONS),
 });
 
 const BaseInputSchema = z.object({
-  questions: z.array(z.string()).length(3),
+  questions: z.array(z.string()).min(1).max(MAX_QUESTIONS),
   crews: z.array(CrewSchema).min(1),
   language: z.enum(['en', 'ar']),
 });
@@ -38,31 +42,44 @@ const ThemesOutputSchema = z.object({
           .max(5),
       })
     )
-    .length(3),
+    .min(1)
+    .max(MAX_QUESTIONS),
 });
 export type CultureThemesOutput = z.infer<typeof ThemesOutputSchema>;
 
-const LetterOutputSchema = z.object({
+const ConstitutionOutputSchema = z.object({
   title: z.string(),
-  salutation: z.string(),
-  opening: z.string().describe('Two sentences that set the scene.'),
-  sections: z
+  preamble: z.string().describe('Two sentences in the voice of the crews.'),
+  articles: z
     .array(
       z.object({
-        heading: z.string(),
-        body: z.string(),
-        bullets: z.array(z.string()).optional(),
+        heading: z.string().describe('The fixed article heading given in the instructions.'),
+        clauses: z.array(z.string()).min(2).max(4),
       })
     )
-    .length(3),
-  closing: z.string().describe('One memorable line.'),
+    .length(4),
+  closing: z.string().describe('One line handing the constitution to whoever leads the island next.'),
   signOff: z.string(),
 });
-export type CultureLetterOutput = z.infer<typeof LetterOutputSchema>;
+export type OneIslandConstitutionOutput = z.infer<typeof ConstitutionOutputSchema>;
 
 const LANGUAGE_NAME = {
   en: 'English',
-  ar: 'Arabic (Modern Standard Arabic, warm and simple, easy to read aloud)',
+  ar: 'Arabic (Modern Standard Arabic, dignified but simple, easy to read aloud)',
+} as const;
+
+/** Fixed titles so the screen, the phone and the document always agree. */
+const FIXED = {
+  en: {
+    title: 'The One Island Constitution',
+    headings: ['Our identity', 'Who can join', 'Our red lines', 'What we cherish'],
+    signOff: 'Signed by the crews of The One Island',
+  },
+  ar: {
+    title: 'دستور الجزيرة الواحدة',
+    headings: ['هويتنا', 'من يمكنه الانضمام', 'خطوطنا الحمراء', 'ما نعتز به'],
+    signOff: 'وقّعته فرق الجزيرة الواحدة',
+  },
 } as const;
 
 function formatAnswers(input: CultureAIInput): string {
@@ -80,14 +97,15 @@ function formatAnswers(input: CultureAIInput): string {
 const GROUND_RULES = `Ground rules:
 - Use ONLY what the crews wrote. Do not invent facts, numbers, history, product names or people.
 - Never name an individual. No blame. Stay honest, but state criticism constructively.
+- Always write the company's name as "etisalat" (lowercase). Never write "e&".
 - The answers may be in English, Arabic or a mix; understand them all.`;
 
 export async function groupCultureThemes(input: CultureAIInput): Promise<CultureThemesOutput> {
   return groupCultureThemesFlow(input);
 }
 
-export async function writeLetterToFutureManagers(input: CultureAIInput): Promise<CultureLetterOutput> {
-  return writeLetterFlow(input);
+export async function writeOneIslandConstitution(input: CultureAIInput): Promise<OneIslandConstitutionOutput> {
+  return writeConstitutionFlow(input);
 }
 
 const groupCultureThemesFlow = ai.defineFlow(
@@ -98,12 +116,12 @@ const groupCultureThemesFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await ai.generate({
-      prompt: `You are helping a live team-building event at e& Egypt. Crews of 8 employees answered three questions about their company culture.
+      prompt: `You are helping a live team-building event at etisalat Egypt. Crews of 8 employees imagined a shared island, "The One Island", and answered questions about it.
 Group the answers into themes, separately for each question.
 
 ${formatAnswers(input)}
 
-For each of the 3 questions return up to 5 themes, ordered by how many different crews expressed them (most first).
+For each of the ${input.questions.length} questions return up to 5 themes, ordered by how many different crews expressed them (most first).
 - "theme": a short label (max 6 words) written in ${LANGUAGE_NAME[input.language]}.
 - "crews": the number of different crews whose answer expresses it (never more than ${input.crews.length}).
 - "quote": a short fragment copied word for word from one crew's answer (keep its original language).
@@ -118,32 +136,38 @@ ${GROUND_RULES}`,
   }
 );
 
-const writeLetterFlow = ai.defineFlow(
+const writeConstitutionFlow = ai.defineFlow(
   {
-    name: 'writeLetterToFutureManagersFlow',
+    name: 'writeOneIslandConstitutionFlow',
     inputSchema: BaseInputSchema,
-    outputSchema: LetterOutputSchema,
+    outputSchema: ConstitutionOutputSchema,
   },
   async input => {
+    const fixed = FIXED[input.language];
     const {output} = await ai.generate({
-      prompt: `At a team-building event, ${input.crews.length} crews of 8 employees of e& Egypt (e&, formerly Etisalat) each discussed three questions about their culture and agreed on one answer per question.
-Write ONE letter from all of them to the future managers of the company. Write in ${LANGUAGE_NAME[input.language]}.
+      prompt: `At a team-building event, ${input.crews.length} crews of 8 etisalat employees imagined a shared island, "The One Island", and each crew drafted its own answers to four questions about it.
+Merge ALL crews' answers into ONE constitution of The One Island ("دستور الجزيرة الواحدة"). Write it in ${LANGUAGE_NAME[input.language]}.
 
 ${formatAnswers(input)}
 
-The letter speaks as "we" (the crews) to the managers who will lead e& in the years to come. It must cover, as exactly three sections in this order:
-1. What e& is. Who we are, in the crews' own words.
-2. What defines our culture. The traits the crews named most often (Q1) and what makes e& different from other companies (Q2).
-3. What you need to do to keep it unique and successful. Open with one or two sentences, then give 4 to 5 concrete bullets, each starting with a verb: protect what we love (Q1, Q2) and remove what we asked to make disappear (Q3).
+Return exactly:
+- "title": "${fixed.title}"
+- "preamble": two sentences in the crews' voice ("We, the crews of The One Island, ...") saying we write this together so that everyone who comes after us knows who we are.
+- "articles": exactly four, in this order, each with the fixed heading and 2 to 4 clauses:
+  1. heading "${fixed.headings[0]}" from Q1 (what makes the island unique).
+  2. heading "${fixed.headings[1]}" from Q2 (who can join and what they must be like). Phrase the clauses as conditions of belonging ("Anyone who...", "Everyone who joins...").
+  3. heading "${fixed.headings[2]}" from Q3 (what we must never do). Phrase the clauses as firm commitments ("We never...", "No one on the island...").
+  4. heading "${fixed.headings[3]}" from Q4 (what we appreciate). Phrase the clauses as what we cherish and protect.
+- "closing": one line handing the constitution to whoever leads the island next (the managers of tomorrow).
+- "signOff": "${fixed.signOff}"
 
-Also write: a "title" (A letter to the future managers of e&), a "salutation", an "opening" (two sentences that set the scene: crews, an island, one shared answer), a one-line "closing", and a "signOff" from the crews of The One Island 2026.
-Style: warm, proud, direct and specific. No corporate clichés (synergy, leverage, best-in-class). Weave in two or three short quotes from the crews. Keep the whole letter under 280 words so it can be read aloud in two minutes and fit on one page. Section headings must be short.
+How to write the clauses: one sentence each, at most 22 words, plain present tense, in the crews' voice ("we"). Merge duplicate ideas, put the ideas more crews shared first, and keep a crew's own striking phrase when it is strong. No corporate clichés (synergy, leverage, best-in-class). Keep the whole constitution under 300 words so it can be read aloud and fit on one page.
 
 ${GROUND_RULES}`,
-      output: {schema: LetterOutputSchema},
-      config: {temperature: 0.7},
+      output: {schema: ConstitutionOutputSchema},
+      config: {temperature: 0.6},
     });
-    if (!output) throw new Error('The AI returned no letter.');
+    if (!output) throw new Error('The AI returned no constitution.');
     return output;
   }
 );

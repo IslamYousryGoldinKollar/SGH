@@ -3,19 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase";
-import { groupThemesAction, writeLetterAction } from "@/lib/capsule-actions";
+import { groupThemesAction, writeConstitutionAction } from "@/lib/capsule-actions";
 import { useCapsuleCrews, useCapsuleSession, useCapsuleStore } from "@/hooks/useCapsule";
 import { useIdle, useStageScale } from "@/hooks/useStage";
-import { SAMPLE_LETTER, SAMPLE_THEMES } from "@/lib/capsule/demo-data";
+import { SAMPLE_CONSTITUTION, SAMPLE_THEMES } from "@/lib/capsule/demo-data";
 import {
   DEFAULT_QUESTIONS,
-  QUESTION_LABELS,
+  ARTICLE_TITLES,
   type CapsuleCrew,
   type CapsuleSession,
-  type LetterLanguage,
+  type OutputLanguage,
 } from "@/lib/capsule/types";
 import BrandMark from "./BrandMark";
-import LetterReveal from "./LetterReveal";
+import ConstitutionReveal from "./ConstitutionReveal";
 import QRBox from "./QRBox";
 
 /**
@@ -24,19 +24,19 @@ import QRBox from "./QRBox";
  *   scan   – a giant QR code (crews arriving)
  *   wall   – live crew spotlight + every group selfie so far (default once the first crew is in)
  *   themes – what the AI found when it grouped the answers
- *   letter – the letter to the future managers
+ *   constitution – the One Island constitution, drafted by the AI from every crew's answers
  *
  * The presenter toolbar only renders for the session owner (or in /capsule/demo) and fades when idle.
  */
 
-type View = "scan" | "wall" | "themes" | "letter";
+type View = "scan" | "wall" | "themes" | "constitution";
 type Mode = "auto" | View;
 
 const VIEWS: { id: View; label: string; key: string }[] = [
   { id: "scan", label: "QR", key: "1" },
   { id: "wall", label: "Wall", key: "2" },
   { id: "themes", label: "Themes", key: "3" },
-  { id: "letter", label: "Letter", key: "4" },
+  { id: "constitution", label: "Constitution", key: "4" },
 ];
 
 export default function ScreenView({ sessionId }: { sessionId: string }) {
@@ -49,8 +49,8 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
 
   const [joinUrl, setJoinUrl] = useState("");
   const [mode, setMode] = useState<Mode>("auto");
-  const [lang, setLang] = useState<LetterLanguage>("en");
-  const [busy, setBusy] = useState<null | "themes" | "letter">(null);
+  const [lang, setLang] = useState<OutputLanguage>("en");
+  const [busy, setBusy] = useState<null | "themes" | "constitution">(null);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
   const n = crews.length;
   const expected = session?.expectedCrews ?? 25;
   const isAdmin = store.isDemo || (!!user && !!session && session.adminId === user.uid);
-  const view: View = mode !== "auto" ? mode : session?.letter ? "letter" : n === 0 ? "scan" : "wall";
+  const view: View = mode !== "auto" ? mode : session?.constitution ? "constitution" : n === 0 ? "scan" : "wall";
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -137,25 +137,25 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
     }
   }
 
-  async function writeLetter() {
+  async function draftConstitution() {
     if (busy || n === 0) return;
-    if (session?.letter && !window.confirm("Write a new letter? The current one will be replaced.")) return;
-    setBusy("letter");
-    setMode("letter");
+    if (session?.constitution && !window.confirm("Draft a new constitution? The current one will be replaced.")) return;
+    setBusy("constitution");
+    setMode("constitution");
     try {
-      const res = await writeLetterAction(payload);
+      const res = await writeConstitutionAction(payload);
       if (res.ok) {
-        await store.saveLetter(res.data);
+        await store.saveConstitution(res.data);
       } else if (store.isDemo) {
-        await store.saveLetter({ ...SAMPLE_LETTER, generatedAt: Date.now(), crewCount: n });
-        showToast(`${res.error} Showing a sample letter.`);
+        await store.saveConstitution({ ...SAMPLE_CONSTITUTION, generatedAt: Date.now(), crewCount: n });
+        showToast(`${res.error} Showing a sample constitution.`);
       } else {
         showToast(res.error);
         setMode("auto");
       }
     } catch (e) {
       console.error(e);
-      showToast("Could not save the letter. Check your connection and try again.");
+      showToast("Could not save the constitution. Check your connection and try again.");
     } finally {
       setBusy(null);
     }
@@ -223,7 +223,7 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
   }
 
   const labelFor = (i: number) =>
-    session.questions[i] === DEFAULT_QUESTIONS[i] ? QUESTION_LABELS[i] : `Question ${i + 1}`;
+    session.questions[i] === DEFAULT_QUESTIONS[i] ? ARTICLE_TITLES[i] : `Question ${i + 1}`;
   const on = (v: View) => (view === v ? "on" : "");
 
   return (
@@ -245,10 +245,10 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
               <div className="big">
                 Scan once.
                 <br />
-                Speak as one.
+                Write as one.
               </div>
               <p className="lead">
-                Crew leaders only: one scan per crew of 8. Read each question out loud, agree on the answer together, then take your group selfie.
+                Crew leaders only: one scan per crew of 8. Read each question out loud, agree together, then take your group selfie. You are drafting the constitution of The One Island.
               </p>
               <div className="qs">
                 {session.questions.map((q, i) => (
@@ -291,7 +291,7 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
         <section className={`cap-view paper ${on("themes")}`} aria-hidden={view !== "themes"}>
           <Header n={n} expected={expected} session={session} />
           <div className="cap-title">
-            {session.themes ? `What ${session.themes.crewCount} crews told us` : "What the crews told us"}
+            {session.themes ? `What ${session.themes.crewCount} crews wrote` : "What the crews wrote"}
             <small>
               {session.themes
                 ? `Grouped by AI, in the crews' own words${session.themes.crewCount < n ? ` · based on the first ${session.themes.crewCount} of ${n} crews` : ""}`
@@ -299,7 +299,7 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
             </small>
           </div>
           {session.themes ? (
-            <div className="cap-cols" dir={session.themes.language === "ar" ? "rtl" : "ltr"}>
+            <div className="cap-cols" dir={session.themes.language === "ar" ? "rtl" : "ltr"} style={{ gridTemplateColumns: `repeat(${session.themes.byQuestion.length}, 1fr)` }}>
               {session.themes.byQuestion.map((items, qi) => (
                 <div className="cap-col" key={qi}>
                   <h3>{labelFor(qi)}</h3>
@@ -326,23 +326,23 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
           )}
         </section>
 
-        {/* ---------------------------------------------------------- letter */}
-        <section className={`cap-view blue ${on("letter")}`} aria-hidden={view !== "letter"}>
+        {/* ---------------------------------------------------------- constitution */}
+        <section className={`cap-view blue ${on("constitution")}`} aria-hidden={view !== "constitution"}>
           <Header n={n} expected={expected} session={session} />
-          {session.letter && busy !== "letter" ? (
-            <LetterReveal letter={session.letter} crews={crews} active={view === "letter"} />
+          {session.constitution && busy !== "constitution" ? (
+            <ConstitutionReveal constitution={session.constitution} crews={crews} active={view === "constitution"} />
           ) : (
             <div className="cap-wait">
-              {busy === "letter" ? (
+              {busy === "constitution" ? (
                 <>
                   <div className="cap-spin" style={{ margin: "0 auto", borderColor: "rgba(255,255,255,.25)", borderTopColor: "#fff", width: 64, height: 64 }} />
-                  <div className="big">Writing the letter…</div>
+                  <div className="big">Drafting the constitution…</div>
                   <p>Reading {n} crews&apos; answers</p>
                 </>
               ) : (
                 <>
-                  <div className="big">The letter is not written yet</div>
-                  <p>{isAdmin ? "Press “Write letter” in the toolbar" : "Coming soon"}</p>
+                  <div className="big">The constitution is not drafted yet</div>
+                  <p>{isAdmin ? "Press “Draft constitution” in the toolbar" : "Coming soon"}</p>
                 </>
               )}
             </div>
@@ -353,7 +353,7 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
       {/* ---------------------------------------------------------- presenter toolbar */}
       {isAdmin && (
         <div className={`cap-bar ${idle && !busy ? "idle" : ""}`} role="toolbar" aria-label="Presenter controls">
-          <button className={mode === "auto" ? "on" : ""} onClick={() => setMode("auto")} title="Automatic: QR, then the wall, then the letter (A)">
+          <button className={mode === "auto" ? "on" : ""} onClick={() => setMode("auto")} title="Automatic: QR, then the wall, then the constitution (A)">
             Auto
           </button>
           {VIEWS.map((v) => (
@@ -365,10 +365,10 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
           <button onClick={analyse} disabled={!!busy || n === 0}>
             {busy === "themes" ? "Grouping…" : "Group answers"}
           </button>
-          <button onClick={writeLetter} disabled={!!busy || n === 0}>
-            {busy === "letter" ? "Writing…" : session.letter ? "Rewrite letter" : "Write letter"}
+          <button onClick={draftConstitution} disabled={!!busy || n === 0}>
+            {busy === "constitution" ? "Drafting…" : session.constitution ? "Redraft constitution" : "Draft constitution"}
           </button>
-          <button onClick={() => setLang(lang === "en" ? "ar" : "en")} title="Language of the next letter and themes">
+          <button onClick={() => setLang(lang === "en" ? "ar" : "en")} title="Language of the next constitution and themes">
             {lang === "en" ? "EN" : "عربي"}
           </button>
           <span className="sep" />
@@ -379,7 +379,7 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
               <button onClick={() => void store.addSampleCrew?.()}>+ Sample crew</button>
               <button
                 onClick={() => {
-                  if (window.confirm("Reset the demo? This clears every sample crew and letter.")) void store.resetDemo?.();
+                  if (window.confirm("Reset the demo? This clears every sample crew and the constitution.")) void store.resetDemo?.();
                 }}
               >
                 Reset
@@ -387,12 +387,12 @@ export default function ScreenView({ sessionId }: { sessionId: string }) {
             </>
           )}
           <a
-            href={`/capsule/${sessionId.toUpperCase()}/letter`}
+            href={`/capsule/${sessionId.toUpperCase()}/constitution`}
             target="_blank"
             rel="noreferrer"
             style={{ all: "unset", cursor: "pointer", whiteSpace: "nowrap", height: 38, padding: "0 16px", borderRadius: 999, fontSize: 14, fontWeight: 700, background: "rgba(255,255,255,.12)", display: "inline-flex", alignItems: "center" }}
           >
-            Letter page ↗
+            Constitution page ↗
           </a>
           <button onClick={toggleFullscreen} title="Fullscreen (F)">
             Fullscreen
@@ -415,8 +415,8 @@ function Header({ n, expected, session }: { n: number; expected: number; session
     <header className="cap-sh">
       <BrandMark size={64} ring="var(--mark-ring)" dot="var(--mark-dot)" />
       <div>
-        <div className="ttl">The Culture Capsule</div>
-        <div className="sub">The One Island · a letter to the future managers of e&amp;</div>
+        <div className="ttl">The One Island Constitution</div>
+        <div className="sub">Drafted live by the crews of etisalat · The Culture Capsule</div>
       </div>
       <div className="right">
         <div className="cap-tally">
@@ -443,7 +443,7 @@ function Spotlight({
   labelFor: (i: number) => string;
 }) {
   const total = crew.answers.join("").length;
-  const tier = total <= 140 ? "t1" : total <= 300 ? "t2" : total <= 480 ? "t3" : "t4";
+  const tier = total <= 160 ? "t1" : total <= 340 ? "t2" : total <= 560 ? "t3" : "t4";
   return (
     <article key={crew.id} className={`cap-spot ${tier} enter`}>
       <div className="ph">
@@ -460,7 +460,7 @@ function Spotlight({
           Led by {crew.leaderName} · Crew {index + 1}
         </div>
         <div className="qa">
-          {[0, 1, 2].map((i) => (
+          {crew.answers.map((_, i) => (
             <div key={i}>
               <small>{labelFor(i)}</small>
               <p dir="auto">{crew.answers[i]}</p>

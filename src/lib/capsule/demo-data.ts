@@ -1,47 +1,57 @@
-import { CREW_SIZE, type CapsuleCrewInput, type CapsuleLetter, type CapsuleThemes } from "./types";
+import { CREW_SIZE, type CapsuleConstitution, type CapsuleCrewInput, type CapsuleThemes } from "./types";
 
-/** Rehearsal content for `/capsule/demo` — clearly sample copy, never real data. */
+/** Rehearsal content for `/capsule/demo`: clearly sample copy, never real data. */
 
-const SAMPLE: Array<[leader: string, crew: string, answers: [string, string, string]]> = [
+type FourAnswers = [unique: string, whoCanJoin: string, never: string, appreciate: string];
+
+const SAMPLE: Array<[leader: string, crew: string, answers: FourAnswers]> = [
   ["Omar", "The Navigators", [
-    "People who genuinely show up for each other, even on a Friday night.",
     "We move fast and still take the time to care about each other.",
-    "Slow approvals that make good ideas wait for weeks.",
+    "Anyone curious, kind and ready to share the work.",
+    "Leave a colleague behind when a deadline gets tough.",
+    "People who genuinely show up for each other, even on a Friday night.",
   ]],
   ["Sara", "Sunrise Crew", [
+    "Our customers sit at the centre of every decision, not in a slide deck.",
+    "Anyone who listens first and speaks up honestly.",
+    "Say 'that's not my department'.",
     "The open-door feeling: you can ask anyone, at any level, and get a real answer.",
-    "Our customers are at the centre of every decision, not a slide in a deck.",
-    "Working in silos: every team on its own little island.",
   ]],
   ["Mohamed", "Palm Pioneers", [
-    "Teamwork. Nobody gets left behind when a deadline gets tough.",
-    "Pride in the brand: we know the network connects millions of families.",
-    "Meetings that could have been a two-line message.",
+    "We know the network connects millions of families, and we are proud of it.",
+    "Everyone who wants to grow and help others grow.",
+    "Hide a mistake instead of learning from it.",
+    "Teamwork. Nobody gets left behind.",
   ]],
   ["Nour", "Coral Squad", [
-    "Learning is part of the job: we are encouraged to grow.",
     "A mix of experience and fresh energy that actually listens to each other.",
-    "Fear of making mistakes. We should learn out loud instead.",
+    "Anyone brave enough to ask questions and humble enough to hear answers.",
+    "Blame a person before looking at the problem.",
+    "Learning is part of the job: we are encouraged to grow.",
   ]],
   ["Karim", "The Tidal Wave", [
-    "Respect: people thank each other and mean it.",
     "We solve problems together instead of looking for who to blame.",
-    "Unclear ownership. Too many people responsible means nobody is.",
+    "People who respect everyone, from the first day to the last.",
+    "Let a good idea wait for weeks in an approval chain.",
+    "Respect: people thank each other and mean it.",
   ]],
   ["Hana", "Lagoon Legends", [
-    "The family spirit: colleagues become friends.",
     "Resilience. We keep the network running no matter what.",
-    "Last-minute urgent requests with no context.",
+    "Anyone who treats colleagues like family.",
+    "Send an urgent request with no context.",
+    "The family spirit: colleagues become friends.",
   ]],
   ["Youssef", "North Coast Navigators", [
-    "Support from managers who listen before they decide.",
     "Big-company stability with a start-up appetite for new ideas.",
-    "Duplicated reports that nobody reads.",
+    "Anyone who brings ideas and brings others along.",
+    "Work in silos, every team on its own little island.",
+    "Managers who listen before they decide.",
   ]],
   ["Mariam", "Seashell Society", [
     "Diversity of people and backgrounds, all under one brand.",
+    "Everyone, whatever their background, who shares our values.",
+    "Skip the thank-you after someone helps.",
     "We celebrate wins together, big or small.",
-    "The 'that's not my department' reflex.",
   ]],
 ];
 
@@ -102,54 +112,70 @@ export const SAMPLE_THEMES: CapsuleThemes = {
   crewCount: 8,
   byQuestion: [
     [
-      { theme: "People who show up for each other", crews: 5, quote: "Nobody gets left behind when a deadline gets tough." },
-      { theme: "Respect and openness", crews: 3, quote: "You can ask anyone, at any level, and get a real answer." },
-      { theme: "Room to learn and grow", crews: 2, quote: "Learning is part of the job." },
-    ],
-    [
       { theme: "Speed with heart", crews: 4, quote: "We move fast and still care about each other." },
-      { theme: "Customers at the centre", crews: 3, quote: "Our customers are at the centre of every decision." },
+      { theme: "Customers at the centre", crews: 2, quote: "Our customers sit at the centre of every decision." },
       { theme: "Pride in the network", crews: 2, quote: "We keep the network running no matter what." },
     ],
     [
-      { theme: "Slow approvals", crews: 3, quote: "Good ideas wait for weeks." },
-      { theme: "Silos and unclear ownership", crews: 3, quote: "Every team on its own little island." },
-      { theme: "Fear of mistakes", crews: 2, quote: "We should learn out loud instead." },
+      { theme: "Curious, kind, ready to share", crews: 4, quote: "Anyone curious, kind and ready to share the work." },
+      { theme: "Respect for everyone", crews: 3, quote: "People who respect everyone, from the first day." },
+      { theme: "Growth mindset", crews: 2, quote: "Everyone who wants to grow and help others grow." },
+    ],
+    [
+      { theme: "Leaving people behind", crews: 3, quote: "Leave a colleague behind when a deadline gets tough." },
+      { theme: "Blame and hiding mistakes", crews: 3, quote: "Blame a person before looking at the problem." },
+      { theme: "Silos and slow approvals", crews: 2, quote: "Every team on its own little island." },
+    ],
+    [
+      { theme: "People who show up for each other", crews: 5, quote: "Nobody gets left behind." },
+      { theme: "Respect and gratitude", crews: 3, quote: "People thank each other and mean it." },
+      { theme: "Room to learn and grow", crews: 2, quote: "Learning is part of the job." },
     ],
   ],
 };
 
-export const SAMPLE_LETTER: CapsuleLetter = {
+export const SAMPLE_CONSTITUTION: CapsuleConstitution = {
   language: "en",
   generatedAt: 0,
   crewCount: 8,
   sample: true,
-  title: "A letter to the future managers of e&",
-  salutation: "Dear future managers,",
-  opening:
-    "We wrote this together, in crews of eight, on an island, with sand on our shoes. It is what we wish someone had told us on our first day.",
-  sections: [
+  title: "The One Island Constitution",
+  preamble:
+    "We, the crews of The One Island, write this together so that everyone who comes after us knows who we are and what we promise each other.",
+  articles: [
     {
-      heading: "What e& is",
-      body:
-        "e& is people who keep millions of families connected, and who keep each other connected while doing it. Behind every network, every app and every call is a colleague who answered the phone on a bad night.",
+      heading: "Our identity",
+      clauses: [
+        "We move fast and still take the time to care about each other.",
+        "Our customers sit at the centre of every decision we make.",
+        "We keep the network running, and we are proud that it connects millions of families.",
+      ],
     },
     {
-      heading: "What defines our culture",
-      body:
-        "We show up for each other. We move fast and still care. We put the customer at the centre of the decision, and we can ask anyone, at any level, for a straight answer.",
+      heading: "Who can join",
+      clauses: [
+        "Anyone who is curious, kind and ready to share the work.",
+        "Everyone who respects people, from the first day to the last.",
+        "Anyone who wants to grow and help others grow.",
+      ],
     },
     {
-      heading: "What you need to do to keep it unique and successful",
-      body: "Protect what we love, and have the courage to remove what slows us down.",
-      bullets: [
-        "Listen before you decide, and say thank you out loud.",
-        "Give decisions a clear owner and a short approval path.",
-        "Break the silos: one company, one destination.",
-        "Make it safe to make mistakes and learn out loud.",
+      heading: "Our red lines",
+      clauses: [
+        "We never leave a colleague behind when a deadline gets tough.",
+        "We never blame a person before we look at the problem.",
+        "We never let a good idea wait in a chain of approvals, and we never work in silos.",
+      ],
+    },
+    {
+      heading: "What we cherish",
+      clauses: [
+        "People who show up for each other, even on a Friday night.",
+        "Respect, and a thank-you that is meant.",
+        "The freedom to learn, to ask anyone, and to get a real answer.",
       ],
     },
   ],
-  closing: "Look after the people. The rest follows.",
-  signOff: "With pride, the crews of The One Island",
+  closing: "To whoever leads the island next: protect what we cherish, and hold the red lines.",
+  signOff: "Signed by the crews of The One Island",
 };

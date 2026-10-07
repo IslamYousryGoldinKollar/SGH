@@ -173,7 +173,7 @@ export default function AdminDashboard() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Culture Capsule</CardTitle>
-          <CardDescription>The ice-breaker QR game: crews of 8 answer three culture questions, and AI writes the letter to future managers.</CardDescription>
+          <CardDescription>The ice-breaker QR game: crews of 8 draft The One Island constitution, and AI merges their answers into one document.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="secondary" onClick={() => router.push('/admin/capsule')}>

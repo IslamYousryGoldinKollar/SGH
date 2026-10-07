@@ -22,14 +22,14 @@ interface DemoState {
 const freshState = (): DemoState => ({
   session: {
     id: DEMO_SESSION_ID,
-    title: "The Culture Capsule (demo)",
+    title: "The One Island Constitution (demo)",
     adminId: "demo",
     status: "open",
     questions: DEFAULT_QUESTIONS,
     expectedCrews: 25,
     createdAt: Date.now(),
     themes: null,
-    letter: null,
+    constitution: null,
   },
   crews: [],
 });
@@ -100,13 +100,13 @@ export function createDemoStore(): CapsuleStore {
       const s = current();
       write({ ...s, session: { ...s.session, themes } });
     },
-    async saveLetter(letter) {
+    async saveConstitution(constitution) {
       const s = current();
-      write({ ...s, session: { ...s.session, letter } });
+      write({ ...s, session: { ...s.session, constitution } });
     },
-    async clearLetter() {
+    async clearConstitution() {
       const s = current();
-      write({ ...s, session: { ...s.session, letter: null } });
+      write({ ...s, session: { ...s.session, constitution: null } });
     },
     async deleteCrew(crewId) {
       const s = current();

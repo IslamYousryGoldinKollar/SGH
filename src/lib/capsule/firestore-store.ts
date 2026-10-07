@@ -19,8 +19,9 @@ import { db } from "@/lib/firebase";
 import type { CapsuleStore, Unsubscribe } from "./store";
 import {
   DEFAULT_QUESTIONS,
+  QUESTION_COUNT,
   type CapsuleCrew,
-  type CapsuleLetter,
+  type CapsuleConstitution,
   type CapsuleSession,
   type CapsuleThemes,
 } from "./types";
@@ -41,17 +42,17 @@ const clean = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 function mapSession(id: string, data: DocumentData): CapsuleSession {
   return {
     id,
-    title: data.title ?? "The Culture Capsule",
+    title: data.title ?? "The One Island Constitution",
     adminId: data.adminId ?? "",
     status: data.status === "closed" ? "closed" : "open",
     questions:
-      Array.isArray(data.questions) && data.questions.length === 3
+      Array.isArray(data.questions) && data.questions.length === QUESTION_COUNT
         ? data.questions
         : DEFAULT_QUESTIONS,
     expectedCrews: Number(data.expectedCrews) || 25,
     createdAt: toMillis(data.createdAt),
     themes: data.themes ?? null,
-    letter: data.letter ?? null,
+    constitution: data.constitution ?? null,
   };
 }
 
@@ -118,11 +119,11 @@ export function createFirestoreStore(sessionId: string): CapsuleStore {
     async saveThemes(themes: CapsuleThemes) {
       await updateDoc(sessionRef, { themes: clean(themes) });
     },
-    async saveLetter(letter: CapsuleLetter) {
-      await updateDoc(sessionRef, { letter: clean(letter) });
+    async saveConstitution(constitution: CapsuleConstitution) {
+      await updateDoc(sessionRef, { constitution: clean(constitution) });
     },
-    async clearLetter() {
-      await updateDoc(sessionRef, { letter: null });
+    async clearConstitution() {
+      await updateDoc(sessionRef, { constitution: null });
     },
     async deleteCrew(crewId) {
       await deleteDoc(doc(db, SESSIONS, sessionId, CREWS, crewId));
@@ -148,14 +149,14 @@ export async function createCapsuleSession(
 ): Promise<string> {
   const id = makeCode();
   await setDoc(doc(db, SESSIONS, id), {
-    title: opts.title?.trim() || "The Culture Capsule",
+    title: opts.title?.trim() || "The One Island Constitution",
     adminId,
     status: "open",
     questions: opts.questions ?? DEFAULT_QUESTIONS,
     expectedCrews: opts.expectedCrews ?? 25,
     createdAt: serverTimestamp(),
     themes: null,
-    letter: null,
+    constitution: null,
   });
   return id;
 }

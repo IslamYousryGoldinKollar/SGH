@@ -26,7 +26,7 @@ export default function AdminCapsulePage() {
   const { toast } = useToast();
   const [sessions, setSessions] = useState<CapsuleSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [title, setTitle] = useState("The Culture Capsule");
+  const [title, setTitle] = useState("The One Island Constitution");
   const [expected, setExpected] = useState(25);
   const [creating, setCreating] = useState(false);
   const [origin, setOrigin] = useState("");
@@ -71,7 +71,7 @@ export default function AdminCapsulePage() {
   }
 
   async function remove(id: string) {
-    if (!window.confirm(`Delete capsule ${id} with all its crews and the letter? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete capsule ${id} with all its crews and the constitution? This cannot be undone.`)) return;
     try {
       await deleteCapsuleSession(id);
     } catch (e) {
@@ -107,8 +107,8 @@ export default function AdminCapsulePage() {
         <CardHeader>
           <CardTitle>New capsule</CardTitle>
           <CardDescription>
-            The ice-breaker QR game: crews of 8 answer three culture questions, take a group selfie, and the AI writes a letter to the
-            future managers.
+            The ice-breaker QR game: crews of 8 answer four questions about The One Island, take a group selfie, and the AI merges
+            everything into the island&apos;s constitution.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-[1fr_160px_auto] items-end">
@@ -164,7 +164,7 @@ export default function AdminCapsulePage() {
                     </CardTitle>
                     <CardDescription>
                       Code <span className="font-mono font-bold tracking-widest">{s.id}</span> · {s.expectedCrews} crews expected
-                      {s.letter ? " · letter written" : ""}
+                      {s.constitution ? " · constitution drafted" : ""}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex gap-4 items-center">
@@ -185,8 +185,8 @@ export default function AdminCapsulePage() {
                     <Button variant="outline" onClick={() => window.open(`/capsule/${s.id}`, "_blank")}>
                       <Smartphone className="mr-2" /> Phone view
                     </Button>
-                    <Button variant="outline" onClick={() => window.open(`/capsule/${s.id}/letter`, "_blank")}>
-                      <FileText className="mr-2" /> Letter page <ExternalLink className="ml-1 h-3 w-3" />
+                    <Button variant="outline" onClick={() => window.open(`/capsule/${s.id}/constitution`, "_blank")}>
+                      <FileText className="mr-2" /> Constitution <ExternalLink className="ml-1 h-3 w-3" />
                     </Button>
                     <Button variant="destructive" onClick={() => remove(s.id)}>
                       <Trash2 className="mr-2" /> Delete

@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./capsule.css";
 
 export const metadata: Metadata = {
-  title: "The Culture Capsule · The One Island",
-  description: "Your crew's voice for the future managers of e&.",
+  title: "The One Island Constitution · Culture Capsule",
+  description: "Your crew helps draft the constitution of The One Island.",
 };
 
 export const viewport: Viewport = {

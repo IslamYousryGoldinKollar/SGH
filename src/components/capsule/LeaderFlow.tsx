@@ -12,17 +12,17 @@ import {
 } from "lucide-react";
 import { useCapsuleSession, useCapsuleStore } from "@/hooks/useCapsule";
 import { compressImage } from "@/lib/capsule/image";
-import { CREW_SIZE, LIMITS } from "@/lib/capsule/types";
+import { ARTICLE_TITLES, CREW_SIZE, LIMITS, QUESTION_COUNT, articleLabel } from "@/lib/capsule/types";
 
 /**
  * What the QR code opens. One phone per crew: the crew leader reads each question out loud,
  * the crew agrees on an answer together, the leader types it in, then takes the group selfie.
  *
- *   0 welcome · 1-3 questions · 4 selfie · 5 review · then the "done" screen
+ *   0 welcome · 1..N questions (one article each) · N+1 selfie · N+2 review · then the "done" screen
  */
 
-const STEP_PHOTO = 4;
-const STEP_REVIEW = 5;
+const STEP_PHOTO = QUESTION_COUNT + 1;
+const STEP_REVIEW = QUESTION_COUNT + 2;
 
 interface Draft {
   step: number;
@@ -39,7 +39,7 @@ interface Done {
   photo: string;
 }
 
-const EMPTY_DRAFT: Draft = { step: 0, leaderName: "", crewName: "", answers: ["", "", ""], photo: "" };
+const EMPTY_DRAFT: Draft = { step: 0, leaderName: "", crewName: "", answers: Array.from({ length: QUESTION_COUNT }, () => ""), photo: "" };
 
 const draftKey = (id: string) => `capsule:${id}:draft`;
 const doneKey = (id: string) => `capsule:${id}:done`;
@@ -99,7 +99,7 @@ export default function LeaderFlow({ sessionId }: { sessionId: string }) {
       setDone(finished);
     } else {
       const saved = readJSON<Draft>(draftKey(sessionId));
-      if (saved) setDraft({ ...EMPTY_DRAFT, ...saved, answers: [0, 1, 2].map((i) => saved.answers?.[i] ?? "") });
+      if (saved) setDraft({ ...EMPTY_DRAFT, ...saved, answers: Array.from({ length: QUESTION_COUNT }, (_, i) => saved.answers?.[i] ?? "") });
     }
     setHydrated(true);
   }, [sessionId]);
@@ -255,24 +255,24 @@ export default function LeaderFlow({ sessionId }: { sessionId: string }) {
       {step === 0 && (
         <div className="cap-body cap-fadein">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="cap-logo" src="/one-island/logo.svg" alt="The One Island · e&" />
+          <img className="cap-logo" src="/one-island/logo.svg" alt="The One Island · etisalat" />
           <div>
             <div className="cap-eyebrow">
               <i />
-              The Culture Capsule
+              The One Island Constitution
             </div>
             <h1 className="cap-h1" style={{ marginTop: 10 }}>
               You lead your crew.
             </h1>
           </div>
           <p className="cap-lead">
-            Your crew of {CREW_SIZE} is about to leave a message for the future managers of e&amp;. You&apos;re holding the phone, so you&apos;re the leader.
+            Your crew of {CREW_SIZE} is about to write the first articles of The One Island constitution, for everyone at etisalat who comes after us. You&apos;re holding the phone, so you&apos;re the leader.
           </p>
           <div className="cap-steps">
             <div className="cap-step">
               <b>1</b>
               <div>
-                Read each question out loud<small>There are {questions.length} of them</small>
+                Read each question out loud<small>{questions.length} articles to draft</small>
               </div>
             </div>
             <div className="cap-step">
@@ -324,12 +324,12 @@ export default function LeaderFlow({ sessionId }: { sessionId: string }) {
         </div>
       )}
 
-      {/* ------------------------------------------------ 1-3 · questions */}
-      {step >= 1 && step <= 3 && (
+      {/* ------------------------------------------------ 1..N · questions */}
+      {step >= 1 && step <= QUESTION_COUNT && (
         <div className="cap-body cap-fadein" key={`q${qIndex}`}>
           <div className="cap-qcard">
             <div className="cap-qnum">
-              Question {qIndex + 1} of {questions.length}
+              {articleLabel(qIndex + 1)} of {questions.length} · {ARTICLE_TITLES[qIndex]}
             </div>
             <h1 className="cap-q">{questions[qIndex]}</h1>
             <div className="cap-hint">
@@ -363,7 +363,7 @@ export default function LeaderFlow({ sessionId }: { sessionId: string }) {
           </div>
           <div className="cap-actions">
             <button className="cap-btn" disabled={!answerOk(qIndex)} onClick={() => goto(step + 1)}>
-              {qIndex === 2 ? "Selfie time" : "Next"} <ArrowRight aria-hidden />
+              {qIndex === QUESTION_COUNT - 1 ? "Selfie time" : "Next"} <ArrowRight aria-hidden />
             </button>
           </div>
         </div>
@@ -448,8 +448,9 @@ export default function LeaderFlow({ sessionId }: { sessionId: string }) {
             {questions.map((q, i) => (
               <button key={i} className="cap-ritem" onClick={() => goto(i + 1)}>
                 <small>
-                  {i + 1}. {q}
+                  {articleLabel(i + 1)} · {ARTICLE_TITLES[i]}
                 </small>
+                <em className="q">{q}</em>
                 <span dir="auto">{draft.answers[i]}</span>
               </button>
             ))}
@@ -502,7 +503,7 @@ function Shell({
                 <i style={{ width: `${(Math.min(step!, STEP_REVIEW) / STEP_REVIEW) * 100}%` }} />
               </div>
               <span className="cap-count">
-                {step! <= 3 ? `${step} / 3` : step === STEP_PHOTO ? "Selfie" : "Review"}
+                {step! <= QUESTION_COUNT ? `${step} / ${QUESTION_COUNT}` : step === STEP_PHOTO ? "Selfie" : "Review"}
               </span>
             </>
           )}

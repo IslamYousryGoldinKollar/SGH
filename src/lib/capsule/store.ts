@@ -1,7 +1,7 @@
 import type {
   CapsuleCrew,
   CapsuleCrewInput,
-  CapsuleLetter,
+  CapsuleConstitution,
   CapsuleSession,
   CapsuleThemes,
 } from "./types";
@@ -31,8 +31,8 @@ export interface CapsuleStore {
   // --- admin only (Firestore rules enforce this; demo allows everything) ---
   setStatus(status: CapsuleSession["status"]): Promise<void>;
   saveThemes(themes: CapsuleThemes): Promise<void>;
-  saveLetter(letter: CapsuleLetter): Promise<void>;
-  clearLetter(): Promise<void>;
+  saveConstitution(constitution: CapsuleConstitution): Promise<void>;
+  clearConstitution(): Promise<void>;
   deleteCrew(crewId: string): Promise<void>;
   /** Demo only: drop in a sample crew so the wall can be rehearsed. */
   addSampleCrew?(): Promise<void>;

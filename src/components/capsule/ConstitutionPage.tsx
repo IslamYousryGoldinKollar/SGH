@@ -3,10 +3,10 @@
 import { Printer } from "lucide-react";
 import { useCapsuleCrews, useCapsuleSession, useCapsuleStore } from "@/hooks/useCapsule";
 import BrandMark from "./BrandMark";
-import { LetterDoc } from "./LetterDoc";
+import { ConstitutionDoc } from "./ConstitutionDoc";
 
-/** A normal, printable page with the finished letter: the take-home version for the future managers. */
-export default function LetterPage({ sessionId }: { sessionId: string }) {
+/** A normal, printable page with the finished constitution and every crew that signed it. */
+export default function ConstitutionPage({ sessionId }: { sessionId: string }) {
   const store = useCapsuleStore(sessionId);
   const { data: session, loading } = useCapsuleSession(store);
   const { data: crews } = useCapsuleCrews(store);
@@ -19,11 +19,11 @@ export default function LetterPage({ sessionId }: { sessionId: string }) {
     );
   }
 
-  const letter = session?.letter;
+  const constitution = session?.constitution;
   return (
     <div className="cap-paper-page">
       <div className="cap-paper-tools">
-        {letter && (
+        {constitution && (
           <button className="cap-btn" onClick={() => window.print()}>
             <Printer aria-hidden /> Print or save as PDF
           </button>
@@ -34,12 +34,12 @@ export default function LetterPage({ sessionId }: { sessionId: string }) {
           <BrandMark size={40} />
           The One Island · Team Building 2026
         </div>
-        {letter ? (
+        {constitution ? (
           <>
-            <LetterDoc letter={letter} />
+            <ConstitutionDoc constitution={constitution} />
             {crews.length > 0 && (
               <div className="photos">
-                <p>Written from the voices of {letter.crewCount} crews</p>
+                <p>Signed by {constitution.crewCount} crews</p>
                 <div>
                   {crews.map((c) => (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -51,8 +51,8 @@ export default function LetterPage({ sessionId }: { sessionId: string }) {
           </>
         ) : (
           <div className="cap-doc">
-            <h1>The letter is not written yet</h1>
-            <p className="open">Once the host asks the AI to write it, it will appear here.</p>
+            <h1>The constitution is not written yet</h1>
+            <p className="open">Once the host asks the AI to draft it from the crews&apos; answers, it will appear here.</p>
           </div>
         )}
       </article>

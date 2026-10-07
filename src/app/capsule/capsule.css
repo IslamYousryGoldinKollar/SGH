@@ -439,6 +439,13 @@
   color: var(--red);
   margin-bottom: 4px;
 }
+.cap-ritem .q {
+  display: block;
+  font-style: normal;
+  font-size: 13px;
+  color: var(--grey);
+  margin-bottom: 4px;
+}
 .cap-ritem span {
   display: block;
   font-size: 16px;
@@ -699,39 +706,39 @@
   border-radius: 0 0 44px 44px;
 }
 .cap-scan .big {
-  font-size: 104px;
+  font-size: 96px;
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.04em;
 }
 .cap-scan .lead {
-  margin-top: 26px;
-  font-size: 34px;
+  margin-top: 22px;
+  font-size: 30px;
   line-height: 1.25;
   font-weight: 500;
   opacity: 0.92;
   max-width: 880px;
 }
 .cap-scan .qs {
-  margin-top: 44px;
+  margin-top: 30px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 .cap-scan .qs div {
   display: flex;
   align-items: center;
   gap: 18px;
-  padding: 16px 22px;
+  padding: 12px 20px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.14);
-  font-size: 27px;
+  font-size: 25px;
   font-weight: 700;
   line-height: 1.15;
 }
 .cap-scan .qs b {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   flex: none;
   border-radius: 50%;
   background: #fff;
@@ -741,7 +748,7 @@
   font-size: 21px;
 }
 .cap-url {
-  margin-top: 26px;
+  margin-top: 18px;
   font-size: 22px;
   font-weight: 500;
   opacity: 0.8;
@@ -783,7 +790,7 @@
   object-fit: contain;
 }
 .cap-spot .tx {
-  padding: 40px 44px 36px;
+  padding: 34px 40px 30px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -791,7 +798,7 @@
   overflow: hidden;
 }
 .cap-spot .nm {
-  font-size: 46px;
+  font-size: 42px;
   font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.03em;
@@ -804,10 +811,10 @@
   color: var(--grey);
 }
 .cap-spot .qa {
-  margin-top: 22px;
+  margin-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   flex: 1;
   min-height: 0;
   justify-content: space-between;
@@ -825,10 +832,10 @@
   font-weight: 500;
   overflow-wrap: anywhere;
 }
-.cap-spot.t1 .qa p { font-size: 32px; }
-.cap-spot.t2 .qa p { font-size: 28px; }
-.cap-spot.t3 .qa p { font-size: 24px; }
-.cap-spot.t4 .qa p { font-size: 21px; }
+.cap-spot.t1 .qa p { font-size: 28px; }
+.cap-spot.t2 .qa p { font-size: 24px; }
+.cap-spot.t3 .qa p { font-size: 21px; }
+.cap-spot.t4 .qa p { font-size: 19px; }
 .cap-spot.enter {
   animation: cap-spot-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
@@ -994,16 +1001,15 @@
   top: 330px;
   bottom: 90px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 20px;
 }
 .cap-col {
   background: #fff;
   border-radius: 30px;
-  padding: 32px 32px 28px;
+  padding: 28px 26px 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   box-shadow: 0 16px 44px rgba(24, 31, 75, 0.08);
   min-height: 0;
 }
@@ -1028,15 +1034,15 @@
 .cap-theme .row {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  font-size: 26px;
+  gap: 10px;
+  font-size: 25px;
   font-weight: 700;
   line-height: 1.12;
 }
 .cap-theme .row em {
   margin-left: auto;
   font-style: normal;
-  font-size: 22px;
+  font-size: 20px;
   color: var(--red);
   white-space: nowrap;
 }
@@ -1069,7 +1075,7 @@
   color: var(--grey);
 }
 
-/* letter reveal (big screen) */
+/* constitution reveal (big screen) */
 .cap-reveal {
   position: absolute;
   left: 100px;
@@ -1102,25 +1108,25 @@
   overflow-wrap: anywhere;
   max-width: 1500px;
 }
-.cap-pg h2 {
-  display: flex;
-  align-items: center;
-  gap: 0.45em;
-  font-size: 1.45em;
-  line-height: 1.05;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+.cap-pg .sub {
+  font-size: 0.62em;
+  font-weight: 500;
+  opacity: 0.8;
+  margin-top: -0.25em;
 }
-.cap-pg h2 span {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 1.5em;
-  height: 1.5em;
-  border-radius: 50%;
-  background: #fff;
-  color: var(--red);
-  font-size: 0.8em;
+.cap-pg .art {
+  font-size: 0.5em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.cap-pg h2 {
+  font-size: 1.9em;
+  line-height: 1.02;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.15em;
 }
 .cap-pg ul {
   list-style: none;
@@ -1128,7 +1134,7 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35em;
+  gap: 0.5em;
 }
 .cap-pg li {
   position: relative;
@@ -1202,7 +1208,7 @@
   margin-left: 12px;
 }
 
-/* shared letter typography (screen + printable page) */
+/* shared constitution typography (screen + printable page) */
 .cap-doc h1 {
   font-size: 1.55em;
   line-height: 1.08;
@@ -1219,25 +1225,28 @@
   overflow-wrap: anywhere;
 }
 .cap-doc .open {
-  margin-top: 0.45em;
+  margin-top: 0.7em;
+}
+.cap-doc .sub {
+  margin-top: 0.15em;
+  font-size: 0.95em;
+  font-weight: 500;
+  color: var(--grey);
 }
 .cap-doc h2 {
-  margin-top: 0.95em;
-  font-size: 1.05em;
+  margin-top: 1.05em;
+  font-size: 1.12em;
   font-weight: 700;
-  color: var(--red);
-  letter-spacing: -0.005em;
+  color: var(--blue);
+  letter-spacing: -0.01em;
 }
-.cap-doc h2 span {
-  display: inline-grid;
-  place-items: center;
-  width: 1.5em;
-  height: 1.5em;
-  margin-right: 0.5em;
-  border-radius: 50%;
-  background: var(--red);
-  color: #fff;
-  font-size: 0.8em;
+.cap-doc h2 small {
+  display: block;
+  font-size: 0.68em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
 }
 .cap-doc ul {
   margin: 0.4em 0 0 0;
@@ -1272,10 +1281,6 @@
   color: var(--grey);
   font-weight: 500;
 }
-.cap-doc[dir="rtl"] h2 span {
-  margin-right: 0;
-  margin-left: 0.5em;
-}
 .cap-doc[dir="rtl"] li {
   padding-left: 0;
   padding-right: 1.3em;
@@ -1295,7 +1300,7 @@
   padding: 3px 10px;
 }
 
-/* letter waiting state */
+/* constitution waiting state */
 .cap-wait {
   position: absolute;
   inset: 0;
@@ -1393,7 +1398,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   Printable letter page
+   Printable constitution page
    -------------------------------------------------------------------------- */
 .cap-paper-page {
   min-height: 100vh;
