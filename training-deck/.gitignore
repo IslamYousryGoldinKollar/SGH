@@ -1,0 +1,7 @@
+# Screenshots and the built deck contain real customer names / phone numbers / addresses -
+# keep them out of git. (git add -f if you really want to commit them.)
+screenshots/*
+!screenshots/.gitkeep
+output/*
+!output/.gitkeep
+__pycache__/
