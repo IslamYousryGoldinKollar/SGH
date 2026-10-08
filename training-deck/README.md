@@ -30,10 +30,10 @@ that name in `screenshots/` and re-run:
 Call-outs are stored as fractions of the original screenshot, so a re-captured screenshot of the same
 screen keeps its call-outs in place. The numbers on a screenshot match the numbered steps beside it.
 
-All slots but one are filled with real photos. `51_cashback_cash` (a Maine checkout with **Cash** selected
-and the **Cashback** line) is still a placeholder. Delete or rename a file to get its placeholder back, for
-example to re-capture a screen. The cashback slide uses the three brand logos (`48_logo_maine`,
-`49_logo_chickin_worx`, `50_logo_vinnys_pizza`).
+All 41 slots the deck uses are filled with real photos, so no placeholders are drawn. Delete or rename a
+file to get its placeholder back, for example to re-capture a screen. The cashback slide shows the three
+brand logos (`48_logo_maine`, `49_logo_chickin_worx`, `50_logo_vinnys_pizza`) and two checkouts: Maine on
+Cash (`51_cashback_cash`) and an online brand on Credit Card (`42_cashback_checkout`).
 
 ## Structure (follows the order workflow)
 
