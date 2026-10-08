@@ -255,6 +255,10 @@ SHOT_TABLE = [
      "كارت Order again (آخر أوردر للعميل) وتحته كارت Rewards، فوق الـ Categories."),
     ("cashback_cash", "51_cashback_cash", (490, 180), "Maine: Cash + Cashback",
      "الـ Checkout في Maine: Cash مختار وتحته سطر Cashback بالمبلغ."),
+    ("maps_menu", "52_google_maps_right_click", (1600, 794), "Google Maps",
+     "Google Maps: خانة البحث، وكليك يمين على المكان — القايمة اللي بتظهر أول سطر فيها إحداثيات المكان."),
+    ("downtown_address", "53_address_downtown", (720, 84), "عنوان متسجّل",
+     "سطر عنوان متسجّل المنطقة فيه Downtown - Tahrir وبعده شارع في مصر الجديدة."),
     ("logo_maine", "48_logo_maine", (1080, 1080), "Maine",
      "لوجو براند Maine (فيه كاش باك)."),
     ("logo_chickin", "49_logo_chickin_worx", (959, 959), "Chickin Worx",
@@ -908,7 +912,36 @@ def k_checklist(prs, ctx, page, spec):
     return s
 
 
-KINDS = dict(cover=k_cover, agenda=k_agenda, divider=k_divider, statement=k_statement, journey=k_journey,
+def k_mismatch(prs, ctx, page, spec):
+    s = content_slide(prs, ctx, page, spec)
+    place(s, ctx, [[spec["shot"]]], (MX, 1.9, CONTENT_W, 1.45))
+    gap = 1.2
+    cw = (CONTENT_W - gap) / 2
+    for i, (label, big, sub) in enumerate(spec["cards"]):
+        x = MX + i * (cw + gap)
+        add_rect(s, x, 3.6, cw, 1.3, fill=CARD, line=RULE, line_w=1, rounded=0.1)
+        add_rect(s, x, 3.6, 0.09, 1.3, fill=ctx.color)
+        badge(s, x + 0.5, 4.25, i + 1, d=0.36, size=12, fill=ctx.color, ring=False)
+        add_text(s, x + 0.9, 3.72, cw - 1.1, 0.3, [P(label, 10, bold=True, color=ctx.color)])
+        add_text(s, x + 0.9, 4.02, cw - 1.1, 0.5, [P(big, 20, bold=True)])
+        add_text(s, x + 0.9, 4.52, cw - 1.1, 0.35, [P(sub, 11.5, color=MUTED)])
+    add_text(s, MX + cw, 3.6, gap, 1.3, [P("≠", 44, bold=True, color=WARN, align="c")], anchor="m")
+    steps = spec["steps"]
+    n = len(steps)
+    g = 0.25
+    sw = (CONTENT_W - (n - 1) * g) / n
+    for i, (title, detail) in enumerate(steps):
+        x = MX + i * (sw + g)
+        add_rect(s, x, 5.1, sw, 1.05, fill=tint(ctx.color, 0.88), rounded=0.08)
+        add_text(s, x + 0.2, 5.18, sw - 0.4, 0.3, [P(title, 13, bold=True, hl=ctx.color)])
+        add_text(s, x + 0.2, 5.5, sw - 0.4, 0.62, [P(detail, 10.5, color=MUTED, hl=INK)])
+        if i < n - 1:
+            add_text(s, x + sw - 0.02, 5.4, g + 0.04, 0.4, [P(CHEVRON, 16, bold=True, color=FAINT, align="c")], anchor="m", wrap=False)
+    draw_banner(s, ctx, spec["banner"][0], spec["banner"][1], MX, 6.3, CONTENT_W, 11.5)
+    return s
+
+
+KINDS = dict(cover=k_cover, mismatch=k_mismatch, agenda=k_agenda, divider=k_divider, statement=k_statement, journey=k_journey,
              side=k_side, wide=k_wide, compare=k_compare, table=k_table, twice=k_twice, checklist=k_checklist)
 
 
@@ -1096,11 +1129,23 @@ def deck_spec() -> List[dict]:
              ],
              flow=["حط اللوكيشن الأول", "اختار صنف وهمي", "روح للـ **Checkout**", "اضغط **Add new address**", "حط اللوكيشن تاني وسجّل العنوان"],
              banner=("must", "خد اللوكيشن مرتين: مرة في الأول، ومرة من **Add new address** في الـ **Checkout**.")),
+        dict(kind="side", sec=3, title="الـ Delivery · الـ Pin بييجي منين؟", en="Where the pin comes from", col_w=4.7,
+             notes="الـ pin بنجيبه من Google Maps: ندوّر على المكان، كليك يمين عليه بالظبط، وأول سطر في القايمة اللي بتظهر هو الإحداثيات. بنضغط عليها فتتنسخ، وبعدين بنلزقها في Enter Location في الداشبورد. نفس الطريقة بنستخدمها في المرتين: على خريطة Order Mode وفي Add new address.",
+             steps=[
+                 ("افتح **Google Maps** ودوّر على المكان", "اكتب اسم المكان أو العنوان في خانة البحث."),
+                 ("اضغط كليك يمين على المكان بالظبط", "على المبنى أو المكان نفسه، مش على الشارع."),
+                 ("انسخ الإحداثيات", "أول سطر في القايمة أرقام زي **30.046370, 31.331306** — اضغط عليه وهتتنسخ."),
+                 ("الصقها في **Enter Location**", "في الداشبورد، وبعدين اختار الاقتراح واضغط **Save**."),
+             ],
+             rows=[[U("maps_menu", crop=(0.72, 0.0, 1.0, 0.115), cap="خانة البحث", marks=[(1, 0.838, 0.04)])],
+                   [U("maps_menu", crop=(0.0, 0.40, 0.43, 1.0), cap="كليك يمين: أول سطر هو الإحداثيات",
+                      boxes=[(0.09, 0.484, 0.25, 0.541)], marks=[(2, 0.262, 0.49), (3, 0.11, 0.511)])]],
+             banner=("tip", "نفس الطريقة في المرتين: على خريطة **Order Mode** وفي **Add new address**.")),
         dict(kind="side", sec=3, title="الـ Delivery · خطوة 1 · حط اللوكيشن الأول", en="Enter the initial location", flow="h",
              notes="ده أول مرة بناخد فيها اللوكيشن. حط لوكيشن العميل على خريطة Order Mode واحفظ. لو السيستم قال We don't deliver to this address يبقى الـ pin برّه منطقة التوصيل.",
              steps=[
                  ("اختار **Delivery**", "في **Order Mode**، أول تاب."),
-                 ("دوّر على اللوكيشن", "اكتب العنوان أو الصق الإحداثيات في **Enter Location**."),
+                 ("حط اللوكيشن", "الصق الإحداثيات من Google Maps في **Enter Location** (السلايد اللي فاتت)، أو اكتب العنوان."),
                  ("اختار الاقتراح", "الـ pin بيروح عليه. قبلها الزرار مكتوب عليه **Move The Pin**."),
                  ("اضغط **Save**", "كده اللوكيشن اتاخد (أول مرة)."),
              ],
@@ -1127,6 +1172,16 @@ def deck_spec() -> List[dict]:
              ],
              rows=[[U("checkout_add_address", marks=[(1, 0.70, 0.86), (2, 0.93, 0.70)]),
                     U("saved_addresses", cap="Select Address", marks=[(3, 0.10, 0.70)])]]),
+        dict(kind="mismatch", sec=3, title="لو العنوان متسجّل: خد بالك من Downtown", en="Registered address: watch out for “Downtown”",
+             notes="ملاحظة من الفريق: لو العنوان المتسجّل مكتوب فيه Downtown (زي Downtown - Tahrir) وهو غير اللوكيشن المطلوب، يبقى الـ pin اتسجّل غلط. المنطقة اللي بتبدأ بيها العنوان معناها إن مكان العميل في الزمالك / وسط البلد، لكن الشارع ممكن يبقى في مصر الجديدة أو التجمع. ساعتها الأوردر هينزل على الفرع الغلط ومش هيوصل للعميل، وده على مسؤولية الـ Agent. فاتأكد مع العميل من المنطقة الرئيسية، ولو مش متطابقة سجّل عنوان جديد بـ pin صح.",
+             shot=U("downtown_address", cap="مثال: عنوان متسجّل المنطقة فيه Downtown والشارع في مصر الجديدة",
+                    boxes=[(0.53, 0.18, 0.915, 0.82), (0.005, 0.18, 0.49, 0.82)], marks=[(1, 0.915, 0.06), (2, 0.49, 0.06)]),
+             cards=[("المنطقة · AREA", "Downtown - Tahrir", "بتقول إن الـ pin في الزمالك / وسط البلد"),
+                    ("الشارع · STREET", "عمارات مصر الجديدة", "بيقول إن العميل في مصر الجديدة")],
+             steps=[("اقرا المنطقة", "أول حاجة في العنوان المتسجّل — لو مكتوب فيها **Downtown** اتأكد منها."),
+                    ("اسأل العميل", "هو في الزمالك ولا مصر الجديدة ولا التجمع؟ أكّد معاه المنطقة الرئيسية."),
+                    ("لو مش متطابقة", "اضغط **Add new address** وحط الـ pin الصح — الخطوة الجاية.")],
+             banner=("warn", "لو العنوان فيه **Downtown** والعميل في مكان تاني، الأوردر هينزل على الفرع الغلط ومش هيوصل للعميل — وده على مسؤولية الـ Agent.")),
         dict(kind="side", sec=3, title="الـ Delivery · خطوة 4 · سجّل العنوان", en="Location again + register the address", flow="h", col_w=4.8,
              notes="دي تاني مرة بناخد فيها اللوكيشن. حط الـ pin تاني، وبعدين املا فورم العنوان واحفظ، كده العنوان اتسجّل على العميل.",
              steps=[
@@ -1280,7 +1335,8 @@ def deck_spec() -> List[dict]:
                  ("رقم الموبايل: الجديد اتسجّل، والمسجّل اتفتح بروفايله.", 2),
                  ("راجعت آخر أوردر وسألت العميل لو كان فيه مشكلة.", 3),
                  ("الأصناف صح، والملاحظات في **Special Instructions**.", 3),
-                 ("**Delivery**: اللوكيشن اتاخد مرتين. **Pickup**: الفرع والميعاد صح.", 3),
+                 ("**Delivery**: اللوكيشن اتاخد مرتين، والعنوان المتسجّل مفيهوش **Downtown**.", 3),
+                 ("**Pickup**: الفرع وميعاد الاستلام صح.", 3),
                  ("راجعت الأوردر والـ **Total** وبيانات العميل — والـ **Voucher** لو فيه.", 4),
                  ("**Cash** أو **Online** (في **Maine** كاش بس) — والكاش باك في Maine و Vinnys Pizza و Chickin Worx بس.", 4),
                  ("الأوردر اتقبل: الفرع وبيانات العميل ورقم الأوردر صح.", 5),

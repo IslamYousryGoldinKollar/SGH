@@ -30,7 +30,7 @@ that name in `screenshots/` and re-run:
 Call-outs are stored as fractions of the original screenshot, so a re-captured screenshot of the same
 screen keeps its call-outs in place. The numbers on a screenshot match the numbered steps beside it.
 
-All 41 slots the deck uses are filled with real photos, so no placeholders are drawn. Delete or rename a
+All 43 slots the deck uses are filled with real photos, so no placeholders are drawn. Delete or rename a
 file to get its placeholder back, for example to re-capture a screen. The cashback slide shows the three
 brand logos (`48_logo_maine`, `49_logo_chickin_worx`, `50_logo_vinnys_pizza`) and two checkouts: Maine on
 Cash (`51_cashback_cash`) and an online brand on Credit Card (`42_cashback_checkout`).
@@ -42,10 +42,10 @@ Cash (`51_cashback_cash`) and an online brand on Credit Card (`42_cashback_check
 | 1–3 | Cover, agenda, the 5-step order journey |
 | 4–7 | 01 الدخول واختيار البراند: login, never share the login, select the brand (Switch Store) |
 | 8–11 | 02 بيانات العميل: phone number, new customer, new vs existing |
-| 12–26 | 03 تنفيذ الأوردر: last order (Order again + Rewards), search by first letters, item options, Special Instructions, sold out, delivery vs pickup, location taken twice (4 steps), pickup branch, branch list, pickup time (Pickup Time screen; restaurants without Schedule: write the time in Special Instructions) |
-| 27–31 | 04 المراجعة والدفع: review with the customer, Cash vs Online (Maine: cash only), cashback (Maine: paid in cash; Vinnys Pizza and Chickin Worx: paid online), voucher |
-| 32–35 | 05 تأكيد الأوردر: complete the checkout (Place Order / Send Cart Link), order lands on the dashboard, accepted order (branch, customer data, order number) |
-| 36 | Checklist |
+| 12–28 | 03 تنفيذ الأوردر: last order (Order again + Rewards), search by first letters, item options, Special Instructions, sold out, delivery vs pickup, location taken twice, where the pin comes from (Google Maps right-click → coordinates → paste in Enter Location), the 4 location steps, a registered address that says Downtown, pickup branch, branch list, pickup time (Pickup Time screen; restaurants without Schedule: write the time in Special Instructions) |
+| 29–33 | 04 المراجعة والدفع: review with the customer, Cash vs Online (Maine: cash only), cashback (Maine: paid in cash; Vinnys Pizza and Chickin Worx: paid online), voucher |
+| 34–37 | 05 تأكيد الأوردر: complete the checkout (Place Order / Send Cart Link), order lands on the dashboard, accepted order (branch, customer data, order number) |
+| 38 | Checklist |
 
 Every slide has speaker notes. Edit the content in `deck_spec()`: UI terms go between `**…**`, and
 the script draws them in the section colour. Avoid brackets, `+` and digit ranges next to English
