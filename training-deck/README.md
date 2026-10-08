@@ -1,7 +1,7 @@
 # Dashboard training deck
 
 `build_training_deck.py` builds the **Dashboard Training** deck for customer-service agents
-(python-pptx, 16:9, 36 slides). The text is Egyptian Arabic, with the dashboard's English UI terms kept
+(python-pptx, 16:9, 38 slides). The text is Egyptian Arabic, with the dashboard's English UI terms kept
 exactly as they appear on screen. The layout reads right to left. The cover keeps the black Zyda
 design; the rest is a light theme with one colour per section.
 
