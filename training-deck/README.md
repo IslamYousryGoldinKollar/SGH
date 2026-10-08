@@ -30,12 +30,9 @@ that name in `screenshots/` and re-run:
 Call-outs are stored as fractions of the original screenshot, so a re-captured screenshot of the same
 screen keeps its call-outs in place. The numbers on a screenshot match the numbered steps beside it.
 
-Four slots have no screenshot yet and stay placeholders until you add the files:
-
-* `38_customer_existing`: an existing customer recognised
-* `40_schedule_slot_picker`: the schedule-slot picker
-* `41_pickup_order_recorded`: a pick-up order on the dashboard
-* `47_last_order`: the last order shown above the categories
+All 40 slots the deck uses are filled with real photos, so no placeholders are drawn. Delete or rename a
+file to get its placeholder back, for example to re-capture a screen. The cashback slide uses the three
+brand logos (`48_logo_maine`, `49_logo_chickin_worx`, `50_logo_vinnys_pizza`).
 
 ## Structure (follows the order workflow)
 
@@ -44,7 +41,7 @@ Four slots have no screenshot yet and stay placeholders until you add the files:
 | 1–3 | Cover, agenda, the 5-step order journey |
 | 4–7 | 01 الدخول واختيار البراند: login, never share the login, select the brand (Switch Store) |
 | 8–11 | 02 بيانات العميل: phone number, new customer, new vs existing |
-| 12–26 | 03 تنفيذ الأوردر: last order, search by first letters, item options, Special Instructions, sold out, delivery vs pickup, location taken twice (4 steps), pickup branch, branch list, pickup time |
+| 12–26 | 03 تنفيذ الأوردر: last order (Order again + Rewards), search by first letters, item options, Special Instructions, sold out, delivery vs pickup, location taken twice (4 steps), pickup branch, branch list, pickup time (Pickup Time screen; restaurants without Schedule: write the time in Special Instructions) |
 | 27–31 | 04 المراجعة والدفع: review with the customer, Cash vs Online, cashback (Maine, Vinnys Pizza, Chickin Worx; online only), voucher |
 | 32–35 | 05 تأكيد الأوردر: complete the checkout (Place Order / Send Cart Link), order lands on the dashboard, accepted order (branch, customer data, order number) |
 | 36 | Checklist |

@@ -237,12 +237,10 @@ SHOT_TABLE = [
      "Order Summary لأوردر Delivery: Subtotal و Delivery Services و Service Fee و Total."),
     ("summary_pickup", "37_summary_pickup", (367, 120), "Order Summary · Pickup",
      "Order Summary لأوردر Pickup (من غير Delivery Services)."),
-    ("customer_existing", "38_customer_existing", (408, 290), "عميل مسجّل",
-     "Select Customer بعد رقم متسجّل: بروفايل العميل بيظهر وتقدر تكمّل."),
-    ("schedule_slot_picker", "40_schedule_slot_picker", (392, 290), "Schedule slot",
-     "شاشة Schedule slot اللي بتختار منها يوم وساعة الاستلام."),
-    ("pickup_order_recorded", "41_pickup_order_recorded", (520, 250), "أوردر Pickup على الداشبورد",
-     "كارت أوردر Pickup على الداشبورد: الفرع ويوم وساعة الاستلام."),
+    ("customer_existing", "38_customer_existing", (348, 169), "رقم مسجّل",
+     "Select Customer بعد رقم متسجّل: العميل بيظهر تحت Customers باسمه ورقمه."),
+    ("schedule_slot_picker", "40_schedule_slot_picker", (366, 582), "Pickup Time",
+     "شاشة Pickup Time اللي بتختار منها As Soon as Possible أو Scheduled Order واليوم والساعة."),
     ("cashback_checkout", "42_cashback_checkout", (352, 316), "Credit Card: Cashback و Send Cart Link",
      "الـ Checkout و Credit Card مختار: سطر Cashback بالمبلغ وزرار Send Cart Link."),
     ("special_instructions", "43_special_instructions", (366, 566), "خانة Special Instructions",
@@ -253,8 +251,14 @@ SHOT_TABLE = [
      "صفحة Switch Store: You're now logged in to + البراند، Search using store name، وليستة البراندات."),
     ("store_switcher", "46_store_switcher", (296, 120), "اسم البراند في القائمة",
      "اسم البراند الحالي فوق في القائمة الجانبية."),
-    ("last_order", "47_last_order", (409, 300), "آخر أوردر فوق الـ Categories",
-     "آخر أوردر للعميل وهو ظاهر فوق الـ Categories في المنيو."),
+    ("last_order", "47_last_order", (345, 337), "Order again + Rewards",
+     "كارت Order again (آخر أوردر للعميل) وتحته كارت Rewards، فوق الـ Categories."),
+    ("logo_maine", "48_logo_maine", (1080, 1080), "Maine",
+     "لوجو براند Maine (فيه كاش باك)."),
+    ("logo_chickin", "49_logo_chickin_worx", (959, 959), "Chickin Worx",
+     "لوجو براند Chickin Worx (فيه كاش باك)."),
+    ("logo_vinnys", "50_logo_vinnys_pizza", (1080, 1080), "Vinnys Pizza",
+     "لوجو براند Vinnys Pizza (فيه كاش باك)."),
 ]
 SHOTS = {k: dict(file=f, size=s, caption=c, show=d) for k, f, s, c, d in SHOT_TABLE}
 
@@ -562,7 +566,7 @@ def draw_use(slide, ctx: Ctx, use: Use, x, y, w, h, caption_h: float = 0.0):
         draw_placeholder(slide, ctx, use.key, rx, y, w, h)
     cap = SHOTS[use.key]["caption"] if use.cap is None else use.cap
     if cap and caption_h:
-        cw = max(w, 1.8)
+        cw = max(w, min(1.8, text_width(cap, 9) + 0.15))
         add_text(slide, rx + w - cw if RTL else rx, y + h + 0.06, cw, caption_h,
                  [P(cap, 9, color=MUTED, italic=not ARABIC.search(cap), align="r" if RTL else "l")], raw=True)
 
@@ -664,17 +668,23 @@ def left_column(slide, ctx, spec, col_w):
         draw_banner(slide, ctx, banner[0], banner[1], x, bottom - bh, col_w)
         bottom -= bh + 0.2
     plans, inset_h = [], 0.0
-    for u in spec.get("inset", []):
-        w_px, h_px = ctx.dims(u)
-        s_ = min(col_w / w_px, 0.0105)
-        cap = SHOTS[u.key]["caption"] if u.cap is None else u.cap
-        ch = 0.3 if cap else 0.0
-        plans.append((u, w_px * s_, h_px * s_, ch))
-        inset_h += h_px * s_ + ch + 0.12
+    for item in spec.get("inset", []):
+        group = item if isinstance(item, list) else [item]  # a list = several shots side by side
+        dims = [ctx.dims(u) for u in group]
+        gap = 0.2
+        s_ = min((col_w - (len(group) - 1) * gap) / sum(d[0] for d in dims), 0.0105)
+        has_cap = any((SHOTS[u.key]["caption"] if u.cap is None else u.cap) for u in group)
+        ch = 0.3 if has_cap else 0.0
+        h = max(d[1] for d in dims) * s_
+        plans.append((group, dims, s_, h, ch, gap))
+        inset_h += h + ch + 0.12
     draw_steps(slide, ctx, spec["steps"], x, top, col_w, bottom - inset_h - (0.1 if plans else 0) - top)
     iy = bottom - inset_h + 0.12
-    for u, w, h, ch in plans:
-        draw_use(slide, ctx, u, x, iy, w, h, ch)  # logical x = start edge of the column
+    for group, dims, s_, h, ch, gap in plans:
+        x_ = x
+        for u, d in zip(group, dims):
+            draw_use(slide, ctx, u, x_, iy + (h - d[1] * s_) / 2, d[0] * s_, d[1] * s_, ch)  # logical x = start edge
+            x_ += d[0] * s_ + gap
         iy += h + ch + 0.12
 
 
@@ -967,10 +977,11 @@ def deck_spec() -> List[dict]:
              steps=[
                  ("افتح **Select Customer**", "هيطلب منك **Phone Number** بتاع العميل."),
                  ("اكتب رقم الموبايل", "الخانة بتبدأ بكود مصر **\u200e+20**. كمّل الرقم وراجعه رقم رقم."),
-                 ("شوف السيستم قال إيه", "العميل المسجّل بيظهر على طول. الرقم الجديد بيطلع **This looks like a new customer**."),
+                 ("شوف السيستم قال إيه", "العميل المسجّل بيظهر تحت **Customers** باسمه ورقمه. الرقم الجديد بيطلع **This looks like a new customer**."),
              ],
              rows=[[U("phone_entry", marks=[(1, 0.60, 0.12), (2, 0.70, 0.67)])],
-                   [U("customer_new", cap="بعد رقم مش متسجّل", marks=[(3, 0.88, 0.68)])]],
+                   [U("customer_existing", cap="رقم مسجّل", marks=[(3, 0.50, 0.78)]),
+                    U("customer_new", cap="رقم جديد", marks=[(3, 0.88, 0.68)])]],
              banner=("tip", "اقرأ الرقم للعميل تاني قبل ما تكمل.")),
         dict(kind="side", sec=2, title="عميل جديد: سجّله", en="New customer: register them", flow="h",
              notes="الرقم الجديد محتاج نسجّل العميل. المطلوب هنا الاسم بس. زرار Save بيفضل رمادي لحد ما الاسم يبقى صح.",
@@ -992,26 +1003,27 @@ def deck_spec() -> List[dict]:
                      "مفيش عناوين محفوظة — هتضيف العنوان في الـ **Checkout**.",
                  ]),
                  dict(label="عميل مسجّل · Existing", row=[
-                     U("customer_existing", cap="عميل مسجّل"),
+                     U("customer_existing", cap="العميل بيظهر تحت Customers", boxes=[(0.03, 0.62, 0.95, 0.94)]),
                      U("saved_addresses", crop=(0, 0.56, 1, 1), cap="العناوين المحفوظة")], bullets=[
-                     "الرقم بيتعرف على طول — من غير تسجيل، افتح البروفايل وكمّل.",
-                     "اتأكد من الاسم مع العميل.",
-                     "عناوينه بتظهر في **Select Address**: اختار واحد أو ضيف جديد.",
+                     "اكتب الرقم — العميل المسجّل بيظهر تحت **Customers** باسمه ورقمه.",
+                     "اختاره وكمّل الأوردر من غير تسجيل، واتأكد من الاسم مع العميل.",
+                     "عناوينه المحفوظة بتظهر في **Select Address**: اختار واحد أو ضيف جديد.",
                  ]),
              ]),
 
         # ---------------------------------------------------------------- 03 order processing
         dict(kind="divider", sec=3, items=["آخر أوردر", "البحث", "Special Instructions", "Delivery ولا Pickup"],
              notes="تالت جزء: تنفيذ الأوردر نفسه."),
-        dict(kind="side", sec=3, title="راجع آخر أوردر للعميل", en="Check the last order",
-             notes="قبل ما نبدأ الأوردر الجديد: آخر أوردر للعميل بيظهر فوق الـ Categories. اسأل العميل لو كان فيه أي مشكلة فيه قبل ما تكمّل.",
+        dict(kind="side", sec=3, title="راجع آخر أوردر للعميل", en="Check the last order", col_w=4.7,
+             notes="قبل ما نبدأ الأوردر الجديد: آخر أوردر للعميل بيظهر تحت Order again فوق الـ Categories، بوقته وحالته ورقمه وأصنافه ومبلغه. اسأل العميل لو كان فيه أي مشكلة فيه قبل ما تكمّل. وتحته كارت Rewards بنقاط العميل.",
              steps=[
-                 ("شوف آخر أوردر", "بيظهر فوق الـ **Categories** في المنيو."),
-                 ("اسأل العميل عنه", "كان فيه أي مشكلة في آخر أوردر؟"),
-                 ("وبعدين كمّل", "ابدأ الأوردر الجديد."),
+                 ("شوف **Order again**", "آخر أوردر للعميل بيظهر فوق الـ **Categories**."),
+                 ("اقرا بياناته", "الوقت والحالة (زي **PREPARING**) ورقم الأوردر والأصناف والمبلغ."),
+                 ("اسأل العميل عنه", "كان فيه أي مشكلة في الأوردر ده؟ على الكارت زراير **Rate** و **Reorder**."),
+                 ("كارت **Rewards**", "تحت آخر أوردر: نقاط العميل (**1,455 pts**) والمكافأة الجاية."),
              ],
-             rows=[[U("last_order")]],
-             banner=("tip", "السؤال ده قبل أي أوردر جديد لعميل مسجّل.")),
+             rows=[[U("last_order", marks=[(1, 0.55, 0.075), (2, 0.67, 0.17), (3, 0.74, 0.375), (4, 0.60, 0.52)])]],
+             banner=("tip", "اسأل عن آخر أوردر قبل ما تبدأ أي أوردر جديد لعميل مسجّل.")),
         dict(kind="side", sec=3, title="دوّر على الصنف بالـ Search", en="Find items fast: search", col_w=4.7,
              notes="الـ Search أسرع طريقة. مش لازم تكتب الاسم كله: أول كام حرف والسيستم يطلع الصنف. تحت كل اسم فيه وصف تفصيلي.",
              steps=[
@@ -1037,7 +1049,7 @@ def deck_spec() -> List[dict]:
              inset=[U("basket_items", cap="بعد Add Item: الصنف في Your Items باختياره")],
              rows=[[U("item_options", marks=[(1, 0.75, 0.47), (2, 0.60, 0.65), (3, 0.65, 0.795), (4, 0.12, 0.905), (5, 0.62, 0.95)])]]),
         dict(kind="side", sec=3, title="طلبات العميل: Special Instructions", en="Comments & exclusions", flow="",
-             notes="بعض الأصناف تحتها خانة Special Instructions. فيها بنكتب طلبات العميل: حاجة عايز يشيلها زي الصوص أو الخس أو الخضار، أو أي تفضيل. الإضافات اللي بسعر بتتختار من جروب Extra.",
+             notes="بعض الأصناف تحتها خانة Special Instructions. فيها بنكتب طلبات العميل: حاجة عايز يشيلها زي الصوص أو الخس أو الخضار، أو أي تفضيل. الإضافات اللي بسعر بتتختار من جروب Extra. وفي المطاعم اللي معندهاش Schedule بنكتب الميعاد المطلوب هنا كملاحظة على أي صنف في الأوردر.",
              steps=[
                  ("افتح الصنف", "بعض الأصناف بس تحتها خانة ملاحظات."),
                  ("اكتب في **SPECIAL INSTRUCTIONS**", "طلب العميل أو الحاجة اللي عايز يشيلها: من غير صوص، من غير خس، من غير خضار."),
@@ -1046,7 +1058,7 @@ def deck_spec() -> List[dict]:
              ],
              rows=[[U("special_instructions", boxes=[(0.04, 0.725, 0.93, 0.81)], marks=[(1, 0.35, 0.61), (2, 0.88, 0.785)]),
                     U("order_item_options", crop=(0, 0.26, 1, 0.70), cap="الإضافات بسعر على الأوردر: Extra", marks=[(3, 0.50, 0.64)])]],
-             banner=("note", "خانة **Special Instructions** موجودة تحت أصناف معينة بس — مش كل الأصناف.")),
+             banner=("tip", "لو المطعم معندوش **Schedule**: اكتب الميعاد اللي العميل عايزه في **Special Instructions** على أي صنف في الأوردر.")),
         dict(kind="side", sec=3, title="الأصناف الـ Sold out والمش متاحة", en="Sold out or not available", col_w=5.0,
              notes="الأصناف المش متاحة بتبان في المنيو بس بعلامة واضحة: رمادي ومكتوب Sold out. الأصناف اللي محتاجة ميعاد عليها Schedule for. قول للعميل على طول واقترح بديل.",
              steps=[
@@ -1153,17 +1165,18 @@ def deck_spec() -> List[dict]:
              rows=[[U("pickup_branch_card", cap="كل فرع ليه pin على الخريطة")]],
              banners=[("note", "الليستة بتعمل scroll — ممكن يكون فيه فروع تانية تحت Golf Central."),
                       ("tip", "المسافة بتتغير حسب لوكيشن العميل. اقراها من الشاشة.")]),
-        dict(kind="side", sec=3, title="الـ Pickup · ميعاد الاستلام", en="Pickup date and time",
-             notes="ميعاد الـ Pickup الافتراضي ASAP مع وقت تقريبي (Ready in 15 minutes). لو عايز وقت تاني، Schedule slot واختار اليوم والساعة. الميعاد ده بيتسجّل على الأوردر.",
+        dict(kind="side", sec=3, title="الـ Pickup · ميعاد الاستلام", en="Pickup date and time", flow="h", col_w=4.7,
+             notes="ميعاد الـ Pickup الافتراضي ASAP مع وقت تقريبي (Ready in 15 minutes). لو العميل عايز وقت تاني، اضغط Schedule slot: بتفتح شاشة Pickup Time، اختار Scheduled Order وبعدين اليوم والساعة. الميعاد بيتسجّل على الأوردر. في بعض المطاعم مفيش Schedule خالص: ساعتها نكتب الميعاد المطلوب في Special Instructions على أي صنف في الأوردر.",
              steps=[
-                 ("**Pickup** مختار", "التوجل عليه **Pickup**."),
-                 ("راجع الفرع", "**Picking up from** فيه اسم الفرع. **Change** لو عايز تغيّره."),
+                 ("**Pickup** مختار والفرع صح", "**Picking up from** فيه اسم الفرع. **Change** لو عايز تغيّره."),
                  ("الميعاد الافتراضي", "**Ready in 15 minutes - ASAP**."),
-                 ("عايز ميعاد تاني؟ **Schedule slot**", "اختار يوم وساعة الاستلام."),
-                 ("الميعاد بيتسجّل على الأوردر", "الفرع ويوم وساعة الاستلام بيظهروا على كارت الأوردر."),
+                 ("عايز ميعاد تاني؟ اضغط **Schedule slot**", "هتفتح شاشة **Pickup Time**."),
+                 ("اختار **Scheduled Order** واليوم والساعة", "بدل **As Soon as Possible**. الأيام فوق والمواعيد تحتها كل ساعة."),
              ],
-             rows=[[U("pickup_time", marks=[(1, 0.45, 0.14), (2, 0.60, 0.42), (3, 0.50, 0.72), (4, 0.68, 0.73)])],
-                   [U("schedule_slot_picker"), U("pickup_order_recorded")]]),
+             inset=[U("orders_incoming", crop=(0.55, 0.0, 0.95, 0.105), cap="الميعاد المطلوب بيظهر على الأوردر: ASAP واليوم والساعة")],
+             banner=("warn", "لو المطعم معندوش **Schedule**: اكتب الميعاد في **Special Instructions** على أي صنف في الأوردر."),
+             rows=[[U("pickup_time", marks=[(1, 0.45, 0.14), (1, 0.60, 0.42), (2, 0.50, 0.72), (3, 0.68, 0.73)]),
+                    U("schedule_slot_picker", marks=[(4, 0.62, 0.145), (4, 0.80, 0.235), (4, 0.80, 0.33)])]]),
 
         # ---------------------------------------------------------------- 04 checkout & payment
         dict(kind="divider", sec=4, items=["راجع مع العميل", "Cash ولا Online", "الكاش باك", "الـ Voucher"],
@@ -1196,16 +1209,12 @@ def deck_spec() -> List[dict]:
         dict(kind="side", sec=4, title="الكاش باك: للدفع الـ Online بس", en="Cashback: online payment only", col_w=4.7,
              notes="الكاش باك موجود في تلات براندات بس: Maine و Vinnys Pizza و Chickin Worx، وبشرط إن العميل يدفع Online. لما تختار Credit Card هيظهر سطر Cashback بالمبلغ.",
              steps=[
-                 ("في 3 براندات بس", "**Maine** و **Vinnys Pizza** و **Chickin Worx**."),
-                 ("لازم الدفع يكون Online", "اختار **Credit Card** — مع الـ **Cash** مفيش كاش باك."),
-                 ("هتشوف علامة الكاش باك", "سطر **Cashback** بالمبلغ تحت **Pay with** — في المثال ده EGP 57.60."),
-                 ("عرّف العميل", "لو في براند من التلاتة وعايز يدفع كاش، قوله إن الكاش باك للـ **Online** بس."),
+                 ("في 3 براندات بس", "اللوجوهات اللي تحت."),
+                 ("لازم الدفع يكون Online", "اختار **Credit Card** — لو العميل عايز يدفع **Cash** قوله إن مفيش كاش باك."),
+                 ("هتشوف علامة الكاش باك", "سطر **Cashback** بالمبلغ تحت **Pay with**. في المثال ده EGP 57.60."),
              ],
-             rows=[[U("switch_store", crop=(0.31, 0.44, 0.69, 0.99), cap="البراندات اللي فيها كاش باك",
-                      boxes=[(0.325, 0.455, 0.665, 0.525), (0.325, 0.565, 0.665, 0.635), (0.325, 0.89, 0.665, 0.96)],
-                      marks=[(1, 0.50, 0.49), (1, 0.50, 0.60), (1, 0.50, 0.925)]),
-                    U("cashback_checkout", boxes=[(0.02, 0.71, 0.95, 0.81)],
-                      marks=[(2, 0.60, 0.59), (3, 0.55, 0.76)])]],
+             inset=[[U("logo_maine"), U("logo_chickin"), U("logo_vinnys")]],
+             rows=[[U("cashback_checkout", boxes=[(0.02, 0.71, 0.95, 0.81)], marks=[(2, 0.60, 0.59), (3, 0.55, 0.76)])]],
              banner=("must", "الكاش باك في **Maine** و **Vinnys Pizza** و **Chickin Worx** بس — وبالدفع الـ **Online** بس.")),
         dict(kind="side", sec=4, title="ضيف الـ Voucher", en="Add a discount voucher",
              notes="الـ Voucher مكانه في خانة Save on this order في الـ Checkout، بين ميعاد التوصيل والـ Order Summary. اكتب الكود واضغط Apply.",
