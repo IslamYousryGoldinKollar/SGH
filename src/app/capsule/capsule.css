@@ -1,0 +1,1489 @@
+/* ==========================================================================
+   The Culture Capsule — The One Island look (matches the team-building deck).
+   Everything is namespaced `cap-` so it never collides with the Care Clans theme.
+   ========================================================================== */
+
+.cap-root {
+  --red: #e00800;
+  --red-dark: #c20700;
+  --blue: #181f4b;
+  --burg: #7c0124;
+  --paper: #f4f3ee;
+  --beige: #e2e2d7;
+  --grey: #71716f;
+  --mgrey: #9c9c99;
+  --lgrey: #dadad7;
+  --dgreen: #16363a;
+  --lime: #47cb6c;
+  --font: "Suisse Intl", var(--font-geist-sans), Arial, Helvetica, sans-serif;
+
+  font-family: var(--font);
+  color: var(--blue);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.cap-root *,
+.cap-root *::before,
+.cap-root *::after {
+  box-sizing: border-box;
+}
+.cap-root button {
+  font-family: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   Phone (crew leader) flow
+   -------------------------------------------------------------------------- */
+.cap-phone-bg {
+  min-height: 100dvh;
+  width: 100%;
+  background:
+    radial-gradient(120% 60% at 100% 0%, rgba(224, 8, 0, 0.1) 0%, rgba(224, 8, 0, 0) 60%),
+    var(--paper);
+  position: relative;
+  overflow-x: hidden;
+}
+.cap-phone {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: max(18px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+}
+.cap-phone-sea {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 190px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.9;
+}
+
+.cap-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.cap-back {
+  all: unset;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--red);
+  box-shadow: 0 2px 10px rgba(24, 31, 75, 0.08);
+  flex: none;
+}
+.cap-back:focus-visible,
+.cap-btn:focus-visible,
+.cap-link:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+.cap-back svg {
+  width: 22px;
+  height: 22px;
+}
+.cap-count {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-left: auto;
+}
+.cap-progress {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--lgrey);
+  overflow: hidden;
+}
+.cap-progress i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--red);
+  transition: width 0.35s ease;
+}
+
+.cap-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 22px;
+  padding-bottom: 14px;
+}
+.cap-logo {
+  display: block;
+  height: 132px;
+  width: auto;
+  margin: 4px auto 0;
+}
+.cap-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--red);
+  letter-spacing: 0.01em;
+}
+.cap-eyebrow i {
+  display: block;
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.cap-h1 {
+  font-size: 36px;
+  line-height: 1.04;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--red);
+}
+.cap-h2 {
+  font-size: 28px;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.cap-lead {
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--grey);
+}
+.cap-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cap-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  border-radius: 18px;
+  background: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.cap-step b {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+}
+.cap-step small {
+  display: block;
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--grey);
+}
+
+.cap-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cap-label {
+  font-size: 15px;
+  font-weight: 700;
+}
+.cap-label small {
+  font-weight: 500;
+  color: var(--grey);
+}
+.cap-input,
+.cap-textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 18px;
+  color: var(--blue);
+  background: #fff;
+  border: 2px solid var(--lgrey);
+  border-radius: 16px;
+  padding: 14px 16px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cap-textarea {
+  min-height: 170px;
+  resize: none;
+  line-height: 1.4;
+}
+.cap-input:focus,
+.cap-textarea:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 4px rgba(224, 8, 0, 0.12);
+}
+.cap-input::placeholder,
+.cap-textarea::placeholder {
+  color: var(--mgrey);
+}
+.cap-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--grey);
+}
+
+.cap-qcard {
+  background: #fff;
+  border-radius: 24px;
+  padding: 20px 20px 18px;
+  box-shadow: 0 6px 24px rgba(24, 31, 75, 0.07);
+  position: relative;
+  overflow: hidden;
+}
+.cap-qcard::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 7px;
+  background: var(--red);
+}
+.cap-qnum {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--red);
+  margin-top: 4px;
+}
+.cap-q {
+  margin-top: 10px;
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.cap-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--paper);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--blue);
+}
+.cap-hint svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  color: var(--red);
+}
+
+.cap-photo {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fff;
+  border: 3px dashed var(--lgrey);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--grey);
+}
+.cap-photo.has {
+  border: 0;
+  box-shadow: 0 8px 28px rgba(24, 31, 75, 0.16);
+}
+.cap-photo .blur {
+  position: absolute;
+  inset: -30px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) brightness(0.92);
+}
+.cap-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.cap-photo svg {
+  width: 54px;
+  height: 54px;
+  color: var(--red);
+}
+.cap-photo p {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.cap-btn {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(224, 8, 0, 0.28);
+  transition: transform 0.12s, opacity 0.2s, background 0.15s;
+  text-align: center;
+}
+.cap-btn:active {
+  transform: scale(0.985);
+}
+.cap-btn[disabled],
+.cap-btn[aria-disabled="true"] {
+  opacity: 0.42;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.cap-btn svg {
+  width: 22px;
+  height: 22px;
+}
+.cap-btn.ghost {
+  background: #fff;
+  color: var(--red);
+  border: 2px solid var(--red);
+  box-shadow: none;
+}
+.cap-btn.navy {
+  background: var(--blue);
+  box-shadow: 0 10px 24px rgba(24, 31, 75, 0.25);
+}
+.cap-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.cap-link {
+  all: unset;
+  cursor: pointer;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--grey);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 8px;
+}
+.cap-error {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff1f0;
+  border: 2px solid var(--red);
+  color: var(--burg);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.cap-note {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 2px solid var(--lgrey);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--grey);
+}
+
+.cap-review {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cap-ritem {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  background: #fff;
+  border-radius: 18px;
+  padding: 14px 16px;
+}
+.cap-ritem small {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 4px;
+}
+.cap-ritem .q {
+  display: block;
+  font-style: normal;
+  font-size: 13px;
+  color: var(--grey);
+  margin-bottom: 4px;
+}
+.cap-ritem span {
+  display: block;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--blue);
+  overflow-wrap: anywhere;
+}
+
+.cap-done {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+}
+.cap-done .tick {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 16px 36px rgba(224, 8, 0, 0.35);
+  animation: cap-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.cap-done .tick svg {
+  width: 56px;
+  height: 56px;
+}
+.cap-done .thumb {
+  width: 220px;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(24, 31, 75, 0.2);
+  transform: rotate(-2deg);
+}
+.cap-done .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@keyframes cap-pop {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.cap-center {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 12px;
+  align-content: center;
+}
+.cap-spin {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 4px solid var(--lgrey);
+  border-top-color: var(--red);
+  animation: cap-rot 0.9s linear infinite;
+}
+@keyframes cap-rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.cap-fadein {
+  animation: cap-fade 0.35s ease both;
+}
+@keyframes cap-fade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Big screen (fixed 1920×1080 stage, scaled to fit — same technique as the deck)
+   -------------------------------------------------------------------------- */
+.cap-screen {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--blue);
+}
+.cap-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 50% 50%;
+  overflow: hidden;
+  background: var(--paper);
+}
+.cap-view {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+.cap-view {
+  --mark-ring: #e00800;
+  --mark-dot: #ffffff;
+}
+.cap-view.red,
+.cap-view.blue {
+  --mark-ring: #ffffff;
+  --mark-dot: #e00800;
+}
+.cap-view.on {
+  opacity: 1;
+  visibility: visible;
+}
+.cap-view.red {
+  background: radial-gradient(120% 90% at 85% 0%, #ff2a1f 0%, #e00800 45%, #c20700 100%);
+  color: #fff;
+}
+.cap-view.paper {
+  background: var(--paper);
+}
+.cap-view.blue {
+  background: radial-gradient(110% 90% at 80% 0%, #2a3470 0%, #181f4b 60%);
+  color: #fff;
+}
+
+.cap-sh {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 52px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  z-index: 5;
+}
+.cap-sh .mark {
+  width: 64px;
+  height: 64px;
+  flex: none;
+}
+.cap-sh .ttl {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.cap-sh .sub {
+  font-size: 19px;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+.cap-sh .right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.cap-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+}
+.cap-live::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  animation: cap-blink 1.4s steps(1) infinite;
+}
+.cap-view.red .cap-live,
+.cap-view.blue .cap-live {
+  background: #fff;
+  color: var(--red);
+}
+.cap-view.red .cap-live::before,
+.cap-view.blue .cap-live::before {
+  background: var(--red);
+}
+.cap-live.closed {
+  background: var(--grey);
+}
+@keyframes cap-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+.cap-tally {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 700;
+}
+.cap-tally b {
+  font-size: 54px;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.cap-tally span {
+  font-size: 22px;
+  opacity: 0.7;
+}
+
+/* scan view */
+.cap-scan {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 760px 1fr;
+  gap: 90px;
+  padding: 190px 100px 90px;
+  align-items: center;
+}
+.cap-qrbox {
+  overflow: hidden;
+  background: #fff;
+  border-radius: 44px;
+  padding: 44px;
+  box-shadow: 0 30px 80px rgba(80, 0, 0, 0.35);
+  position: relative;
+  color: var(--blue);
+}
+.cap-qrbox svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.cap-qrbox .corner {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 14px;
+  background: linear-gradient(90deg, #47cb6c 0%, #16363a 30%, #7c0124 50%, #e00800 100%);
+  border-radius: 0 0 44px 44px;
+}
+.cap-scan .big {
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+.cap-scan .lead {
+  margin-top: 22px;
+  font-size: 30px;
+  line-height: 1.25;
+  font-weight: 500;
+  opacity: 0.92;
+  max-width: 880px;
+}
+.cap-scan .qs {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cap-scan .qs div {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.cap-scan .qs b {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--red);
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+}
+.cap-url {
+  margin-top: 18px;
+  font-size: 22px;
+  font-weight: 500;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* wall view */
+.cap-spot {
+  position: absolute;
+  left: 100px;
+  top: 170px;
+  width: 1280px;
+  height: 640px;
+  border-radius: 36px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(24, 31, 75, 0.14);
+  display: grid;
+  grid-template-columns: 640px 1fr;
+  overflow: hidden;
+}
+.cap-spot .ph {
+  position: relative;
+  background: var(--beige);
+}
+.cap-spot .ph .blur {
+  position: absolute;
+  inset: -40px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) brightness(0.9);
+}
+/* contain, never cover: a portrait group selfie must not lose anyone at the edges */
+.cap-spot .ph img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.cap-spot .tx {
+  padding: 34px 40px 30px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.cap-spot .nm {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--red);
+}
+.cap-spot .by {
+  margin-top: 8px;
+  font-size: 21px;
+  font-weight: 500;
+  color: var(--grey);
+}
+.cap-spot .qa {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  justify-content: space-between;
+}
+.cap-spot .qa small {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--red);
+  letter-spacing: 0.01em;
+  margin-bottom: 4px;
+}
+.cap-spot .qa p {
+  line-height: 1.22;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.cap-spot.t1 .qa p { font-size: 28px; }
+.cap-spot.t2 .qa p { font-size: 24px; }
+.cap-spot.t3 .qa p { font-size: 21px; }
+.cap-spot.t4 .qa p { font-size: 19px; }
+.cap-spot.enter {
+  animation: cap-spot-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+@keyframes cap-spot-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cap-new {
+  position: absolute;
+  right: 22px;
+  top: 22px;
+  z-index: 2;
+  background: var(--red);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 999px;
+  animation: cap-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.cap-side {
+  position: absolute;
+  left: 1420px;
+  top: 170px;
+  width: 400px;
+  height: 640px;
+  border-radius: 36px;
+  background: var(--blue);
+  color: #fff;
+  padding: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+}
+.cap-side .qr {
+  width: 100%;
+  background: #fff;
+  border-radius: 24px;
+  padding: 20px;
+}
+.cap-side .qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.cap-side b {
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.cap-side small {
+  font-size: 18px;
+  opacity: 0.75;
+  line-height: 1.3;
+}
+.cap-side .lbl {
+  margin-top: auto;
+  font-size: 22px;
+  font-weight: 700;
+}
+.cap-side .bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+.cap-side .bar i {
+  display: block;
+  height: 100%;
+  background: #fff;
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+.cap-strip {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 846px;
+  height: 190px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 12px;
+}
+.cap-thumb {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--beige);
+  outline: 4px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.2s, transform 0.2s;
+}
+.cap-thumb.on {
+  outline-color: var(--red);
+  transform: translateY(-4px);
+}
+.cap-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cap-thumb span {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 99px;
+  background: rgba(24, 31, 75, 0.78);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.cap-thumb.empty {
+  background: transparent;
+  border: 3px dashed var(--lgrey);
+  cursor: default;
+}
+
+/* themes view */
+.cap-title {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 150px;
+  font-size: 76px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+  color: var(--red);
+}
+.cap-title small {
+  display: block;
+  margin-top: 12px;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--grey);
+  letter-spacing: 0;
+}
+.cap-cols {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 330px;
+  bottom: 90px;
+  display: grid;
+  gap: 20px;
+}
+.cap-col {
+  background: #fff;
+  border-radius: 30px;
+  padding: 28px 26px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 16px 44px rgba(24, 31, 75, 0.08);
+  min-height: 0;
+}
+.cap-col h3 {
+  font-size: 30px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--red);
+}
+.cap-col .qtxt {
+  font-size: 18px;
+  color: var(--grey);
+  line-height: 1.3;
+  margin-top: -8px;
+}
+.cap-theme {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cap-theme .row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.12;
+}
+.cap-theme .row em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 20px;
+  color: var(--red);
+  white-space: nowrap;
+}
+.cap-theme .meter {
+  height: 12px;
+  border-radius: 99px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.cap-theme .meter i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--red);
+}
+.cap-theme q {
+  font-size: 18px;
+  color: var(--grey);
+  line-height: 1.25;
+  quotes: "“" "”";
+}
+.cap-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--grey);
+}
+
+/* constitution reveal (big screen) */
+.cap-reveal {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 170px;
+  bottom: 130px;
+  display: flex;
+  flex-direction: column;
+}
+.cap-pg {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.55em;
+  color: #fff;
+}
+.cap-pg h1 {
+  font-size: 1.75em;
+  line-height: 1.02;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.cap-pg .sal {
+  font-weight: 700;
+}
+.cap-pg p {
+  line-height: 1.28;
+  overflow-wrap: anywhere;
+  max-width: 1500px;
+}
+.cap-pg .sub {
+  font-size: 0.62em;
+  font-weight: 500;
+  opacity: 0.8;
+  margin-top: -0.25em;
+}
+.cap-pg .art {
+  font-size: 0.5em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.cap-pg h2 {
+  font-size: 1.9em;
+  line-height: 1.02;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.15em;
+}
+.cap-pg ul {
+  list-style: none;
+  margin: 0.2em 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.cap-pg li {
+  position: relative;
+  padding-inline-start: 1.1em;
+  line-height: 1.22;
+}
+.cap-pg li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.5em;
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+  background: #fff;
+}
+.cap-pg .close {
+  font-size: 1.45em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.cap-pg .sign {
+  opacity: 0.8;
+  font-size: 0.8em;
+}
+.cap-pg .mosaic {
+  margin-top: 0.6em;
+  display: grid;
+  gap: 8px;
+}
+.cap-pg .mosaic img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+.cap-sample.inv {
+  align-self: flex-start;
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+}
+.cap-dots {
+  position: absolute;
+  left: 100px;
+  bottom: 84px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 18px;
+  font-weight: 700;
+}
+.cap-dots button {
+  all: unset;
+  cursor: pointer;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transition: all 0.3s;
+}
+.cap-dots button.on {
+  width: 34px;
+  border-radius: 8px;
+  background: #fff;
+}
+.cap-dots span {
+  margin-left: 12px;
+}
+
+/* shared constitution typography (screen + printable page) */
+.cap-doc h1 {
+  font-size: 1.55em;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--red);
+}
+.cap-doc .sal {
+  margin-top: 0.7em;
+  font-weight: 700;
+}
+.cap-doc p {
+  line-height: 1.38;
+  overflow-wrap: anywhere;
+}
+.cap-doc .open {
+  margin-top: 0.7em;
+}
+.cap-doc .sub {
+  margin-top: 0.15em;
+  font-size: 0.95em;
+  font-weight: 500;
+  color: var(--grey);
+}
+.cap-doc h2 {
+  margin-top: 1.05em;
+  font-size: 1.12em;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: -0.01em;
+}
+.cap-doc h2 small {
+  display: block;
+  font-size: 0.68em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.cap-doc ul {
+  margin: 0.4em 0 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28em;
+}
+.cap-doc li {
+  line-height: 1.32;
+  padding-left: 1.3em;
+  position: relative;
+}
+.cap-doc li::before {
+  content: "";
+  position: absolute;
+  left: 0.15em;
+  top: 0.55em;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background: var(--red);
+}
+.cap-doc .close {
+  margin-top: 0.9em;
+  font-weight: 700;
+  font-size: 1.08em;
+}
+.cap-doc .sign {
+  margin-top: 0.35em;
+  color: var(--grey);
+  font-weight: 500;
+}
+.cap-doc[dir="rtl"] li {
+  padding-left: 0;
+  padding-right: 1.3em;
+}
+.cap-doc[dir="rtl"] li::before {
+  left: auto;
+  right: 0.15em;
+}
+.cap-sample {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--grey);
+  border: 1.5px dashed var(--mgrey);
+  border-radius: 8px;
+  padding: 3px 10px;
+}
+
+/* constitution waiting state */
+.cap-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 18px;
+  align-content: center;
+}
+.cap-wait .big {
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.cap-wait p {
+  font-size: 28px;
+  opacity: 0.85;
+}
+
+/* toolbar (admin only, fades when idle) */
+.cap-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 999px;
+  background: rgba(24, 31, 75, 0.88);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-family: var(--font);
+  transition: opacity 0.4s;
+  max-width: calc(100vw - 16px);
+  overflow-x: auto;
+}
+.cap-bar.idle {
+  opacity: 0;
+  pointer-events: none;
+}
+.cap-bar button {
+  all: unset;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+}
+.cap-bar button:hover {
+  background: var(--red);
+}
+.cap-bar button.on {
+  background: #fff;
+  color: var(--red);
+}
+.cap-bar button[disabled] {
+  opacity: 0.45;
+  cursor: wait;
+}
+.cap-bar button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.cap-bar .sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0 4px;
+}
+.cap-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 70px;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: 720px;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--burg);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Printable constitution page
+   -------------------------------------------------------------------------- */
+.cap-paper-page {
+  min-height: 100vh;
+  background: var(--paper);
+  padding: 32px 16px 60px;
+}
+.cap-paper {
+  max-width: 820px;
+  margin: 0 auto;
+  background: #fffdf8;
+  border-radius: 12px;
+  padding: 56px 64px 48px;
+  box-shadow: 0 20px 60px rgba(24, 31, 75, 0.14);
+  font-size: 19px;
+}
+.cap-paper .brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 26px;
+  font-weight: 700;
+  color: var(--grey);
+  font-size: 15px;
+}
+.cap-paper .photos {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 2px solid var(--beige);
+}
+.cap-paper .photos p {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--grey);
+  margin-bottom: 12px;
+}
+.cap-paper .photos div {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+.cap-paper .photos img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+.cap-paper-tools {
+  max-width: 820px;
+  margin: 0 auto 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.cap-paper-tools .cap-btn {
+  width: auto;
+  min-height: 44px;
+  font-size: 15px;
+  padding: 0 20px;
+}
+@media (max-width: 640px) {
+  .cap-paper {
+    padding: 32px 22px;
+    font-size: 17px;
+  }
+}
+@media print {
+  .cap-paper-page {
+    background: #fff;
+    padding: 0;
+  }
+  .cap-paper {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: none;
+    padding: 0;
+  }
+  .cap-paper-tools {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cap-root * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
